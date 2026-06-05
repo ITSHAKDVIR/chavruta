@@ -1,0 +1,5004 @@
+{
+  "ashkenazi": [
+    {
+      "en": "Weekday",
+      "he": "ימי חול",
+      "children": [
+        {
+          "en": "Shacharit",
+          "he": "תפילת שחרית",
+          "children": [
+            {
+              "en": "Preparatory Prayers",
+              "he": "הכנה לתפילה",
+              "children": [
+                {
+                  "en": "Modeh Ani",
+                  "he": "מודה אני",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Modeh Ani"
+                },
+                {
+                  "en": "Netilat Yadayim",
+                  "he": "נטילת ידים",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Netilat Yadayim"
+                },
+                {
+                  "en": "Asher Yatzar",
+                  "he": "אשר יצר",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Asher Yatzar"
+                },
+                {
+                  "en": "Elokai Neshama",
+                  "he": "אלהי נשמה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Elokai Neshama"
+                },
+                {
+                  "en": "Tzitzit",
+                  "he": "ציצית",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Tzitzit"
+                },
+                {
+                  "en": "Torah Blessings",
+                  "he": "ברכות התורה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Torah Blessings"
+                },
+                {
+                  "en": "Torah Study",
+                  "he": "לימוד תורה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Torah Study"
+                },
+                {
+                  "en": "Tallit",
+                  "he": "טלית",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Tallit"
+                },
+                {
+                  "en": "Tefillin",
+                  "he": "תפילין",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Tefillin"
+                },
+                {
+                  "en": "Ma Tovu",
+                  "he": "מה טובו",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Ma Tovu"
+                },
+                {
+                  "en": "Adon Olam",
+                  "he": "אדון עולם",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Adon Olam"
+                },
+                {
+                  "en": "Yigdal",
+                  "he": "יגדל",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Yigdal"
+                },
+                {
+                  "en": "Morning Blessings",
+                  "he": "ברכות השחר",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Morning Blessings"
+                },
+                {
+                  "en": "Akedah",
+                  "he": "עקדה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Akedah"
+                },
+                {
+                  "en": "Sovereignty of Heaven",
+                  "he": "עול מלכות שמים",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Sovereignty of Heaven"
+                },
+                {
+                  "en": "Korbanot",
+                  "he": "קרבנות",
+                  "children": [
+                    {
+                      "en": "Kiyor",
+                      "he": "פרשת הכיור",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Korbanot, Kiyor"
+                    },
+                    {
+                      "en": "Terumat HaDeshen",
+                      "he": "פרשת תרומת הדשן",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Korbanot, Terumat HaDeshen"
+                    },
+                    {
+                      "en": "Korban HaTamid",
+                      "he": "פרשת קרבן תמיד",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Korbanot, Korban HaTamid"
+                    },
+                    {
+                      "en": "Ketoret",
+                      "he": "פרשת הקטורת",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Korbanot, Ketoret"
+                    },
+                    {
+                      "en": "Order of the Temple Service",
+                      "he": "סדר המערכה",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Korbanot, Order of the Temple Service"
+                    },
+                    {
+                      "en": "Laws of Sacrifices",
+                      "he": "דיני זבחים",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Korbanot, Laws of Sacrifices"
+                    },
+                    {
+                      "en": "Baraita of Rabbi Yishmael",
+                      "he": "ברייתא דרבי ישמעאל",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Korbanot, Baraita of Rabbi Yishmael"
+                    },
+                    {
+                      "en": "Kaddish DeRabbanan",
+                      "he": "קדיש דרבנן",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Preparatory Prayers, Korbanot, Kaddish DeRabbanan"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "en": "Pesukei Dezimra",
+              "he": "פסוקי דזמרה",
+              "children": [
+                {
+                  "en": "Introductory Psalm",
+                  "he": "מזמור שיר",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Introductory Psalm"
+                },
+                {
+                  "en": "Mourner's Kaddish",
+                  "he": "קדיש יתום",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Mourner's Kaddish"
+                },
+                {
+                  "en": "Barukh She'amar",
+                  "he": "ברוך שאמר",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Barukh She'amar"
+                },
+                {
+                  "en": "Hodu",
+                  "he": "הודו",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Hodu"
+                },
+                {
+                  "en": "Mizmor Letoda",
+                  "he": "מזמור לתודה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Mizmor Letoda"
+                },
+                {
+                  "en": "Yehi Chevod",
+                  "he": "יהי כבוד",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Yehi Chevod"
+                },
+                {
+                  "en": "Ashrei",
+                  "he": "אשרי",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Ashrei"
+                },
+                {
+                  "en": "Psalm 146",
+                  "he": "תהילים קמו",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Psalm 146"
+                },
+                {
+                  "en": "Psalm 147",
+                  "he": "תהילים קמז",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Psalm 147"
+                },
+                {
+                  "en": "Psalm 148",
+                  "he": "תהילים קמח",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Psalm 148"
+                },
+                {
+                  "en": "Psalm 149",
+                  "he": "תהילים קמט",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Psalm 149"
+                },
+                {
+                  "en": "Psalm 150",
+                  "he": "תהילים קנ",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Psalm 150"
+                },
+                {
+                  "en": "Closing Verses",
+                  "he": "ברוך ה׳",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Closing Verses"
+                },
+                {
+                  "en": "Vayevarech David",
+                  "he": "ויברך דוד",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Vayevarech David"
+                },
+                {
+                  "en": "Ata Hu",
+                  "he": "אתה הוא",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Ata Hu"
+                },
+                {
+                  "en": "Az Yashir",
+                  "he": "אז ישיר",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Az Yashir"
+                },
+                {
+                  "en": "Yishtabach",
+                  "he": "ישתבח",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Yishtabach"
+                },
+                {
+                  "en": "Psalm 130",
+                  "he": "תהילים קל",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Psalm 130"
+                },
+                {
+                  "en": "Half Kaddish",
+                  "he": "חצי קדיש",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Pesukei Dezimra, Half Kaddish"
+                }
+              ]
+            },
+            {
+              "en": "Blessings of the Shema",
+              "he": "ברכות קריאת שמע",
+              "children": [
+                {
+                  "en": "Barchu",
+                  "he": "ברכו",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Blessings of the Shema, Barchu"
+                },
+                {
+                  "en": "First Blessing before Shema",
+                  "he": "יוצר אור",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Blessings of the Shema, First Blessing before Shema"
+                },
+                {
+                  "en": "Second Blessing before Shema",
+                  "he": "אהבת ישראל",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Blessings of the Shema, Second Blessing before Shema"
+                },
+                {
+                  "en": "Shema",
+                  "he": "שמע",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Blessings of the Shema, Shema"
+                },
+                {
+                  "en": "Blessing after Shema",
+                  "he": "גאל ישראל",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Blessings of the Shema, Blessing after Shema"
+                }
+              ]
+            },
+            {
+              "en": "Amidah",
+              "he": "עמידה",
+              "children": [
+                {
+                  "en": "Patriarchs",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Patriarchs"
+                },
+                {
+                  "en": "Divine Might",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Divine Might"
+                },
+                {
+                  "en": "Holiness of God",
+                  "he": "קדושת השם",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Holiness of God"
+                },
+                {
+                  "en": "Kedushah",
+                  "he": "קדושה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Kedushah"
+                },
+                {
+                  "en": "Knowledge",
+                  "he": "דעת",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Knowledge"
+                },
+                {
+                  "en": "Repentance",
+                  "he": "תשובה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Repentance"
+                },
+                {
+                  "en": "Forgiveness",
+                  "he": "סליחה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Forgiveness"
+                },
+                {
+                  "en": "Redemption",
+                  "he": "גאולה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Redemption"
+                },
+                {
+                  "en": "Healing",
+                  "he": "רפואה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Healing"
+                },
+                {
+                  "en": "Prosperity",
+                  "he": "ברכת השנים",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Prosperity"
+                },
+                {
+                  "en": "Gathering the Exiles",
+                  "he": "קבוץ גליות",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Gathering the Exiles"
+                },
+                {
+                  "en": "Justice",
+                  "he": "משפט",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Justice"
+                },
+                {
+                  "en": "Against Enemies",
+                  "he": "ברכת המינים",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Against Enemies"
+                },
+                {
+                  "en": "The Righteous",
+                  "he": "על הצדיקים",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, The Righteous"
+                },
+                {
+                  "en": "Rebuilding Jerusalem",
+                  "he": "בנין ירושלים",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Rebuilding Jerusalem"
+                },
+                {
+                  "en": "Kingdom of David",
+                  "he": "מלכות בית דוד",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Kingdom of David"
+                },
+                {
+                  "en": "Response to Prayer",
+                  "he": "שומע תפילה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Response to Prayer"
+                },
+                {
+                  "en": "Temple Service",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Temple Service"
+                },
+                {
+                  "en": "Thanksgiving",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Thanksgiving"
+                },
+                {
+                  "en": "Birkat Kohanim",
+                  "he": "ברכת כוהנים",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Birkat Kohanim"
+                },
+                {
+                  "en": "Peace",
+                  "he": "שים שלום",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Peace"
+                },
+                {
+                  "en": "Concluding Passage",
+                  "he": "אלוהי נצור",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Amidah, Concluding Passage"
+                }
+              ]
+            },
+            {
+              "en": "Post Amidah",
+              "he": "אחר העמידה",
+              "children": [
+                {
+                  "en": "Vidui and 13 Middot",
+                  "he": "וידוי וי\"ג מידות",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Amidah, Vidui and 13 Middot"
+                },
+                {
+                  "en": "Avinu Malkenu",
+                  "he": "אבינו מלכנו",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Amidah, Avinu Malkenu"
+                },
+                {
+                  "en": "Tachanun",
+                  "he": "תחנון",
+                  "children": [
+                    {
+                      "en": "For Monday and Thursday",
+                      "he": "והוא רחום",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Amidah, Tachanun, For Monday and Thursday"
+                    },
+                    {
+                      "en": "Nefilat Apayim",
+                      "he": "נפילת אפיים",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Amidah, Tachanun, Nefilat Apayim"
+                    },
+                    {
+                      "en": "God of Israel",
+                      "he": "ה אל׳ ישראל",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Amidah, Tachanun, God of Israel"
+                    },
+                    {
+                      "en": "Shomer Yisrael",
+                      "he": "שומר ישראל",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Amidah, Tachanun, Shomer Yisrael"
+                    },
+                    {
+                      "en": "Half Kaddish",
+                      "he": "חצי קדיש",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Amidah, Tachanun, Half Kaddish"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "en": "Torah Reading",
+              "he": "קריאת התורה",
+              "children": [
+                {
+                  "en": "Removing the Torah from Ark",
+                  "he": "הוצאת ספר תורה",
+                  "children": [
+                    {
+                      "en": "El Erech Appayim",
+                      "he": "אל ארך אפים",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Removing the Torah from Ark, El Erech Appayim"
+                    },
+                    {
+                      "en": "Vayehi Binsoa",
+                      "he": "ויהי בנסוע",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Removing the Torah from Ark, Vayehi Binsoa"
+                    },
+                    {
+                      "en": "Berich Shmei",
+                      "he": "בריך שמה",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Removing the Torah from Ark, Berich Shmei"
+                    },
+                    {
+                      "en": "Lekha Hashem",
+                      "he": "לך השם",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Removing the Torah from Ark, Lekha Hashem"
+                    },
+                    {
+                      "en": "Av Harachamim",
+                      "he": "אב הרחמים",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Removing the Torah from Ark, Av Harachamim"
+                    },
+                    {
+                      "en": "Vetigaleh Veteraeh",
+                      "he": "ותגלה ותראה",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Removing the Torah from Ark, Vetigaleh Veteraeh"
+                    }
+                  ]
+                },
+                {
+                  "en": "Reading from Sefer",
+                  "he": "קריאת התורה",
+                  "children": [
+                    {
+                      "en": "Birkat HaTorah",
+                      "he": "ברכת התורה",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Reading from Sefer, Birkat HaTorah"
+                    },
+                    {
+                      "en": "Birkat Hagomel",
+                      "he": "ברכת הגומל",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Reading from Sefer, Birkat Hagomel"
+                    },
+                    {
+                      "en": "Half Kaddish",
+                      "he": "חצי קדיש",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Reading from Sefer, Half Kaddish"
+                    },
+                    {
+                      "en": "Raising the Torah",
+                      "he": "הגבהה",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Reading from Sefer, Raising the Torah"
+                    },
+                    {
+                      "en": "Prayers for Welfare of the People",
+                      "he": "יהי רצון",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Reading from Sefer, Prayers for Welfare of the People"
+                    }
+                  ]
+                },
+                {
+                  "en": "Returning Sefer to Aron",
+                  "he": "הכנסת ספר תורה",
+                  "children": [
+                    {
+                      "en": "Yehalelu",
+                      "he": "יהללו",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Returning Sefer to Aron, Yehalelu"
+                    },
+                    {
+                      "en": "LeDavid Mizmor",
+                      "he": "לדוד מזמור",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Returning Sefer to Aron, LeDavid Mizmor"
+                    },
+                    {
+                      "en": "Uvenucho Yomar",
+                      "he": "ובנוחה יאמר",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Returning Sefer to Aron, Uvenucho Yomar"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "en": "Concluding Prayers",
+              "he": "סיום תפילה",
+              "children": [
+                {
+                  "en": "Ashrei",
+                  "he": "אשרי",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Ashrei"
+                },
+                {
+                  "en": "Lamenatze'ach",
+                  "he": "למנצח",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Lamenatze'ach"
+                },
+                {
+                  "en": "Uva Letzion",
+                  "he": "ובא לציון",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Uva Letzion"
+                },
+                {
+                  "en": "Kaddish Shalem",
+                  "he": "קדיש שלם",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Kaddish Shalem"
+                },
+                {
+                  "en": "Alenu",
+                  "he": "עלינו",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Alenu"
+                },
+                {
+                  "en": "Mourner's Kaddish",
+                  "he": "קדיש יתום",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Mourner's Kaddish"
+                },
+                {
+                  "en": "Song of the Day",
+                  "he": "שיר של יום",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Song of the Day"
+                },
+                {
+                  "en": "Barchi Nafshi",
+                  "he": "ברכי נפשי",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Barchi Nafshi"
+                },
+                {
+                  "en": "LeDavid",
+                  "he": "לדוד",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, LeDavid"
+                },
+                {
+                  "en": "Korbanot (Israel)",
+                  "he": "קרבנות",
+                  "children": [
+                    {
+                      "en": "Ein Kelohenu",
+                      "he": "אין כאלוהינו",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Korbanot (Israel), Ein Kelohenu"
+                    },
+                    {
+                      "en": "Pitum HaKetoret",
+                      "he": "פטום קטורת",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Korbanot (Israel), Pitum HaKetoret"
+                    },
+                    {
+                      "en": "Mourner's Kaddish",
+                      "he": "קדיש יתום (**)",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Korbanot (Israel), Mourner's Kaddish"
+                    },
+                    {
+                      "en": "Barchu",
+                      "he": "ברכו",
+                      "ref": "Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Korbanot (Israel), Barchu"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "en": "Post Service",
+              "he": "תפילות נוספות",
+              "children": [
+                {
+                  "en": "Six Remembrances",
+                  "he": "שש זכירות",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Service, Six Remembrances"
+                },
+                {
+                  "en": "Ten Commandments",
+                  "he": "עשרת הדברות",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Service, Ten Commandments"
+                },
+                {
+                  "en": "Thirteen Principles",
+                  "he": "י\"ג עיקרי אמונה",
+                  "ref": "Siddur Ashkenaz, Weekday, Shacharit, Post Service, Thirteen Principles"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "en": "Minchah",
+          "he": "תפילת מנחה",
+          "children": [
+            {
+              "en": "Ashrei",
+              "he": "אשרי",
+              "ref": "Siddur Ashkenaz, Weekday, Minchah, Ashrei"
+            },
+            {
+              "en": "Amida",
+              "he": "עמידה",
+              "children": [
+                {
+                  "en": "Patriarchs",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Patriarchs"
+                },
+                {
+                  "en": "Divine Might",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Divine Might"
+                },
+                {
+                  "en": "Holiness of God",
+                  "he": "קדושת השם",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Holiness of God"
+                },
+                {
+                  "en": "Keduasha",
+                  "he": "קדושה",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Keduasha"
+                },
+                {
+                  "en": "Knowledge",
+                  "he": "דעת",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Knowledge"
+                },
+                {
+                  "en": "Repentance",
+                  "he": "תשובה",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Repentance"
+                },
+                {
+                  "en": "Forgiveness",
+                  "he": "סליחה",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Forgiveness"
+                },
+                {
+                  "en": "Redemption",
+                  "he": "גאולה",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Redemption"
+                },
+                {
+                  "en": "Healing",
+                  "he": "רפואה",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Healing"
+                },
+                {
+                  "en": "Prosperity",
+                  "he": "ברכת השנים",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Prosperity"
+                },
+                {
+                  "en": "Gathering the Exiles",
+                  "he": "קבוץ גליות",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Gathering the Exiles"
+                },
+                {
+                  "en": "Justice",
+                  "he": "משפט",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Justice"
+                },
+                {
+                  "en": "Against Enemies",
+                  "he": "ברכת המינים",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Against Enemies"
+                },
+                {
+                  "en": "The Righteous",
+                  "he": "על הצדיקים",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, The Righteous"
+                },
+                {
+                  "en": "Rebuilding Jerusalem",
+                  "he": "בנין ירושלים",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Rebuilding Jerusalem"
+                },
+                {
+                  "en": "Kingdom of David",
+                  "he": "מלכות בית דוד",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Kingdom of David"
+                },
+                {
+                  "en": "Response to Prayer",
+                  "he": "שומע תפילה",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Response to Prayer"
+                },
+                {
+                  "en": "Temple Service",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Temple Service"
+                },
+                {
+                  "en": "Thanksgiving",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Thanksgiving"
+                },
+                {
+                  "en": "Birkat Kohanim",
+                  "he": "ברכת כוהנים",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Birkat Kohanim"
+                },
+                {
+                  "en": "Peace",
+                  "he": "שים שלום",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Peace"
+                },
+                {
+                  "en": "Concluding Passage",
+                  "he": "אלוהי נצור",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Amida, Concluding Passage"
+                }
+              ]
+            },
+            {
+              "en": "Post Amidah",
+              "he": "אחר העמידה",
+              "children": [
+                {
+                  "en": "Vidui and 13 Middot",
+                  "he": "וידוי וי\"ג המידות",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Post Amidah, Vidui and 13 Middot"
+                },
+                {
+                  "en": "Avinu Malkenu",
+                  "he": "אבינו מלכנו",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Post Amidah, Avinu Malkenu"
+                },
+                {
+                  "en": "Tachanun",
+                  "he": "תחנון",
+                  "children": [
+                    {
+                      "en": "Nefilat Appayim",
+                      "he": "נפילת אפים",
+                      "ref": "Siddur Ashkenaz, Weekday, Minchah, Post Amidah, Tachanun, Nefilat Appayim"
+                    },
+                    {
+                      "en": "Shomer Yisrael",
+                      "he": "שומר ישראל",
+                      "ref": "Siddur Ashkenaz, Weekday, Minchah, Post Amidah, Tachanun, Shomer Yisrael"
+                    }
+                  ]
+                },
+                {
+                  "en": "Kaddish Shalem",
+                  "he": "קדיש שלם",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Post Amidah, Kaddish Shalem"
+                }
+              ]
+            },
+            {
+              "en": "Concluding Prayers",
+              "he": "סיום תפילה",
+              "children": [
+                {
+                  "en": "Alenu",
+                  "he": "עלינו",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Concluding Prayers, Alenu"
+                },
+                {
+                  "en": "Mourner's Kaddish",
+                  "he": "קדיש יתום",
+                  "ref": "Siddur Ashkenaz, Weekday, Minchah, Concluding Prayers, Mourner's Kaddish"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "en": "Maariv",
+          "he": "מעריב",
+          "children": [
+            {
+              "en": "Vehu Rachum",
+              "he": "והוא רחום",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, Vehu Rachum"
+            },
+            {
+              "en": "Barchu",
+              "he": "ברכו",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, Barchu"
+            },
+            {
+              "en": "Blessings of the Shema",
+              "he": "ברכות קריאת שמע",
+              "children": [
+                {
+                  "en": "First Blessing before Shema",
+                  "he": "המעריב ערבים",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Blessings of the Shema, First Blessing before Shema"
+                },
+                {
+                  "en": "Second Blessing before Shema",
+                  "he": "אהבת עולם",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Blessings of the Shema, Second Blessing before Shema"
+                },
+                {
+                  "en": "Shema",
+                  "he": "שמע",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Blessings of the Shema, Shema"
+                },
+                {
+                  "en": "First Blessing after Shema",
+                  "he": "אמת ואמונה",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Blessings of the Shema, First Blessing after Shema"
+                },
+                {
+                  "en": "Second Blessing after Shema",
+                  "he": "השכיבנו",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Blessings of the Shema, Second Blessing after Shema"
+                },
+                {
+                  "en": "Third Blessing after Shema",
+                  "he": "ברוך ה׳ לעולם (outside of Israel)",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Blessings of the Shema, Third Blessing after Shema"
+                },
+                {
+                  "en": "Half Kaddish",
+                  "he": "חצי קדיש",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Blessings of the Shema, Half Kaddish"
+                }
+              ]
+            },
+            {
+              "en": "Amidah",
+              "he": "עמידה",
+              "children": [
+                {
+                  "en": "Patriarchs",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Patriarchs"
+                },
+                {
+                  "en": "Divine Might",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Divine Might"
+                },
+                {
+                  "en": "Holiness of God",
+                  "he": "קדושת השם",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Holiness of God"
+                },
+                {
+                  "en": "Knowledge",
+                  "he": "דעת",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Knowledge"
+                },
+                {
+                  "en": "Repentance",
+                  "he": "תשובה",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Repentance"
+                },
+                {
+                  "en": "Forgiveness",
+                  "he": "סליחה",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Forgiveness"
+                },
+                {
+                  "en": "Redemption",
+                  "he": "גאולה",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Redemption"
+                },
+                {
+                  "en": "Healing",
+                  "he": "רפואה",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Healing"
+                },
+                {
+                  "en": "Prosperity",
+                  "he": "ברכת השנים",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Prosperity"
+                },
+                {
+                  "en": "Gathering the Exiles",
+                  "he": "קיבוץ גלויות",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Gathering the Exiles"
+                },
+                {
+                  "en": "Justice",
+                  "he": "משפט",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Justice"
+                },
+                {
+                  "en": "Against Enemies",
+                  "he": "ברכת המינים",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Against Enemies"
+                },
+                {
+                  "en": "The Righteous",
+                  "he": "על הצדיקים",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, The Righteous"
+                },
+                {
+                  "en": "Rebuilding Jerusalem",
+                  "he": "בניין ירושלים",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Rebuilding Jerusalem"
+                },
+                {
+                  "en": "Kingdom of David",
+                  "he": "מלכות בית דוד",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Kingdom of David"
+                },
+                {
+                  "en": "Response to Prayer",
+                  "he": "שומע תפילה",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Response to Prayer"
+                },
+                {
+                  "en": "Temple Service",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Temple Service"
+                },
+                {
+                  "en": "Thanksgiving",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Thanksgiving"
+                },
+                {
+                  "en": "Peace",
+                  "he": "שים שלום",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Peace"
+                },
+                {
+                  "en": "Concluding Passage",
+                  "he": "אלוהי נצור",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Amidah, Concluding Passage"
+                }
+              ]
+            },
+            {
+              "en": "Kaddish Shalem",
+              "he": "קדיש שלם",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, Kaddish Shalem"
+            },
+            {
+              "en": "Additions for Motza'ei Shabbat",
+              "he": "תוספות למוצאי שבת",
+              "children": [
+                {
+                  "en": "Viyehi Noam",
+                  "he": "ויהי נעם",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Additions for Motza'ei Shabbat, Viyehi Noam"
+                },
+                {
+                  "en": "Veyiten Lekha",
+                  "he": "ויתן לך",
+                  "ref": "Siddur Ashkenaz, Weekday, Maariv, Additions for Motza'ei Shabbat, Veyiten Lekha"
+                }
+              ]
+            },
+            {
+              "en": "Sefirat HaOmer",
+              "he": "ספירת העומר",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, Sefirat HaOmer"
+            },
+            {
+              "en": "Alenu",
+              "he": "עלינו",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, Alenu"
+            },
+            {
+              "en": "Mourner's Kaddish",
+              "he": "קדיש יתום",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, Mourner's Kaddish"
+            },
+            {
+              "en": "LeDavid",
+              "he": "לדוד",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, LeDavid"
+            },
+            {
+              "en": "Birkat HaLevana",
+              "he": "ברכת הלבנה",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, Birkat HaLevana"
+            },
+            {
+              "en": "Keri'at Shema al Hamita",
+              "he": "קריאת שמע על המיטה",
+              "ref": "Siddur Ashkenaz, Weekday, Maariv, Keri'at Shema al Hamita"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "en": "Shabbat",
+      "he": "שבת",
+      "children": [
+        {
+          "en": "Kabbalat Shabbat",
+          "he": "קבלת שבת",
+          "children": [
+            {
+              "en": "Yedid Nefesh",
+              "he": "ידיד נפש",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Yedid Nefesh"
+            },
+            {
+              "en": "Psalm 95",
+              "he": "תהילים צה",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Psalm 95"
+            },
+            {
+              "en": "Psalm 96",
+              "he": "תהילים צו",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Psalm 96"
+            },
+            {
+              "en": "Psalm 97",
+              "he": "תהילים צז",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Psalm 97"
+            },
+            {
+              "en": "Psalm 98",
+              "he": "תהילים צח",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Psalm 98"
+            },
+            {
+              "en": "Psalm 99",
+              "he": "תהילים צט",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Psalm 99"
+            },
+            {
+              "en": "Psalm 29",
+              "he": "תהילים כט",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Psalm 29"
+            },
+            {
+              "en": "Ana Bekoach",
+              "he": "אנא בכח",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Ana Bekoach"
+            },
+            {
+              "en": "Lekha Dodi",
+              "he": "לכה דודי",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Lekha Dodi"
+            },
+            {
+              "en": "Psalm 92",
+              "he": "תהילים צב",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Psalm 92"
+            },
+            {
+              "en": "Psalm 93",
+              "he": "תהילים צג",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Psalm 93"
+            },
+            {
+              "en": "Mourner's Kaddish",
+              "he": "קדיש יתום",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Mourner's Kaddish"
+            },
+            {
+              "en": "Bameh Madlikin",
+              "he": "במה מדליקין",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Bameh Madlikin"
+            },
+            {
+              "en": "Kaddish DeRabbanan",
+              "he": "קדיש דרבנן",
+              "ref": "Siddur Ashkenaz, Shabbat, Kabbalat Shabbat, Kaddish DeRabbanan"
+            }
+          ]
+        },
+        {
+          "en": "Maariv",
+          "he": "מעריב",
+          "children": [
+            {
+              "en": "Barchu",
+              "he": "ברכו",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Barchu"
+            },
+            {
+              "en": "Blessings of the Shema",
+              "he": "קריאת שמע וברכותיה",
+              "children": [
+                {
+                  "en": "First Blessing before Shema",
+                  "he": "המעריב ערבים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Blessings of the Shema, First Blessing before Shema"
+                },
+                {
+                  "en": "Second Blessing before Shema",
+                  "he": "אהבת עולם",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Blessings of the Shema, Second Blessing before Shema"
+                },
+                {
+                  "en": "Shema",
+                  "he": "שמע",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Blessings of the Shema, Shema"
+                },
+                {
+                  "en": "First Blessing after Shema",
+                  "he": "אמת ואמונה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Blessings of the Shema, First Blessing after Shema"
+                },
+                {
+                  "en": "Second Blessing after Shema",
+                  "he": "השכיבינו",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Blessings of the Shema, Second Blessing after Shema"
+                }
+              ]
+            },
+            {
+              "en": "Veshamru",
+              "he": "ושמרו",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Veshamru"
+            },
+            {
+              "en": "Half Kaddish",
+              "he": "חצי קדיש",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Half Kaddish"
+            },
+            {
+              "en": "Amidah",
+              "he": "עמידה",
+              "children": [
+                {
+                  "en": "Patriarchs",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Amidah, Patriarchs"
+                },
+                {
+                  "en": "Divine Might",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Amidah, Divine Might"
+                },
+                {
+                  "en": "Holines of God's Name",
+                  "he": "קדושת השם",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Amidah, Holines of God's Name"
+                },
+                {
+                  "en": "Sanctity of the Day",
+                  "he": "קדושת היום",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Amidah, Sanctity of the Day"
+                },
+                {
+                  "en": "Temple Service",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Amidah, Temple Service"
+                },
+                {
+                  "en": "Thanksgiving",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Amidah, Thanksgiving"
+                },
+                {
+                  "en": "Peace",
+                  "he": "שלום רב",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Amidah, Peace"
+                },
+                {
+                  "en": "Concluding Passage",
+                  "he": "אלהי נצור",
+                  "ref": "Siddur Ashkenaz, Shabbat, Maariv, Amidah, Concluding Passage"
+                }
+              ]
+            },
+            {
+              "en": "Vay'chulu",
+              "he": "ויכולו",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Vay'chulu"
+            },
+            {
+              "en": "Me'ein Sheva",
+              "he": "ברכה אחת מעין שבע",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Me'ein Sheva"
+            },
+            {
+              "en": "Kaddish Shalem",
+              "he": "קדיש שלם",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Kaddish Shalem"
+            },
+            {
+              "en": "Sefirat HaOmer",
+              "he": "ספירת העומר",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Sefirat HaOmer"
+            },
+            {
+              "en": "Aleinu",
+              "he": "עלינו",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Aleinu"
+            },
+            {
+              "en": "Mourner's Kaddish",
+              "he": "קדיש יתום",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Mourner's Kaddish"
+            },
+            {
+              "en": "LeDavid",
+              "he": "לדוד",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, LeDavid"
+            },
+            {
+              "en": "Yigdal",
+              "he": "יגדל",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Yigdal"
+            },
+            {
+              "en": "Adon Olam",
+              "he": "אדון עולם",
+              "ref": "Siddur Ashkenaz, Shabbat, Maariv, Adon Olam"
+            }
+          ]
+        },
+        {
+          "en": "Shabbat Evening",
+          "he": "ליל שבת",
+          "children": [
+            {
+              "en": "Blessing the Children",
+              "he": "ברכת הבנים",
+              "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Blessing the Children"
+            },
+            {
+              "en": "Shalom Aleichem",
+              "he": "שלום עליכם",
+              "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Shalom Aleichem"
+            },
+            {
+              "en": "Kiddush",
+              "he": "קידוש",
+              "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Kiddush"
+            },
+            {
+              "en": "Ribon Kol HaOlamim",
+              "he": "ריבון כל העולמים",
+              "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Ribon Kol HaOlamim"
+            },
+            {
+              "en": "Eshet Chayil",
+              "he": "אשת חיל",
+              "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Eshet Chayil"
+            },
+            {
+              "en": "Zemirot for Shabbat Evening",
+              "he": "זמירות לליל שבת",
+              "children": [
+                {
+                  "en": "Kol Mekadesh",
+                  "he": "כל מקדש",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Zemirot for Shabbat Evening, Kol Mekadesh"
+                },
+                {
+                  "en": "Menucha VeSimcha",
+                  "he": "מנוחה ושמחה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Zemirot for Shabbat Evening, Menucha VeSimcha"
+                },
+                {
+                  "en": "Ma Yedidut",
+                  "he": "מה ידידות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Zemirot for Shabbat Evening, Ma Yedidut"
+                },
+                {
+                  "en": "Yom zeh L'yisrael",
+                  "he": "יום זה לישראל",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Zemirot for Shabbat Evening, Yom zeh L'yisrael"
+                },
+                {
+                  "en": "Yah Ribon",
+                  "he": "יה ריבון",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Zemirot for Shabbat Evening, Yah Ribon"
+                },
+                {
+                  "en": "Tzamah Nafshi",
+                  "he": "צמאה נפשי",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Zemirot for Shabbat Evening, Tzamah Nafshi"
+                },
+                {
+                  "en": "Tzur Mishelo",
+                  "he": "צור משלו",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shabbat Evening, Zemirot for Shabbat Evening, Tzur Mishelo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "en": "Shacharit",
+          "he": "שחרית",
+          "children": [
+            {
+              "en": "Preparatory Prayers",
+              "he": "הכנה לתפילה",
+              "children": [
+                {
+                  "en": "Modeh Ani",
+                  "he": "מודה אני",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Modeh Ani"
+                },
+                {
+                  "en": "Netilat Yadayim",
+                  "he": "נטילת ידים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Netilat Yadayim"
+                },
+                {
+                  "en": "Asher Yatzar",
+                  "he": "אשר יצר",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Asher Yatzar"
+                },
+                {
+                  "en": "Elokai Neshama",
+                  "he": "אלהי נשמה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Elokai Neshama"
+                },
+                {
+                  "en": "Tzitzit",
+                  "he": "ציצית",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Tzitzit"
+                },
+                {
+                  "en": "Tallit",
+                  "he": "טלית",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Tallit"
+                },
+                {
+                  "en": "Ma Tovu",
+                  "he": "מה טובו",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Ma Tovu"
+                },
+                {
+                  "en": "Adon Olam",
+                  "he": "אדון עולם",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Adon Olam"
+                },
+                {
+                  "en": "Yigdal",
+                  "he": "יגדל",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Yigdal"
+                },
+                {
+                  "en": "Morning Blessings",
+                  "he": "ברכות השחר",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Morning Blessings"
+                },
+                {
+                  "en": "Akedah",
+                  "he": "עקדה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Akedah"
+                },
+                {
+                  "en": "Sovereignty of Heaven",
+                  "he": "עול מלכות שמים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Sovereignty of Heaven"
+                },
+                {
+                  "en": "Korbanot",
+                  "he": "קרבנות",
+                  "children": [
+                    {
+                      "en": "Kiyor",
+                      "he": "פרשת הכיור",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Korbanot, Kiyor"
+                    },
+                    {
+                      "en": "Terumat HaDeshen",
+                      "he": "פרשת תרומת הדשן",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Korbanot, Terumat HaDeshen"
+                    },
+                    {
+                      "en": "Korban HaTamid",
+                      "he": "פרשת קרבן תמיד",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Korbanot, Korban HaTamid"
+                    },
+                    {
+                      "en": "Ketoret",
+                      "he": "פרשת הקטורת",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Korbanot, Ketoret"
+                    },
+                    {
+                      "en": "Order of the Temple Service",
+                      "he": "סדר המערכה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Korbanot, Order of the Temple Service"
+                    },
+                    {
+                      "en": "Laws of Sacrifices",
+                      "he": "דיני זבחים",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Korbanot, Laws of Sacrifices"
+                    },
+                    {
+                      "en": "Baraita of Rabbi Yishmael",
+                      "he": "ברייתא דרבי ישמעאל",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Korbanot, Baraita of Rabbi Yishmael"
+                    },
+                    {
+                      "en": "Kaddish DeRabbanan",
+                      "he": "קדיש דרבנן",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Preparatory Prayers, Korbanot, Kaddish DeRabbanan"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "en": "Pesukei Dezimra",
+              "he": "פסוקי דזמרה",
+              "children": [
+                {
+                  "en": "Mizmor Shir",
+                  "he": "מזמור שיר חנוכת הבית",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Mizmor Shir"
+                },
+                {
+                  "en": "Mourner's Kaddish",
+                  "he": "קדיש יתום",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Mourner's Kaddish"
+                },
+                {
+                  "en": "Barukh She'amar",
+                  "he": "ברוך שאמר",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Barukh She'amar"
+                },
+                {
+                  "en": "Hodu",
+                  "he": "הודו",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Hodu"
+                },
+                {
+                  "en": "Mizmor Letoda",
+                  "he": "מזמור לתודה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Mizmor Letoda"
+                },
+                {
+                  "en": "Psalm 19",
+                  "he": "תהילים יט",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 19"
+                },
+                {
+                  "en": "Psalm 34",
+                  "he": "תהילים לד",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 34"
+                },
+                {
+                  "en": "Psalm 90",
+                  "he": "תהילים צ",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 90"
+                },
+                {
+                  "en": "Psalm 91",
+                  "he": "תהילים צא",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 91"
+                },
+                {
+                  "en": "Psalm 135",
+                  "he": "תהילים קלה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 135"
+                },
+                {
+                  "en": "Psalm 136",
+                  "he": "תהילים קלו",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 136"
+                },
+                {
+                  "en": "Psalm 33",
+                  "he": "תהילים לג",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 33"
+                },
+                {
+                  "en": "Psalm 92",
+                  "he": "תהילים צב",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 92"
+                },
+                {
+                  "en": "Psalm 93",
+                  "he": "תהילים צג",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 93"
+                },
+                {
+                  "en": "Yehi Chevod",
+                  "he": "יהי כבוד",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Yehi Chevod"
+                },
+                {
+                  "en": "Ashrei",
+                  "he": "אשרי",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Ashrei"
+                },
+                {
+                  "en": "Psalm 146",
+                  "he": "תהילים קמו",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 146"
+                },
+                {
+                  "en": "Psalm 147",
+                  "he": "תהילים קמז",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 147"
+                },
+                {
+                  "en": "Psalm 148",
+                  "he": "תהילים קמח",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 148"
+                },
+                {
+                  "en": "Psalm 149",
+                  "he": "תהילים קמט",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 149"
+                },
+                {
+                  "en": "Psalm 150",
+                  "he": "תהילים קנ",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 150"
+                },
+                {
+                  "en": "Baruch Hashem",
+                  "he": "ברוך ה׳",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Baruch Hashem"
+                },
+                {
+                  "en": "Vayevarech David",
+                  "he": "ויברך דוד",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Vayevarech David"
+                },
+                {
+                  "en": "Shirat HaYam",
+                  "he": "אז ישיר",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Shirat HaYam"
+                },
+                {
+                  "en": "Nishmat Kol Chai",
+                  "he": "נשמת כל חי",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Nishmat Kol Chai"
+                },
+                {
+                  "en": "Shochen Ad",
+                  "he": "שוכן עד",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Shochen Ad"
+                },
+                {
+                  "en": "Yishtabach",
+                  "he": "ישתבח",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Yishtabach"
+                },
+                {
+                  "en": "Psalm 130",
+                  "he": "תהילים קל",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Psalm 130"
+                },
+                {
+                  "en": "Half Kaddish",
+                  "he": "חצי קדיש",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Half Kaddish"
+                }
+              ]
+            },
+            {
+              "en": "Blessings of the Shema",
+              "he": "ברכות קריאת שמע",
+              "children": [
+                {
+                  "en": "Barchu",
+                  "he": "ברכו",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Blessings of the Shema, Barchu"
+                },
+                {
+                  "en": "First Blessing before Shema",
+                  "he": "יוצר אור",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Blessings of the Shema, First Blessing before Shema"
+                },
+                {
+                  "en": "Second Blessing before Shema",
+                  "he": "אהבת ישראל",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Blessings of the Shema, Second Blessing before Shema"
+                },
+                {
+                  "en": "Shema",
+                  "he": "שמע",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Blessings of the Shema, Shema"
+                },
+                {
+                  "en": "Blessing after Shema",
+                  "he": "גאל ישראל",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Blessings of the Shema, Blessing after Shema"
+                }
+              ]
+            },
+            {
+              "en": "Amidah",
+              "he": "עמידה",
+              "children": [
+                {
+                  "en": "Patriarchs",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Patriarchs"
+                },
+                {
+                  "en": "Divine Might",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Divine Might"
+                },
+                {
+                  "en": "Kedushah",
+                  "he": "קדושה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Kedushah"
+                },
+                {
+                  "en": "Holiness of God",
+                  "he": "קדושת השם",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Holiness of God"
+                },
+                {
+                  "en": "Sanctity of the Day",
+                  "he": "קדושת היום",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Sanctity of the Day"
+                },
+                {
+                  "en": "Temple Service",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Temple Service"
+                },
+                {
+                  "en": "Thanksgiving",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Thanksgiving"
+                },
+                {
+                  "en": "Birkat Kohanim",
+                  "he": "ברכת כהנים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Birkat Kohanim"
+                },
+                {
+                  "en": "Peace",
+                  "he": "שים שלום",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Peace"
+                },
+                {
+                  "en": "Concluding Passage",
+                  "he": "אלוהי נצור",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Concluding Passage"
+                },
+                {
+                  "en": "Kaddish Shalem",
+                  "he": "קדיש שלם",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Kaddish Shalem"
+                }
+              ]
+            },
+            {
+              "en": "Torah Reading",
+              "he": "קריאת התורה",
+              "children": [
+                {
+                  "en": "Removing the Torah from the Ark",
+                  "he": "הוצאת ספר תורה",
+                  "children": [
+                    {
+                      "en": "Ein Kamocha",
+                      "he": "אין כמוך",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Removing the Torah from the Ark, Ein Kamocha"
+                    },
+                    {
+                      "en": "Vayehi Binsoa",
+                      "he": "ויהי בנסע",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Removing the Torah from the Ark, Vayehi Binsoa"
+                    },
+                    {
+                      "en": "Berich Shmei",
+                      "he": "בריך שמה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Removing the Torah from the Ark, Berich Shmei"
+                    },
+                    {
+                      "en": "Shema Yisrael (Gadlu)",
+                      "he": "שמע ישראל",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Removing the Torah from the Ark, Shema Yisrael (Gadlu)"
+                    },
+                    {
+                      "en": "Lecha Hashem",
+                      "he": "לך השם",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Removing the Torah from the Ark, Lecha Hashem"
+                    },
+                    {
+                      "en": "Veyazor Veyagen",
+                      "he": "ויעזור ויגן",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Removing the Torah from the Ark, Veyazor Veyagen"
+                    }
+                  ]
+                },
+                {
+                  "en": "Reading from Sefer",
+                  "he": "קריאת התורה",
+                  "children": [
+                    {
+                      "en": "Birkat HaTorah",
+                      "he": "ברכת התורה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Birkat HaTorah"
+                    },
+                    {
+                      "en": "Birkat Hagomel",
+                      "he": "ברכת הגומל",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Birkat Hagomel"
+                    },
+                    {
+                      "en": "Mi Sheberach",
+                      "he": "מי שברך",
+                      "children": [
+                        {
+                          "en": "For an Oleh",
+                          "he": "לעולה התורה",
+                          "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Mi Sheberach, For an Oleh"
+                        },
+                        {
+                          "en": "For Sickness (includes man and woman)",
+                          "he": "לחולים",
+                          "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Mi Sheberach, For Sickness (includes man and woman)"
+                        },
+                        {
+                          "en": "For Birth",
+                          "he": "ליולדות",
+                          "children": [
+                            {
+                              "en": "Birth of a Son",
+                              "he": "יולדת בן",
+                              "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Mi Sheberach, For Birth, Birth of a Son"
+                            },
+                            {
+                              "en": "Birth of Daughter",
+                              "he": "יולדת בת",
+                              "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Mi Sheberach, For Birth, Birth of Daughter"
+                            }
+                          ]
+                        },
+                        {
+                          "en": "Bar Mitzvah",
+                          "he": "בר מצוה",
+                          "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Mi Sheberach, Bar Mitzvah"
+                        },
+                        {
+                          "en": "Bat Mitzvah",
+                          "he": "בת מצוה",
+                          "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Mi Sheberach, Bat Mitzvah"
+                        }
+                      ]
+                    },
+                    {
+                      "en": "Half Kaddish",
+                      "he": "חצי קדיש",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Half Kaddish"
+                    },
+                    {
+                      "en": "Raising the Torah",
+                      "he": "הגבהה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Raising the Torah"
+                    },
+                    {
+                      "en": "Haftarah",
+                      "he": "הפטרה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Haftarah"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "en": "Communal Prayers",
+              "he": "תפילות לציבור",
+              "children": [
+                {
+                  "en": "Yekum Purkan",
+                  "he": "יקום פרקן",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Communal Prayers, Yekum Purkan"
+                },
+                {
+                  "en": "Prayer of the State of Israel",
+                  "he": "תפילה לשלום מדינת ישראל",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Communal Prayers, Prayer of the State of Israel"
+                },
+                {
+                  "en": "Prayer for Israeli Soldiers",
+                  "he": "מי שברך לחיילי צה\"ל",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Communal Prayers, Prayer for Israeli Soldiers"
+                },
+                {
+                  "en": "Prayer for Those Being Held in Captivity",
+                  "he": "מי שברך לשבויים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Communal Prayers, Prayer for Those Being Held in Captivity"
+                },
+                {
+                  "en": "Birkat Hachodesh",
+                  "he": "ברכת החודש",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Communal Prayers, Birkat Hachodesh"
+                },
+                {
+                  "en": "Av HaRachamim",
+                  "he": "אב הרחמים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Communal Prayers, Av HaRachamim"
+                }
+              ]
+            },
+            {
+              "en": "Ashrei",
+              "he": "אשרי",
+              "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Ashrei"
+            },
+            {
+              "en": "Returning Sefer to Aron",
+              "he": "הכנסת ספר תורה",
+              "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Returning Sefer to Aron"
+            },
+            {
+              "en": "Half Kaddish",
+              "he": "חצי קדיש",
+              "ref": "Siddur Ashkenaz, Shabbat, Shacharit, Half Kaddish"
+            }
+          ]
+        },
+        {
+          "en": "Musaf LeShabbat",
+          "he": "מוסף לשבת",
+          "children": [
+            {
+              "en": "Amidah",
+              "he": "עמידה",
+              "children": [
+                {
+                  "en": "Patriarchs",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Patriarchs"
+                },
+                {
+                  "en": "Divine Might",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Divine Might"
+                },
+                {
+                  "en": "Kedushah",
+                  "he": "קדושה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Kedushah"
+                },
+                {
+                  "en": "Holiness of God",
+                  "he": "קדושת השם",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Holiness of God"
+                },
+                {
+                  "en": "Sanctity of the Day",
+                  "he": "קדושת היום",
+                  "children": [
+                    {
+                      "en": "For Shabbat",
+                      "he": "לשבת",
+                      "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Sanctity of the Day, For Shabbat"
+                    },
+                    {
+                      "en": "For Shabbat Rosh Chodesh",
+                      "he": "לשבת ראש חודש",
+                      "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Sanctity of the Day, For Shabbat Rosh Chodesh"
+                    }
+                  ]
+                },
+                {
+                  "en": "Temple Service",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Temple Service"
+                },
+                {
+                  "en": "Thanksgiving",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Thanksgiving"
+                },
+                {
+                  "en": "Birkat Kohanim",
+                  "he": "ברכת כהנים",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Birkat Kohanim"
+                },
+                {
+                  "en": "Peace",
+                  "he": "שים שלום",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Peace"
+                },
+                {
+                  "en": "Concluding Passage",
+                  "he": "אלוהי נצור",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Concluding Passage"
+                },
+                {
+                  "en": "Kaddish Shalem",
+                  "he": "קדיש שלם",
+                  "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Amidah, Kaddish Shalem"
+                }
+              ]
+            },
+            {
+              "en": "Kaddish Shalem",
+              "he": "קדיש שלם",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Kaddish Shalem"
+            },
+            {
+              "en": "Ein Keloheinu",
+              "he": "אין כאלוהינו",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Ein Keloheinu"
+            },
+            {
+              "en": "Pitum Haketoret",
+              "he": "פיטום הקטורת",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Pitum Haketoret"
+            },
+            {
+              "en": "Kaddish Derabbanan",
+              "he": "קדיש דרבנן",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Kaddish Derabbanan"
+            },
+            {
+              "en": "Alenu",
+              "he": "עלינו",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Alenu"
+            },
+            {
+              "en": "Mourner's Kaddish",
+              "he": "קדיש יתום",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Mourner's Kaddish"
+            },
+            {
+              "en": "Mizmor Shir L'Yom HaShabbat",
+              "he": "מזמור שיר ליום השבת",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Mizmor Shir L'Yom HaShabbat"
+            },
+            {
+              "en": "LeDavid",
+              "he": "לדוד",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, LeDavid"
+            },
+            {
+              "en": "Shir HaKavod",
+              "he": "שיר הכבוד",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Shir HaKavod"
+            },
+            {
+              "en": "Adon Olam",
+              "he": "אדון עולם",
+              "ref": "Siddur Ashkenaz, Shabbat, Musaf LeShabbat, Adon Olam"
+            }
+          ]
+        },
+        {
+          "en": "Daytime Meal",
+          "he": "סעודת היום",
+          "children": [
+            {
+              "en": "Kiddusha Rabba",
+              "he": "קידושא רבה",
+              "ref": "Siddur Ashkenaz, Shabbat, Daytime Meal, Kiddusha Rabba"
+            },
+            {
+              "en": "Zemirot for Second Meal",
+              "he": "זמירות לסעודת היום",
+              "children": [
+                {
+                  "en": "Baruch Kel Elyon",
+                  "he": "ברוך אל עליון",
+                  "ref": "Siddur Ashkenaz, Shabbat, Daytime Meal, Zemirot for Second Meal, Baruch Kel Elyon"
+                },
+                {
+                  "en": "Yom Zeh Mechubad",
+                  "he": "יום זה מכובד",
+                  "ref": "Siddur Ashkenaz, Shabbat, Daytime Meal, Zemirot for Second Meal, Yom Zeh Mechubad"
+                },
+                {
+                  "en": "Yom Shabbaton",
+                  "he": "יום שבתון",
+                  "ref": "Siddur Ashkenaz, Shabbat, Daytime Meal, Zemirot for Second Meal, Yom Shabbaton"
+                },
+                {
+                  "en": "Shimru Shabtotai",
+                  "he": "שמרו שבתותי",
+                  "ref": "Siddur Ashkenaz, Shabbat, Daytime Meal, Zemirot for Second Meal, Shimru Shabtotai"
+                },
+                {
+                  "en": "Ki Eshmera",
+                  "he": "כי אשמרה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Daytime Meal, Zemirot for Second Meal, Ki Eshmera"
+                },
+                {
+                  "en": "Dror Yikrah",
+                  "he": "דרור יקרא",
+                  "ref": "Siddur Ashkenaz, Shabbat, Daytime Meal, Zemirot for Second Meal, Dror Yikrah"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "en": "Minchah",
+          "he": "מנחה",
+          "children": [
+            {
+              "en": "Ashrei",
+              "he": "אשרי",
+              "ref": "Siddur Ashkenaz, Shabbat, Minchah, Ashrei"
+            },
+            {
+              "en": "Uva Letzion",
+              "he": "ובא לציון",
+              "ref": "Siddur Ashkenaz, Shabbat, Minchah, Uva Letzion"
+            },
+            {
+              "en": "Half Kaddish",
+              "he": "חצי קדיש",
+              "ref": "Siddur Ashkenaz, Shabbat, Minchah, Half Kaddish"
+            },
+            {
+              "en": "Torah Reading",
+              "he": "קריאת התורה",
+              "children": [
+                {
+                  "en": "Removing the Torah from Ark",
+                  "he": "הוצאת ספר תורה",
+                  "children": [
+                    {
+                      "en": "Va'ani Tefillati",
+                      "he": "ואני תפילתי",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Removing the Torah from Ark, Va'ani Tefillati"
+                    },
+                    {
+                      "en": "Vayehi Binsoa",
+                      "he": "ויהי בנסוע",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Removing the Torah from Ark, Vayehi Binsoa"
+                    },
+                    {
+                      "en": "Berich Shmei",
+                      "he": "בריך שמה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Removing the Torah from Ark, Berich Shmei"
+                    },
+                    {
+                      "en": "Gadlu",
+                      "he": "גדלו",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Removing the Torah from Ark, Gadlu"
+                    },
+                    {
+                      "en": "Lekha Hashem",
+                      "he": "לך ה׳",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Removing the Torah from Ark, Lekha Hashem"
+                    },
+                    {
+                      "en": "Av Harachamim",
+                      "he": "אב הרחמים",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Removing the Torah from Ark, Av Harachamim"
+                    },
+                    {
+                      "en": "Vetigaleh Veteraeh",
+                      "he": "ותגלה ותראה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Removing the Torah from Ark, Vetigaleh Veteraeh"
+                    }
+                  ]
+                },
+                {
+                  "en": "Reading from Sefer",
+                  "he": "קריאת התורה",
+                  "children": [
+                    {
+                      "en": "Birkat HaTorah",
+                      "he": "ברכת התורה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Reading from Sefer, Birkat HaTorah"
+                    },
+                    {
+                      "en": "Raising the Torah",
+                      "he": "הגבהה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Reading from Sefer, Raising the Torah"
+                    }
+                  ]
+                },
+                {
+                  "en": "Returning Sefer to Aron",
+                  "he": "הכנסת התורה",
+                  "children": [
+                    {
+                      "en": "Yehalelu",
+                      "he": "יהללו",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Returning Sefer to Aron, Yehalelu"
+                    },
+                    {
+                      "en": "LeDavid",
+                      "he": "לדוד מזמור",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Returning Sefer to Aron, LeDavid"
+                    },
+                    {
+                      "en": "Uvenucho Yomar",
+                      "he": "ובנוחה יאמר",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Torah Reading, Returning Sefer to Aron, Uvenucho Yomar"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "en": "Amidah",
+              "he": "עמידה",
+              "children": [
+                {
+                  "en": "Patriarchs",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Patriarchs"
+                },
+                {
+                  "en": "Divine Might",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Divine Might"
+                },
+                {
+                  "en": "Kedushah",
+                  "he": "קדושה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Kedushah"
+                },
+                {
+                  "en": "Holiness of God",
+                  "he": "קדושת השם",
+                  "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Holiness of God"
+                },
+                {
+                  "en": "Sanctity of the Day",
+                  "he": "קדושת היום",
+                  "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Sanctity of the Day"
+                },
+                {
+                  "en": "Temple Service",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Temple Service"
+                },
+                {
+                  "en": "Thanksgiving",
+                  "he": "מודים",
+                  "children": [
+                    {
+                      "en": "Modim",
+                      "he": "מודים ומודים דרבנן",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Thanksgiving, Modim"
+                    },
+                    {
+                      "en": "Al Hanisim for Chanukkah",
+                      "he": "על הניסים לחנוכה",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Thanksgiving, Al Hanisim for Chanukkah"
+                    },
+                    {
+                      "en": "Al Hanisim for Purim",
+                      "he": "על הניסים לפורים",
+                      "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Thanksgiving, Al Hanisim for Purim"
+                    }
+                  ]
+                },
+                {
+                  "en": "Peace",
+                  "he": "שים שלום",
+                  "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Peace"
+                },
+                {
+                  "en": "Concluding Passage",
+                  "he": "אלוהי נצור",
+                  "ref": "Siddur Ashkenaz, Shabbat, Minchah, Amidah, Concluding Passage"
+                }
+              ]
+            },
+            {
+              "en": "Tzidkatkhah Tzedek",
+              "he": "צדקתך צדק",
+              "ref": "Siddur Ashkenaz, Shabbat, Minchah, Tzidkatkhah Tzedek"
+            },
+            {
+              "en": "Kaddish Shalem",
+              "he": "קדיש שלם",
+              "ref": "Siddur Ashkenaz, Shabbat, Minchah, Kaddish Shalem"
+            },
+            {
+              "en": "Alenu",
+              "he": "עלינו",
+              "ref": "Siddur Ashkenaz, Shabbat, Minchah, Alenu"
+            },
+            {
+              "en": "Mourner's Kaddish",
+              "he": "קדיש יתום",
+              "ref": "Siddur Ashkenaz, Shabbat, Minchah, Mourner's Kaddish"
+            },
+            {
+              "en": "Barchi Nafshi",
+              "he": "ברכי נפשי",
+              "ref": "Siddur Ashkenaz, Shabbat, Minchah, Barchi Nafshi"
+            }
+          ]
+        },
+        {
+          "en": "Third Meal",
+          "he": "סעודת שלישית",
+          "children": [
+            {
+              "en": "Atkinu",
+              "he": "אתקינו",
+              "ref": "Siddur Ashkenaz, Shabbat, Third Meal, Atkinu"
+            },
+            {
+              "en": "Mizmor LeDavid",
+              "he": "מזמור לדוד",
+              "ref": "Siddur Ashkenaz, Shabbat, Third Meal, Mizmor LeDavid"
+            },
+            {
+              "en": "Yedid Nefesh",
+              "he": "ידיד נפש",
+              "ref": "Siddur Ashkenaz, Shabbat, Third Meal, Yedid Nefesh"
+            }
+          ]
+        },
+        {
+          "en": "Havdalah",
+          "he": "הבדלה",
+          "ref": "Siddur Ashkenaz, Shabbat, Havdalah"
+        }
+      ]
+    },
+    {
+      "en": "Festivals",
+      "he": "חגים",
+      "children": [
+        {
+          "en": "Rosh Chodesh",
+          "he": "ראש חודש",
+          "children": [
+            {
+              "en": "Hallel",
+              "he": "הלל",
+              "children": [
+                {
+                  "en": "Berakhah before the Hallel",
+                  "he": "ברכת הלל",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah before the Hallel"
+                },
+                {
+                  "en": "Psalm 113",
+                  "he": "תהילים קיג",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 113"
+                },
+                {
+                  "en": "Psalm 114",
+                  "he": "תהילים קיד",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 114"
+                },
+                {
+                  "en": "Psalm 115",
+                  "he": "תהילים קטו",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 115"
+                },
+                {
+                  "en": "Psalm 116",
+                  "he": "תהילים קטז",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 116"
+                },
+                {
+                  "en": "Psalm 117",
+                  "he": "תהילים קיז",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 117"
+                },
+                {
+                  "en": "Psalm 118",
+                  "he": "תהילים קיח",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Psalm 118"
+                },
+                {
+                  "en": "Berakhah after the Hallel",
+                  "he": "ברכה בסוף",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah after the Hallel"
+                }
+              ]
+            },
+            {
+              "en": "Musaf Amidah for Rosh Chodesh",
+              "he": "מוסף עמידה לראש חודש",
+              "children": [
+                {
+                  "en": "Avot",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Avot"
+                },
+                {
+                  "en": "Gevurot",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Gevurot"
+                },
+                {
+                  "en": "Kedushah",
+                  "he": "קדושה",
+                  "children": [
+                    {
+                      "en": "Kedushat HaShem",
+                      "he": "קדושת השם",
+                      "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Kedushah, Kedushat HaShem"
+                    }
+                  ]
+                },
+                {
+                  "en": "Sanctity of the Day",
+                  "he": "קדושת היום",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Sanctity of the Day"
+                },
+                {
+                  "en": "Avodah",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Avodah"
+                },
+                {
+                  "en": "Hodayah",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Hodayah"
+                },
+                {
+                  "en": "Birkat Kohanim",
+                  "he": "ברכת כהנים",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Birkat Kohanim"
+                },
+                {
+                  "en": "Peace",
+                  "he": "שים שלום",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Peace"
+                },
+                {
+                  "en": "Passages Ending Amidah",
+                  "he": "אלוהי נצור",
+                  "ref": "Siddur Ashkenaz, Festivals, Rosh Chodesh, Musaf Amidah for Rosh Chodesh, Passages Ending Amidah"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "en": "Shalosh Regalim",
+          "he": "תפילות לשלוש רגלים",
+          "children": [
+            {
+              "en": "Amida for Maariv, Shacharit, Mincha",
+              "he": "עמידה לערבית, שחרית, מנחה",
+              "children": [
+                {
+                  "en": "Avot",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Avot"
+                },
+                {
+                  "en": "Gevurot",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Gevurot"
+                },
+                {
+                  "en": "Kedusha",
+                  "he": "קדושה",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Kedusha"
+                },
+                {
+                  "en": "Sanctity of the Day",
+                  "he": "קדושת היום",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Sanctity of the Day"
+                },
+                {
+                  "en": "Avodah",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Avodah"
+                },
+                {
+                  "en": "Modim",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Modim"
+                },
+                {
+                  "en": "Birkat Kohanim",
+                  "he": "ברכת כהנים",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Birkat Kohanim"
+                },
+                {
+                  "en": "Peace",
+                  "he": "ברכה לשלום",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Peace"
+                },
+                {
+                  "en": "Concluding Prayer",
+                  "he": "סיום עמידה",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Amida for Maariv, Shacharit, Mincha, Concluding Prayer"
+                }
+              ]
+            },
+            {
+              "en": "Mussaf",
+              "he": "מוסף",
+              "children": [
+                {
+                  "en": "Avot",
+                  "he": "אבות",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Avot"
+                },
+                {
+                  "en": "Gevurot",
+                  "he": "גבורות",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Gevurot"
+                },
+                {
+                  "en": "Kedusha",
+                  "he": "קדושה",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Kedusha"
+                },
+                {
+                  "en": "Sanctity of the Name",
+                  "he": "קדושת השם",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Sanctity of the Name"
+                },
+                {
+                  "en": "Sanctity of the Day",
+                  "he": "קדושת היום",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Sanctity of the Day"
+                },
+                {
+                  "en": "Avodah",
+                  "he": "עבודה",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Avodah"
+                },
+                {
+                  "en": "Modim",
+                  "he": "מודים",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Modim"
+                },
+                {
+                  "en": "Birkat Kohanim",
+                  "he": "ברכת כוהנים",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Birkat Kohanim"
+                },
+                {
+                  "en": "Peace",
+                  "he": "ברכת שלום",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Peace"
+                },
+                {
+                  "en": "Concluding Prayer",
+                  "he": "סיום עמידה",
+                  "ref": "Siddur Ashkenaz, Festivals, Shalosh Regalim, Mussaf, Concluding Prayer"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "en": "Prayer for Dew",
+          "he": "תפילת טל",
+          "ref": "Siddur Ashkenaz, Festivals, Prayer for Dew"
+        },
+        {
+          "en": "Prayer for Rain",
+          "he": "תפילת גשם",
+          "ref": "Siddur Ashkenaz, Festivals, Prayer for Rain"
+        },
+        {
+          "en": "Sukkot",
+          "he": "סוכות",
+          "children": [
+            {
+              "en": "Prayers in the Sukkah",
+              "he": "תפילות בסוכה",
+              "children": [
+                {
+                  "en": "Entering the Sukkah",
+                  "he": "כשנכנסים לסוכה",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Prayers in the Sukkah, Entering the Sukkah"
+                },
+                {
+                  "en": "Ushpizin",
+                  "he": "אושפיזין",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Prayers in the Sukkah, Ushpizin"
+                },
+                {
+                  "en": "Leaving the Sukkah",
+                  "he": "כשיוצאים מן הסוכה",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Prayers in the Sukkah, Leaving the Sukkah"
+                }
+              ]
+            },
+            {
+              "en": "Blessing on Lulav",
+              "he": "נטילת לולב",
+              "ref": "Siddur Ashkenaz, Festivals, Sukkot, Blessing on Lulav"
+            },
+            {
+              "en": "Hosha'anot",
+              "he": "הושענות",
+              "children": [
+                {
+                  "en": "For Shabbat Chol Hamoed",
+                  "he": "כל יום בסוכות שחל בשבת",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Hosha'anot, For Shabbat Chol Hamoed"
+                },
+                {
+                  "en": "First Day of Sukkot",
+                  "he": "יום טוב ראשון של סוכות",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Hosha'anot, First Day of Sukkot"
+                },
+                {
+                  "en": "Second Day of Sukkot",
+                  "he": "יום שני של סוכות",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Hosha'anot, Second Day of Sukkot"
+                },
+                {
+                  "en": "Third Day of Sukkot",
+                  "he": "יום שלישי של סוכות",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Hosha'anot, Third Day of Sukkot"
+                },
+                {
+                  "en": "Fourth Day of Sukkot",
+                  "he": "יום רביעי של סוכות",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Hosha'anot, Fourth Day of Sukkot"
+                },
+                {
+                  "en": "Fifth Day of Sukkot",
+                  "he": "יום חמישי של סוכות",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Hosha'anot, Fifth Day of Sukkot"
+                },
+                {
+                  "en": "Sixth Day of Sukkot",
+                  "he": "יום שישי של סוכות",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Hosha'anot, Sixth Day of Sukkot"
+                },
+                {
+                  "en": "Hosha'ana Rabba",
+                  "he": "הושענא רבה",
+                  "ref": "Siddur Ashkenaz, Festivals, Sukkot, Hosha'anot, Hosha'ana Rabba"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "en": "Chanukah",
+          "he": "חנוכה",
+          "children": [
+            {
+              "en": "Service for Lighting Chanukah Candles",
+              "he": "סדר הדלקת נרות חנוכה",
+              "children": [
+                {
+                  "en": "Blessings on Chanukah Candles",
+                  "he": "ברכות הדלקת נרות חנוכה",
+                  "ref": "Siddur Ashkenaz, Festivals, Chanukah, Service for Lighting Chanukah Candles, Blessings on Chanukah Candles"
+                },
+                {
+                  "en": "Hanerot Hallalu",
+                  "he": "הנרות הללו",
+                  "ref": "Siddur Ashkenaz, Festivals, Chanukah, Service for Lighting Chanukah Candles, Hanerot Hallalu"
+                },
+                {
+                  "en": "Maoz Tzur",
+                  "he": "מעוז צור",
+                  "ref": "Siddur Ashkenaz, Festivals, Chanukah, Service for Lighting Chanukah Candles, Maoz Tzur"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "en": "Selichot",
+          "he": "סליחות",
+          "children": [
+            {
+              "en": "Fast of Gedalia",
+              "he": "צום גדליה",
+              "ref": "Siddur Ashkenaz, Festivals, Selichot, Fast of Gedalia"
+            },
+            {
+              "en": "Ten of Tevet",
+              "he": "עשרה בטבת",
+              "ref": "Siddur Ashkenaz, Festivals, Selichot, Ten of Tevet"
+            },
+            {
+              "en": "Fast of Esther",
+              "he": "תענית אסתר",
+              "ref": "Siddur Ashkenaz, Festivals, Selichot, Fast of Esther"
+            },
+            {
+              "en": "Seventeen of Tamuz",
+              "he": "שבעה עשר בתמוז",
+              "ref": "Siddur Ashkenaz, Festivals, Selichot, Seventeen of Tamuz"
+            },
+            {
+              "en": "Yom Kippur Katan",
+              "he": "יום כיפור קטן",
+              "ref": "Siddur Ashkenaz, Festivals, Selichot, Yom Kippur Katan"
+            },
+            {
+              "en": "BaHaB",
+              "he": "בהב",
+              "ref": "Siddur Ashkenaz, Festivals, Selichot, BaHaB"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "en": "Berachot",
+      "he": "ברכות",
+      "children": [
+        {
+          "en": "Birkat HaMazon",
+          "he": "ברכת המזון",
+          "ref": "Siddur Ashkenaz, Berachot, Birkat HaMazon"
+        },
+        {
+          "en": "Birkat Hanehenin",
+          "he": "ברכת הנהנין",
+          "children": [
+            {
+              "en": "Eating",
+              "he": "אכילה",
+              "children": [
+                {
+                  "en": "Barachot Rishonot",
+                  "he": "ברכות ראשונות",
+                  "ref": "Siddur Ashkenaz, Berachot, Birkat Hanehenin, Eating, Barachot Rishonot"
+                },
+                {
+                  "en": "Brachot Achronot",
+                  "he": "ברכות אחרונות",
+                  "children": [
+                    {
+                      "en": "Al Hamichyah",
+                      "he": "על המחיה",
+                      "ref": "Siddur Ashkenaz, Berachot, Birkat Hanehenin, Eating, Brachot Achronot, Al Hamichyah"
+                    },
+                    {
+                      "en": "Borei Nefashot",
+                      "he": "בורא נפשות",
+                      "ref": "Siddur Ashkenaz, Berachot, Birkat Hanehenin, Eating, Brachot Achronot, Borei Nefashot"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "en": "Blessings on Sights Sounds and Smells",
+              "he": "ברכות הראייה השמיעה והריח",
+              "ref": "Siddur Ashkenaz, Berachot, Birkat Hanehenin, Blessings on Sights Sounds and Smells"
+            }
+          ]
+        },
+        {
+          "en": "Birkhot Hamitzvot",
+          "he": "ברכת המצוות",
+          "ref": "Siddur Ashkenaz, Berachot, Birkhot Hamitzvot"
+        },
+        {
+          "en": "Asher Yatzar Etchem Badin",
+          "he": "מחיה המתים",
+          "ref": "Siddur Ashkenaz, Berachot, Asher Yatzar Etchem Badin"
+        },
+        {
+          "en": "Tefillat HaDerech",
+          "he": "תפילת הדרך",
+          "ref": "Siddur Ashkenaz, Berachot, Tefillat HaDerech"
+        },
+        {
+          "en": "Havinenu",
+          "he": "הביננו",
+          "ref": "Siddur Ashkenaz, Berachot, Havinenu"
+        }
+      ]
+    },
+    {
+      "en": "Kaddish",
+      "he": "קדיש",
+      "children": [
+        {
+          "en": "Half Kaddish",
+          "he": "חצי קדיש",
+          "ref": "Siddur Ashkenaz, Kaddish, Half Kaddish"
+        },
+        {
+          "en": "Mourner's Kaddish",
+          "he": "קדיש יתום",
+          "ref": "Siddur Ashkenaz, Kaddish, Mourner's Kaddish"
+        },
+        {
+          "en": "Kaddish Shalem",
+          "he": "קדיש שלם",
+          "ref": "Siddur Ashkenaz, Kaddish, Kaddish Shalem"
+        },
+        {
+          "en": "Kaddish d'Rabbanan",
+          "he": "קדיש דרבנן",
+          "ref": "Siddur Ashkenaz, Kaddish, Kaddish d'Rabbanan"
+        },
+        {
+          "en": "Kaddish achar HaKevura",
+          "he": "קדיש דאתחדתא",
+          "ref": "Siddur Ashkenaz, Kaddish, Kaddish achar HaKevura"
+        },
+        {
+          "en": "Kaddish achar Hashlamat Meschet",
+          "he": "קדיש אחר השלמת מסכת",
+          "ref": "Siddur Ashkenaz, Kaddish, Kaddish achar Hashlamat Meschet"
+        }
+      ]
+    }
+  ],
+  "sephardi": [
+    {
+      "en": "Upon Arising",
+      "he": "סדר השכמת הבוקר",
+      "children": [
+        {
+          "en": "Modeh Ani",
+          "he": "מודה אני",
+          "ref": "Siddur Sefard, Upon Arising, Modeh Ani"
+        },
+        {
+          "en": "Tallit",
+          "he": "טלית",
+          "ref": "Siddur Sefard, Upon Arising, Tallit"
+        },
+        {
+          "en": "Tefilin",
+          "he": "תפילין",
+          "ref": "Siddur Sefard, Upon Arising, Tefilin"
+        },
+        {
+          "en": "Introductory Prayers",
+          "he": "תפילה קודם התפילה",
+          "ref": "Siddur Sefard, Upon Arising, Introductory Prayers"
+        },
+        {
+          "en": "Upon Entering Synagogue",
+          "he": "סדר הליכה לבית הכנסת",
+          "ref": "Siddur Sefard, Upon Arising, Upon Entering Synagogue"
+        }
+      ]
+    },
+    {
+      "en": "Weekday Shacharit",
+      "he": "שחרית לימות החול",
+      "children": [
+        {
+          "en": "Morning Blessings",
+          "he": "ברכות השחר",
+          "ref": "Siddur Sefard, Weekday Shacharit, Morning Blessings"
+        },
+        {
+          "en": "Blessings on Torah",
+          "he": "ברכות התורה",
+          "ref": "Siddur Sefard, Weekday Shacharit, Blessings on Torah"
+        },
+        {
+          "en": "Morning Prayer",
+          "he": "תפילת השחר",
+          "ref": "Siddur Sefard, Weekday Shacharit, Morning Prayer"
+        },
+        {
+          "en": "Korbanot",
+          "he": "קרבנות",
+          "ref": "Siddur Sefard, Weekday Shacharit, Korbanot"
+        },
+        {
+          "en": "B'raita d'Rabi Yishmael",
+          "he": "ברייתא דר' ישמעאל",
+          "ref": "Siddur Sefard, Weekday Shacharit, B'raita d'Rabi Yishmael"
+        },
+        {
+          "en": "Hodu",
+          "he": "הודו",
+          "ref": "Siddur Sefard, Weekday Shacharit, Hodu"
+        },
+        {
+          "en": "Yishtabach",
+          "he": "ישתבח",
+          "ref": "Siddur Sefard, Weekday Shacharit, Yishtabach"
+        },
+        {
+          "en": "The Shema",
+          "he": "ק\"ש וברכותיה",
+          "ref": "Siddur Sefard, Weekday Shacharit, The Shema"
+        },
+        {
+          "en": "Amidah",
+          "he": "עמידה",
+          "ref": "Siddur Sefard, Weekday Shacharit, Amidah"
+        },
+        {
+          "en": "Tachanun",
+          "he": "תחנון",
+          "ref": "Siddur Sefard, Weekday Shacharit, Tachanun"
+        },
+        {
+          "en": "Avinu Malkeinu",
+          "he": "אבינו מלכנו",
+          "ref": "Siddur Sefard, Weekday Shacharit, Avinu Malkeinu"
+        },
+        {
+          "en": "For Monday & Thursday",
+          "he": "לשני וחמישי",
+          "ref": "Siddur Sefard, Weekday Shacharit, For Monday & Thursday"
+        },
+        {
+          "en": "Torah Reading",
+          "he": "קריאת התורה",
+          "ref": "Siddur Sefard, Weekday Shacharit, Torah Reading"
+        },
+        {
+          "en": "Ashrei",
+          "he": "אשרי",
+          "ref": "Siddur Sefard, Weekday Shacharit, Ashrei"
+        },
+        {
+          "en": "Beit Yaakov",
+          "he": "בית יעקב",
+          "ref": "Siddur Sefard, Weekday Shacharit, Beit Yaakov"
+        },
+        {
+          "en": "Song of the Day",
+          "he": "שיר של יום",
+          "ref": "Siddur Sefard, Weekday Shacharit, Song of the Day"
+        },
+        {
+          "en": "Barchi Nafshi",
+          "he": "ברכי נפשי",
+          "ref": "Siddur Sefard, Weekday Shacharit, Barchi Nafshi"
+        },
+        {
+          "en": "L'David Hashem",
+          "he": "לדוד ה'",
+          "ref": "Siddur Sefard, Weekday Shacharit, L'David Hashem"
+        },
+        {
+          "en": "Kaveh",
+          "he": "קוה",
+          "ref": "Siddur Sefard, Weekday Shacharit, Kaveh"
+        },
+        {
+          "en": "Aleinu",
+          "he": "עלינו",
+          "ref": "Siddur Sefard, Weekday Shacharit, Aleinu"
+        }
+      ]
+    },
+    {
+      "en": "Additional Prayers ",
+      "he": "תוספות אחרי שחרית",
+      "children": [
+        {
+          "en": "Six Rememberances",
+          "he": "שש זכירות",
+          "ref": "Siddur Sefard, Additional Prayers , Six Rememberances"
+        },
+        {
+          "en": "Thirteen Principles",
+          "he": "שלשה עשר עיקרים",
+          "ref": "Siddur Sefard, Additional Prayers , Thirteen Principles"
+        },
+        {
+          "en": "Chapter of Fear of God",
+          "he": "פרשת היראה",
+          "ref": "Siddur Sefard, Additional Prayers , Chapter of Fear of God"
+        },
+        {
+          "en": "Chapter of Repentance",
+          "he": "פרשת התשובה",
+          "ref": "Siddur Sefard, Additional Prayers , Chapter of Repentance"
+        },
+        {
+          "en": "Chapter of Manna",
+          "he": "פרשת המן",
+          "ref": "Siddur Sefard, Additional Prayers , Chapter of Manna"
+        },
+        {
+          "en": "Supplications After Prayers",
+          "he": "בקשות לאחר התפילה",
+          "ref": "Siddur Sefard, Additional Prayers , Supplications After Prayers"
+        },
+        {
+          "en": "Chapter of Song",
+          "he": "פרק שירה",
+          "ref": "Siddur Sefard, Additional Prayers , Chapter of Song"
+        }
+      ]
+    },
+    {
+      "en": "Weekday Mincha",
+      "he": "מנחה לימות החול",
+      "children": [
+        {
+          "en": "Korbanot",
+          "he": "קרבנות",
+          "ref": "Siddur Sefard, Weekday Mincha, Korbanot"
+        },
+        {
+          "en": "Torah Reading for Fast Day",
+          "he": "קריאה לתענית ציבור",
+          "ref": "Siddur Sefard, Weekday Mincha, Torah Reading for Fast Day"
+        },
+        {
+          "en": "Amidah",
+          "he": "עמידה",
+          "ref": "Siddur Sefard, Weekday Mincha, Amidah"
+        },
+        {
+          "en": "Tachanun",
+          "he": "תחנון",
+          "ref": "Siddur Sefard, Weekday Mincha, Tachanun"
+        },
+        {
+          "en": "Avinu Malkeinu",
+          "he": "אבינו מלכנו",
+          "ref": "Siddur Sefard, Weekday Mincha, Avinu Malkeinu"
+        }
+      ]
+    },
+    {
+      "en": "Weekday Maariv",
+      "he": "ערבית לימות החול",
+      "children": [
+        {
+          "en": "The Shema",
+          "he": "ק\"ש וברכותיה",
+          "ref": "Siddur Sefard, Weekday Maariv, The Shema"
+        },
+        {
+          "en": "Amidah",
+          "he": "עמידה",
+          "ref": "Siddur Sefard, Weekday Maariv, Amidah"
+        },
+        {
+          "en": "Motzaei Shabbat",
+          "he": "ערבית למוצאי שבת",
+          "ref": "Siddur Sefard, Weekday Maariv, Motzaei Shabbat"
+        },
+        {
+          "en": "Sefirat HaOmer",
+          "he": "ספירת העומר",
+          "ref": "Siddur Sefard, Weekday Maariv, Sefirat HaOmer"
+        }
+      ]
+    },
+    {
+      "en": "Kiddush Levanah",
+      "he": "קידוש לבנה",
+      "ref": "Siddur Sefard, Kiddush Levanah"
+    },
+    {
+      "en": "Bedtime Shema",
+      "he": "קריאת שמע שעל המיטה",
+      "ref": "Siddur Sefard, Bedtime Shema"
+    },
+    {
+      "en": "Lag BaOmer Songs",
+      "he": "שירים לל\"ג בעומר",
+      "children": [
+        {
+          "en": "Amar Rabbi Akiva",
+          "he": "אמר רבי עקיבא",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Amar Rabbi Akiva"
+        },
+        {
+          "en": "Ashreinu Ma Tov",
+          "he": "אשרנו מה טוב חלקנו",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Ashreinu Ma Tov"
+        },
+        {
+          "en": "Ashreinu Uma Naim",
+          "he": "אשרינו ומה נעים גורלינו",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Ashreinu Uma Naim"
+        },
+        {
+          "en": "Bar Yochai",
+          "he": "בר יוחאי",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Bar Yochai"
+        },
+        {
+          "en": "Bar Yochai Butzina Kadisha",
+          "he": "בר יוחאי בוצינא קדישא",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Bar Yochai Butzina Kadisha"
+        },
+        {
+          "en": "Bar Yochai Hashem Imcha",
+          "he": "בר יוחאי ה' עמך",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Bar Yochai Hashem Imcha"
+        },
+        {
+          "en": "Bar Yochai Yesod Olam",
+          "he": "בר יוחאי יסוד עולם",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Bar Yochai Yesod Olam"
+        },
+        {
+          "en": "Bar Yochai Tagel Yoladetecha",
+          "he": "בר יוחאי תגל יולדתך",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Bar Yochai Tagel Yoladetecha"
+        },
+        {
+          "en": "Va'amartem Ko Lechai",
+          "he": "ואמרתם כה לחי",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Va'amartem Ko Lechai"
+        },
+        {
+          "en": "Lichvod HaTanna",
+          "he": "לכבוד התנא האלקי רבי שמעון בר יוחאי",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Lichvod HaTanna"
+        },
+        {
+          "en": "Naaleh V'Navo",
+          "he": "נעלה ונבוא אל שערי מירון",
+          "ref": "Siddur Sefard, Lag BaOmer Songs, Naaleh V'Navo"
+        }
+      ]
+    },
+    {
+      "en": "Various Blessings",
+      "he": "ברכות ותפילות שונות",
+      "children": [
+        {
+          "en": "Marriage Blessings",
+          "he": "סדר ברכות אירוסין ונשואין",
+          "ref": "Siddur Sefard, Various Blessings, Marriage Blessings"
+        },
+        {
+          "en": "Sheva Berachot",
+          "he": "סדר שבע ברכות",
+          "ref": "Siddur Sefard, Various Blessings, Sheva Berachot"
+        },
+        {
+          "en": "Circumcision",
+          "he": "סדר ברית מילה",
+          "ref": "Siddur Sefard, Various Blessings, Circumcision"
+        },
+        {
+          "en": "Geula LeBrit Milah",
+          "he": "גאולה לברית מילה",
+          "ref": "Siddur Sefard, Various Blessings, Geula LeBrit Milah"
+        },
+        {
+          "en": "Redeeming Firstborn",
+          "he": "סדר פדיון הבן",
+          "ref": "Siddur Sefard, Various Blessings, Redeeming Firstborn"
+        }
+      ]
+    },
+    {
+      "en": "Mealtime Blessings",
+      "he": "סדר סעודה וברכותיה",
+      "ref": "Siddur Sefard, Mealtime Blessings"
+    },
+    {
+      "en": "Birchat HaMazon",
+      "he": "סדר ברכת המזון",
+      "children": [
+        {
+          "en": "Birchat HaMazon",
+          "he": " ברכת המזון",
+          "ref": "Siddur Sefard, Birchat HaMazon, Birchat HaMazon"
+        },
+        {
+          "en": "Brit Milah",
+          "he": "הרחמן לברית מילה",
+          "ref": "Siddur Sefard, Birchat HaMazon, Brit Milah"
+        },
+        {
+          "en": "Blessing on Foods",
+          "he": "ברכות הנהנין",
+          "ref": "Siddur Sefard, Birchat HaMazon, Blessing on Foods"
+        }
+      ]
+    },
+    {
+      "en": "Blessings",
+      "he": "ברכות הנהנין",
+      "children": [
+        {
+          "en": "Me'ein Shalosh",
+          "he": "ברכה אחרונה מעין שלוש",
+          "ref": "Siddur Sefard, Blessings, Me'ein Shalosh"
+        },
+        {
+          "en": "Ha'etz",
+          "he": "בורא פרי העץ",
+          "ref": "Siddur Sefard, Blessings, Ha'etz"
+        },
+        {
+          "en": "Ha'adamah",
+          "he": "בורא פרי האדמה",
+          "ref": "Siddur Sefard, Blessings, Ha'adamah"
+        },
+        {
+          "en": "Shehakol",
+          "he": "ברכת שהכל",
+          "ref": "Siddur Sefard, Blessings, Shehakol"
+        },
+        {
+          "en": "Borei Nefashot",
+          "he": "בורא נפשות",
+          "ref": "Siddur Sefard, Blessings, Borei Nefashot"
+        },
+        {
+          "en": "Shehecheyanu",
+          "he": "ברכת שהחיינו",
+          "ref": "Siddur Sefard, Blessings, Shehecheyanu"
+        },
+        {
+          "en": "Fragrant Spices",
+          "he": "ריח בשמים",
+          "ref": "Siddur Sefard, Blessings, Fragrant Spices"
+        },
+        {
+          "en": "Fragrant Herbs",
+          "he": "ריח טוב שבעשבים",
+          "ref": "Siddur Sefard, Blessings, Fragrant Herbs"
+        },
+        {
+          "en": "Fragrant Shrubs",
+          "he": "ריח טוב שבעצים",
+          "ref": "Siddur Sefard, Blessings, Fragrant Shrubs"
+        },
+        {
+          "en": "Fragrant Fruit",
+          "he": "ריח טוב שבפירות",
+          "ref": "Siddur Sefard, Blessings, Fragrant Fruit"
+        },
+        {
+          "en": "Fragrant Oils",
+          "he": "שמן אפרסמון",
+          "ref": "Siddur Sefard, Blessings, Fragrant Oils"
+        },
+        {
+          "en": "Lightning & Thunder",
+          "he": "ברכת ברקים ורעמים",
+          "ref": "Siddur Sefard, Blessings, Lightning & Thunder"
+        },
+        {
+          "en": "Seeing Rainbow",
+          "he": "ברכת הקשת",
+          "ref": "Siddur Sefard, Blessings, Seeing Rainbow"
+        },
+        {
+          "en": "Seeing Ocean",
+          "he": "הים הגדול",
+          "ref": "Siddur Sefard, Blessings, Seeing Ocean"
+        },
+        {
+          "en": "Blossoming Fruit Tree",
+          "he": "ברכת האילנות",
+          "ref": "Siddur Sefard, Blessings, Blossoming Fruit Tree"
+        },
+        {
+          "en": "Various Blessings of Praise",
+          "he": "ברכות שונות",
+          "ref": "Siddur Sefard, Blessings, Various Blessings of Praise"
+        },
+        {
+          "en": "Immersing Utensils",
+          "he": "ברכת טבילת כלים",
+          "ref": "Siddur Sefard, Blessings, Immersing Utensils"
+        },
+        {
+          "en": "Mezuzah",
+          "he": "ברכת המזוזה",
+          "ref": "Siddur Sefard, Blessings, Mezuzah"
+        },
+        {
+          "en": "Separating Challah",
+          "he": "סדר הפרשת חלה",
+          "ref": "Siddur Sefard, Blessings, Separating Challah"
+        },
+        {
+          "en": "Separating Terumot & Maasrot",
+          "he": "סדר הפרשת תרומות ומעשרות",
+          "ref": "Siddur Sefard, Blessings, Separating Terumot & Maasrot"
+        },
+        {
+          "en": "Traveler's Prayer",
+          "he": "תפלת הדרך",
+          "ref": "Siddur Sefard, Blessings, Traveler's Prayer"
+        },
+        {
+          "en": "Air Traveler's Prayer",
+          "he": "תפילת הדרך לטסים באוירון",
+          "ref": "Siddur Sefard, Blessings, Air Traveler's Prayer"
+        }
+      ]
+    },
+    {
+      "en": "Eruv Tavshilin",
+      "he": "סדר ערוב תבשילין",
+      "ref": "Siddur Sefard, Eruv Tavshilin"
+    },
+    {
+      "en": "Shabbat Candle Lighting",
+      "he": "סדר הדלקת נרות שבת",
+      "ref": "Siddur Sefard, Shabbat Candle Lighting"
+    },
+    {
+      "en": "Shabbat Eve Mincha",
+      "he": "מנחה לערב שבת",
+      "children": [
+        {
+          "en": "Song of Songs",
+          "he": "שיר השירים",
+          "ref": "Siddur Sefard, Shabbat Eve Mincha, Song of Songs"
+        },
+        {
+          "en": "Mincha",
+          "he": "מנחה לערב שבת",
+          "ref": "Siddur Sefard, Shabbat Eve Mincha, Mincha"
+        },
+        {
+          "en": "Amidah",
+          "he": "תפילת עמידה",
+          "ref": "Siddur Sefard, Shabbat Eve Mincha, Amidah"
+        }
+      ]
+    },
+    {
+      "en": "Kabbalat Shabbat",
+      "he": "קבלת שבת",
+      "ref": "Siddur Sefard, Kabbalat Shabbat"
+    },
+    {
+      "en": "Shabbat Eve Maariv",
+      "he": "ערבית של שבת",
+      "children": [
+        {
+          "en": "Shabbat Eve Maariv",
+          "he": "תפילת ערבית של שבת",
+          "ref": "Siddur Sefard, Shabbat Eve Maariv, Shabbat Eve Maariv"
+        },
+        {
+          "en": "Shema & Blessings",
+          "he": "ק\"ש וברכותיה",
+          "ref": "Siddur Sefard, Shabbat Eve Maariv, Shema & Blessings"
+        },
+        {
+          "en": "Amidah",
+          "he": "תפילת עמידה",
+          "ref": "Siddur Sefard, Shabbat Eve Maariv, Amidah"
+        },
+        {
+          "en": "Vayechulu",
+          "he": "ויכולו",
+          "ref": "Siddur Sefard, Shabbat Eve Maariv, Vayechulu"
+        }
+      ]
+    },
+    {
+      "en": "Shabbat Evening Meal",
+      "he": "סעודת ליל שבת",
+      "children": [
+        {
+          "en": "Blessing the Children",
+          "he": "ברכת הבנים",
+          "ref": "Siddur Sefard, Shabbat Evening Meal, Blessing the Children"
+        },
+        {
+          "en": "Shalom Aleichem",
+          "he": "שלום עליכם",
+          "ref": "Siddur Sefard, Shabbat Evening Meal, Shalom Aleichem"
+        },
+        {
+          "en": "Eishet Chayil",
+          "he": "אשת חיל",
+          "ref": "Siddur Sefard, Shabbat Evening Meal, Eishet Chayil"
+        },
+        {
+          "en": "Atkinu Seudata",
+          "he": "אתקינו סעודתא",
+          "ref": "Siddur Sefard, Shabbat Evening Meal, Atkinu Seudata"
+        },
+        {
+          "en": "Shabbat Eve Kiddush",
+          "he": "קידוש ליל שבת",
+          "ref": "Siddur Sefard, Shabbat Evening Meal, Shabbat Eve Kiddush"
+        },
+        {
+          "en": "Zemirot",
+          "he": "זמירות לליל שבת",
+          "ref": "Siddur Sefard, Shabbat Evening Meal, Zemirot"
+        }
+      ]
+    },
+    {
+      "en": "Shabbat Morning Services",
+      "he": "שחרית של שבת",
+      "children": [
+        {
+          "en": "Pesukei D'Zimrah",
+          "he": "פסוקי דזמרה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Pesukei D'Zimrah"
+        },
+        {
+          "en": "Shema & Blessings",
+          "he": "ק\"ש וברכותיה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Shema & Blessings"
+        },
+        {
+          "en": "Amidah",
+          "he": "תפילת עמידה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Amidah"
+        },
+        {
+          "en": "Shabbat Torah Reading",
+          "he": "סדר קריאת התורה בשבת",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Shabbat Torah Reading"
+        },
+        {
+          "en": "Blessings on Torah Reading",
+          "he": "ברכת התורה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Blessings on Torah Reading"
+        },
+        {
+          "en": "Prayer for Oleh",
+          "he": "מי שברך לעולה לתורה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Prayer for Oleh"
+        },
+        {
+          "en": "Prayer for Mother after Chilbirth",
+          "he": "מי שברך ליולדת",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Prayer for Mother after Chilbirth"
+        },
+        {
+          "en": "Prayer for Sick",
+          "he": "מי שברך לחולה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Prayer for Sick"
+        },
+        {
+          "en": "BaHaB Blessing",
+          "he": "מברכין בה\"ב",
+          "ref": "Siddur Sefard, Shabbat Morning Services, BaHaB Blessing"
+        },
+        {
+          "en": "Thanksgiving Blessing",
+          "he": "ברכת הגומל",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Thanksgiving Blessing"
+        },
+        {
+          "en": "Bar Mitzva",
+          "he": "לנער בר מצוה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Bar Mitzva"
+        },
+        {
+          "en": "Hagbahah",
+          "he": "הגבהת ספר תורה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Hagbahah"
+        },
+        {
+          "en": "Haftarah Blessings",
+          "he": "ברכות ההפטרה",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Haftarah Blessings"
+        },
+        {
+          "en": "Blessing of New Month",
+          "he": "ברכת החודש",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Blessing of New Month"
+        },
+        {
+          "en": "Prayer for Deceased",
+          "he": "הזכרת נשמות",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Prayer for Deceased"
+        },
+        {
+          "en": "Av HaRachamim",
+          "he": "אב הרחמים",
+          "ref": "Siddur Sefard, Shabbat Morning Services, Av HaRachamim"
+        }
+      ]
+    },
+    {
+      "en": "Musaf",
+      "he": "מוסף של שבת",
+      "ref": "Siddur Sefard, Musaf"
+    },
+    {
+      "en": "Shabbat Day Meal",
+      "he": "סעודת שבת",
+      "children": [
+        {
+          "en": "Seder Tikunei Shabbat",
+          "he": "סדר תיקוני שבת",
+          "ref": "Siddur Sefard, Shabbat Day Meal, Seder Tikunei Shabbat"
+        },
+        {
+          "en": "Shabbat Day Kiddush",
+          "he": "קידוש ליום השבת",
+          "ref": "Siddur Sefard, Shabbat Day Meal, Shabbat Day Kiddush"
+        },
+        {
+          "en": "Zemirot",
+          "he": "זמירות ליום השבת",
+          "ref": "Siddur Sefard, Shabbat Day Meal, Zemirot"
+        }
+      ]
+    },
+    {
+      "en": "Shabbat Mincha",
+      "he": "מנחה לשבת קודש",
+      "children": [
+        {
+          "en": "Korbanot",
+          "he": "קרבנות",
+          "ref": "Siddur Sefard, Shabbat Mincha, Korbanot"
+        },
+        {
+          "en": "Amidah",
+          "he": "תפילת עמידה",
+          "ref": "Siddur Sefard, Shabbat Mincha, Amidah"
+        },
+        {
+          "en": "Pirkei Avot",
+          "he": "פרקי אבות",
+          "ref": "Siddur Sefard, Shabbat Mincha, Pirkei Avot"
+        }
+      ]
+    },
+    {
+      "en": "Third Meal",
+      "he": "סעודה שלישית",
+      "children": [
+        {
+          "en": "Zemirot",
+          "he": "זמירות לסעודה שלישית",
+          "ref": "Siddur Sefard, Third Meal, Zemirot"
+        },
+        {
+          "en": "Motzaei Shabbat Prayers",
+          "he": "סדר מוצאי שבת",
+          "ref": "Siddur Sefard, Third Meal, Motzaei Shabbat Prayers"
+        },
+        {
+          "en": "Gott Fun Avraham",
+          "he": "בקשה למוצאי שבת",
+          "ref": "Siddur Sefard, Third Meal, Gott Fun Avraham"
+        }
+      ]
+    },
+    {
+      "en": "Motzaei Shabbat ",
+      "he": "למוצאי שבת",
+      "children": [
+        {
+          "en": "Havdala",
+          "he": "סדר הבדלה",
+          "ref": "Siddur Sefard, Motzaei Shabbat , Havdala"
+        },
+        {
+          "en": "Hamavdil",
+          "he": "זמר למוצאי שבת",
+          "ref": "Siddur Sefard, Motzaei Shabbat , Hamavdil"
+        },
+        {
+          "en": "Melava Malka Zemirot",
+          "he": "זמירות לסעודת מלוה מלכה",
+          "ref": "Siddur Sefard, Motzaei Shabbat , Melava Malka Zemirot"
+        }
+      ]
+    },
+    {
+      "en": "Shaking Lulav",
+      "he": "סדר נטילת לולב",
+      "ref": "Siddur Sefard, Shaking Lulav"
+    },
+    {
+      "en": "Rosh Chodesh",
+      "he": "לראש חודש",
+      "children": [
+        {
+          "en": "Hallel",
+          "he": "סדר הלל",
+          "ref": "Siddur Sefard, Rosh Chodesh, Hallel"
+        },
+        {
+          "en": "Song of the Day",
+          "he": "שיר של יום",
+          "ref": "Siddur Sefard, Rosh Chodesh, Song of the Day"
+        },
+        {
+          "en": "Barchi Nafshi",
+          "he": "ברכי נפשי",
+          "ref": "Siddur Sefard, Rosh Chodesh, Barchi Nafshi"
+        },
+        {
+          "en": "Torah Reading",
+          "he": "קריאת התורה לראש חדש",
+          "ref": "Siddur Sefard, Rosh Chodesh, Torah Reading"
+        },
+        {
+          "en": "Ashrei Uva L'Tziyon",
+          "he": "אשרי ובא לציון",
+          "ref": "Siddur Sefard, Rosh Chodesh, Ashrei Uva L'Tziyon"
+        },
+        {
+          "en": "Returning Sefer Torah",
+          "he": "החזרת ספר תורה",
+          "ref": "Siddur Sefard, Rosh Chodesh, Returning Sefer Torah"
+        },
+        {
+          "en": "Mussaf",
+          "he": "מוסף לראש חודש",
+          "ref": "Siddur Sefard, Rosh Chodesh, Mussaf"
+        }
+      ]
+    },
+    {
+      "en": "Holidays",
+      "he": "לשלש רגלים",
+      "children": [
+        {
+          "en": "Yom Tov Eve Kiddush",
+          "he": "קידוש לשלש רגלים",
+          "ref": "Siddur Sefard, Holidays, Yom Tov Eve Kiddush"
+        },
+        {
+          "en": "Kaddish Before Maariv Amidah",
+          "he": "תפילת ג' רגלים לערבית, לשחרית ולמנחה",
+          "ref": "Siddur Sefard, Holidays, Kaddish Before Maariv Amidah"
+        },
+        {
+          "en": "Maariv, Shacharit & Mincha Amidah",
+          "he": "תפילת עמידה לשחרית, מנחה וערבית של ג' רגלים",
+          "ref": "Siddur Sefard, Holidays, Maariv, Shacharit & Mincha Amidah"
+        },
+        {
+          "en": "Yizkor",
+          "he": "סדר הזכרת נשמות",
+          "ref": "Siddur Sefard, Holidays, Yizkor"
+        },
+        {
+          "en": "Prayer for Dew",
+          "he": "תפילת טל ליום ראשון של פסח",
+          "ref": "Siddur Sefard, Holidays, Prayer for Dew"
+        },
+        {
+          "en": "Prayer for Rain",
+          "he": "תפילת גשם לשמיני עצרת",
+          "ref": "Siddur Sefard, Holidays, Prayer for Rain"
+        },
+        {
+          "en": "Yom Tov Musaf Amidah",
+          "he": "מוסף לג' רגלים",
+          "ref": "Siddur Sefard, Holidays, Yom Tov Musaf Amidah"
+        },
+        {
+          "en": "Yom Tov Daytime Kiddush",
+          "he": "סדר קידושא רבא לג' רגלים ולראש השנה",
+          "ref": "Siddur Sefard, Holidays, Yom Tov Daytime Kiddush"
+        },
+        {
+          "en": "Prayer Upon Entering Sukkah",
+          "he": "תפילה כשנכנסים לסוכה",
+          "ref": "Siddur Sefard, Holidays, Prayer Upon Entering Sukkah"
+        }
+      ]
+    },
+    {
+      "en": "Nissan",
+      "he": "ניסן",
+      "children": [
+        {
+          "en": "The'Nasi' Readings",
+          "he": "פרשת הנשיאים",
+          "ref": "Siddur Sefard, Nissan, The'Nasi' Readings"
+        },
+        {
+          "en": "Search for Hametz",
+          "he": "סדר בדיקת חמץ",
+          "ref": "Siddur Sefard, Nissan, Search for Hametz"
+        },
+        {
+          "en": "Burning Hametz",
+          "he": "סדר שריפת חמץ",
+          "ref": "Siddur Sefard, Nissan, Burning Hametz"
+        },
+        {
+          "en": "Pesach Offering",
+          "he": "סדר אמירת קרבן פסח",
+          "ref": "Siddur Sefard, Nissan, Pesach Offering"
+        },
+        {
+          "en": "Letter of Rav Shimshon of Ostropol",
+          "he": "אגרת רבינו שמשון מגיד מאוסטרופוליא",
+          "ref": "Siddur Sefard, Nissan, Letter of Rav Shimshon of Ostropol"
+        }
+      ]
+    },
+    {
+      "en": "Pesach Haggadah",
+      "he": "הגדה של פסח",
+      "children": [
+        {
+          "en": "Kadesh",
+          "he": "קדש",
+          "ref": "Siddur Sefard, Pesach Haggadah, Kadesh"
+        },
+        {
+          "en": "Urchatz",
+          "he": "ורחץ",
+          "ref": "Siddur Sefard, Pesach Haggadah, Urchatz"
+        },
+        {
+          "en": "Karpas",
+          "he": "כרפס",
+          "ref": "Siddur Sefard, Pesach Haggadah, Karpas"
+        },
+        {
+          "en": "Yachatz",
+          "he": "יחץ",
+          "ref": "Siddur Sefard, Pesach Haggadah, Yachatz"
+        },
+        {
+          "en": "Maggid",
+          "he": "מגיד",
+          "ref": "Siddur Sefard, Pesach Haggadah, Maggid"
+        },
+        {
+          "en": "Rochtzoh",
+          "he": "רחצה",
+          "ref": "Siddur Sefard, Pesach Haggadah, Rochtzoh"
+        },
+        {
+          "en": "Motzi, Matzah",
+          "he": "מוציא, מצה",
+          "ref": "Siddur Sefard, Pesach Haggadah, Motzi, Matzah"
+        },
+        {
+          "en": "Maror",
+          "he": "מרור",
+          "ref": "Siddur Sefard, Pesach Haggadah, Maror"
+        },
+        {
+          "en": "Korech",
+          "he": "כורך",
+          "ref": "Siddur Sefard, Pesach Haggadah, Korech"
+        },
+        {
+          "en": "Shulchan Orech",
+          "he": "שלחן עורך",
+          "ref": "Siddur Sefard, Pesach Haggadah, Shulchan Orech"
+        },
+        {
+          "en": "Tzafun",
+          "he": "צפון",
+          "ref": "Siddur Sefard, Pesach Haggadah, Tzafun"
+        },
+        {
+          "en": "Barech",
+          "he": "ברך",
+          "ref": "Siddur Sefard, Pesach Haggadah, Barech"
+        },
+        {
+          "en": "Hallel",
+          "he": "הלל",
+          "ref": "Siddur Sefard, Pesach Haggadah, Hallel"
+        },
+        {
+          "en": "Nirtzah",
+          "he": "נרצה",
+          "ref": "Siddur Sefard, Pesach Haggadah, Nirtzah"
+        },
+        {
+          "en": "Shir HaShirim",
+          "he": "שיר השירים",
+          "ref": "Siddur Sefard, Pesach Haggadah, Shir HaShirim"
+        }
+      ]
+    },
+    {
+      "en": "Sukkot",
+      "he": "סוכות",
+      "children": [
+        {
+          "en": "Order of Hoshanot",
+          "he": "סדר הושענות",
+          "ref": "Siddur Sefard, Sukkot, Order of Hoshanot"
+        },
+        {
+          "en": "First Day & Chol HaMoed",
+          "he": "הושענות ליו\"ט ראשון ולחוה\"מ",
+          "ref": "Siddur Sefard, Sukkot, First Day & Chol HaMoed"
+        },
+        {
+          "en": "Sabbath",
+          "he": "הושענות לשבת",
+          "ref": "Siddur Sefard, Sukkot, Sabbath"
+        },
+        {
+          "en": "Hoshana Rabba",
+          "he": "הושענות להושענא רבא",
+          "ref": "Siddur Sefard, Sukkot, Hoshana Rabba"
+        }
+      ]
+    },
+    {
+      "en": "Simchat Torah",
+      "he": "שמחת תורה",
+      "children": [
+        {
+          "en": "Hakafot",
+          "he": "הקפות לשמחת תורה",
+          "ref": "Siddur Sefard, Simchat Torah, Hakafot"
+        },
+        {
+          "en": "Evening Torah Reading",
+          "he": "סדר הקריאה לליל שמחת תורה",
+          "ref": "Siddur Sefard, Simchat Torah, Evening Torah Reading"
+        }
+      ]
+    },
+    {
+      "en": "Shavuot",
+      "he": "שבועות",
+      "ref": "Siddur Sefard, Shavuot"
+    },
+    {
+      "en": "Yotzerot",
+      "he": "יוצרות",
+      "children": [
+        {
+          "en": "Parashat Sekalim",
+          "he": "יוצר לפרשת שקלים",
+          "ref": "Siddur Sefard, Yotzerot, Parashat Sekalim"
+        },
+        {
+          "en": "Musaf for Shekalim",
+          "he": "מוסף לפרשת שקלים",
+          "ref": "Siddur Sefard, Yotzerot, Musaf for Shekalim"
+        },
+        {
+          "en": "Parashat Zachor",
+          "he": "יוצר לפרשת זכור",
+          "ref": "Siddur Sefard, Yotzerot, Parashat Zachor"
+        },
+        {
+          "en": "Parashat Parah",
+          "he": "יוצר לפרשת פרה",
+          "ref": "Siddur Sefard, Yotzerot, Parashat Parah"
+        },
+        {
+          "en": "Parashat HaChodesh",
+          "he": "יוצר לפרשת החודש",
+          "ref": "Siddur Sefard, Yotzerot, Parashat HaChodesh"
+        },
+        {
+          "en": "Musaf for Hachodesh",
+          "he": "מוסף לפרשת החודש",
+          "ref": "Siddur Sefard, Yotzerot, Musaf for Hachodesh"
+        },
+        {
+          "en": "Shabbat HaGadol",
+          "he": "יוצר לשבת הגדול",
+          "ref": "Siddur Sefard, Yotzerot, Shabbat HaGadol"
+        },
+        {
+          "en": "Haggadah for Shabbat Hagadol",
+          "he": "הגדה ש\"פ לשבת הגדול",
+          "ref": "Siddur Sefard, Yotzerot, Haggadah for Shabbat Hagadol"
+        }
+      ]
+    },
+    {
+      "en": "Chanukah",
+      "he": "חנוכה",
+      "children": [
+        {
+          "en": "Menorah Lighting",
+          "he": "סדר הדלקת נרות חנוכה",
+          "ref": "Siddur Sefard, Chanukah, Menorah Lighting"
+        },
+        {
+          "en": "Torah Reading",
+          "he": "קריאת התורה",
+          "ref": "Siddur Sefard, Chanukah, Torah Reading"
+        },
+        {
+          "en": "Song for Shabbat Chanuka",
+          "he": "זמר לשבת חנוכה",
+          "ref": "Siddur Sefard, Chanukah, Song for Shabbat Chanuka"
+        }
+      ]
+    },
+    {
+      "en": "Purim",
+      "he": "פורים",
+      "children": [
+        {
+          "en": "Parashat Zachor",
+          "he": "פרשת זכור",
+          "ref": "Siddur Sefard, Purim, Parashat Zachor"
+        },
+        {
+          "en": "Megillah Reading",
+          "he": "קריאת המגילה",
+          "ref": "Siddur Sefard, Purim, Megillah Reading"
+        },
+        {
+          "en": "Order of Purim Day",
+          "he": "סדר יום פורים",
+          "ref": "Siddur Sefard, Purim, Order of Purim Day"
+        },
+        {
+          "en": "Krovetz L'Purim",
+          "he": "קרובץ לפורים",
+          "ref": "Siddur Sefard, Purim, Krovetz L'Purim"
+        },
+        {
+          "en": "Torah Reading",
+          "he": "קריאת התורה לפורים",
+          "ref": "Siddur Sefard, Purim, Torah Reading"
+        }
+      ]
+    },
+    {
+      "en": "Fast Days",
+      "he": "תעניות ואבלות",
+      "children": [
+        {
+          "en": "Yom Kippur Katan",
+          "he": "סדר יום כיפור קטן",
+          "ref": "Siddur Sefard, Fast Days, Yom Kippur Katan"
+        },
+        {
+          "en": "Selichot for BaHaB",
+          "he": "סליחות לתעניות שני וחמישי ושני",
+          "ref": "Siddur Sefard, Fast Days, Selichot for BaHaB"
+        },
+        {
+          "en": "Selichot for First Monday",
+          "he": "סליחות לשני קמא",
+          "ref": "Siddur Sefard, Fast Days, Selichot for First Monday"
+        },
+        {
+          "en": "Selichot for Thursday",
+          "he": "סליחות לחמישי",
+          "ref": "Siddur Sefard, Fast Days, Selichot for Thursday"
+        },
+        {
+          "en": "Selichot for Concluding Monday",
+          "he": "סליחות לשני בתרא",
+          "ref": "Siddur Sefard, Fast Days, Selichot for Concluding Monday"
+        },
+        {
+          "en": "Selichot for Asara B'Tevet",
+          "he": "סליחות לעשרה בטבת",
+          "ref": "Siddur Sefard, Fast Days, Selichot for Asara B'Tevet"
+        },
+        {
+          "en": "Selichot for Taanit Esther",
+          "he": "סליחות לתענית אסתר",
+          "ref": "Siddur Sefard, Fast Days, Selichot for Taanit Esther"
+        },
+        {
+          "en": "Selichot for 20 Sivan",
+          "he": "סליחות לכ' סיון",
+          "ref": "Siddur Sefard, Fast Days, Selichot for 20 Sivan"
+        },
+        {
+          "en": "El Maleh Prayer",
+          "he": "אל מלא רחמים של כ' סיון",
+          "ref": "Siddur Sefard, Fast Days, El Maleh Prayer"
+        },
+        {
+          "en": "Selichot for 17 Tamuz",
+          "he": "סליחות לשבעה עשר בתמוז",
+          "ref": "Siddur Sefard, Fast Days, Selichot for 17 Tamuz"
+        },
+        {
+          "en": "Selichot for Childrens' Illness",
+          "he": "סליחות לתחלואי ילדים ר\"ל",
+          "ref": "Siddur Sefard, Fast Days, Selichot for Childrens' Illness"
+        }
+      ]
+    },
+    {
+      "en": "Torah Readings",
+      "he": "סדר הקריאות",
+      "children": [
+        {
+          "en": "Torah Reading for Shabbat Mincha & Monday, Thursday",
+          "he": "קריאות לשבת במנחה, ושני וחמישי",
+          "ref": "Siddur Sefard, Torah Readings, Torah Reading for Shabbat Mincha & Monday, Thursday"
+        },
+        {
+          "en": "Fast Day Torah Reading",
+          "he": "קריאה בתורה לתענית ציבור",
+          "ref": "Siddur Sefard, Torah Readings, Fast Day Torah Reading"
+        },
+        {
+          "en": "Fast Day Mincha Haftara",
+          "he": "הפטרה לתענית ציבור במנחה",
+          "ref": "Siddur Sefard, Torah Readings, Fast Day Mincha Haftara"
+        },
+        {
+          "en": "Torah Reading for Rosh Chodesh",
+          "he": "קריאה לראש חודש",
+          "ref": "Siddur Sefard, Torah Readings, Torah Reading for Rosh Chodesh"
+        },
+        {
+          "en": "Torah Reading for Chol Hamoed Pesach",
+          "he": "קריאה לחוה\"מ פסח",
+          "ref": "Siddur Sefard, Torah Readings, Torah Reading for Chol Hamoed Pesach"
+        },
+        {
+          "en": "Torah Reading for Chol Hamoed Sukkot",
+          "he": "קריאה לחול המועד של סוכות",
+          "ref": "Siddur Sefard, Torah Readings, Torah Reading for Chol Hamoed Sukkot"
+        }
+      ]
+    },
+    {
+      "en": "Priestly Blessing",
+      "he": "סדר ברכת כהנים",
+      "ref": "Siddur Sefard, Priestly Blessing"
+    },
+    {
+      "en": "Various Prayers & Segulot",
+      "he": "תפילות וסגולות שונות",
+      "children": [
+        {
+          "en": "Formula Against Evil Eye",
+          "he": "לחש לעין הרע",
+          "ref": "Siddur Sefard, Various Prayers & Segulot, Formula Against Evil Eye"
+        },
+        {
+          "en": "Letter of Ramban",
+          "he": "אגרת הרמב\"ן",
+          "ref": "Siddur Sefard, Various Prayers & Segulot, Letter of Ramban"
+        },
+        {
+          "en": "Prayer of the Shelah",
+          "he": "תפילת השל\"ה הקדוש",
+          "ref": "Siddur Sefard, Various Prayers & Segulot, Prayer of the Shelah"
+        },
+        {
+          "en": "Parashat Haman Reading for Tuesday Beshalach",
+          "he": "פרשת המן שמו\"ת ליום שלישי פרשת בשלח",
+          "ref": "Siddur Sefard, Various Prayers & Segulot, Parashat Haman Reading for Tuesday Beshalach"
+        },
+        {
+          "en": "Prayer for Livelihood",
+          "he": "תפילה על הפרנסה",
+          "ref": "Siddur Sefard, Various Prayers & Segulot, Prayer for Livelihood"
+        },
+        {
+          "en": "Awesome Prayer of Rabbeinu Tam",
+          "he": "תפילה נוראה וקדושה מרבנו תם זי\"ע",
+          "ref": "Siddur Sefard, Various Prayers & Segulot, Awesome Prayer of Rabbeinu Tam"
+        }
+      ]
+    }
+  ],
+  "edot-mizrach": [
+    {
+      "en": "Preparatory Prayers",
+      "he": "סדר השכמת הבוקר",
+      "children": [
+        {
+          "en": "Modeh Ani",
+          "he": "מודה אני",
+          "ref": "Siddur Edot HaMizrach, Preparatory Prayers, Modeh Ani"
+        },
+        {
+          "en": "Morning Blessings",
+          "he": "ברכות השחר",
+          "ref": "Siddur Edot HaMizrach, Preparatory Prayers, Morning Blessings"
+        },
+        {
+          "en": "Torah Blessings",
+          "he": "ברכות התורה",
+          "ref": "Siddur Edot HaMizrach, Preparatory Prayers, Torah Blessings"
+        }
+      ]
+    },
+    {
+      "en": "The Midnight Rite",
+      "he": "סדר תיקון חצות",
+      "children": [
+        {
+          "en": "LeShem Yichud",
+          "he": "לשם יחוד",
+          "ref": "Siddur Edot HaMizrach, The Midnight Rite, LeShem Yichud"
+        },
+        {
+          "en": "Tikkun Rachel",
+          "he": "תיקון רחל",
+          "ref": "Siddur Edot HaMizrach, The Midnight Rite, Tikkun Rachel"
+        },
+        {
+          "en": "Tikkun Leah",
+          "he": "תיקון לאה",
+          "ref": "Siddur Edot HaMizrach, The Midnight Rite, Tikkun Leah"
+        }
+      ]
+    },
+    {
+      "en": "Weekday Shacharit",
+      "he": "שחרית לימי החול",
+      "children": [
+        {
+          "en": "Petichat Eliyahu",
+          "he": "פתיחת אליהו",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Petichat Eliyahu"
+        },
+        {
+          "en": "Order of Talit",
+          "he": "סדר עטיפת ציצית",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Order of Talit"
+        },
+        {
+          "en": "Order of Tefillin",
+          "he": "סדר הנחת תפילין",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Order of Tefillin"
+        },
+        {
+          "en": "Hanna's Prayer",
+          "he": "ותתפלל חנה",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Hanna's Prayer"
+        },
+        {
+          "en": "Morning Prayer",
+          "he": "תפילת שחרית",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Morning Prayer"
+        },
+        {
+          "en": "Incense Offering",
+          "he": "פטום הקטורת",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Incense Offering"
+        },
+        {
+          "en": "Hodu",
+          "he": "הודו",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Hodu"
+        },
+        {
+          "en": "Pesukei D'Zimra",
+          "he": "פסוקי דזמרה",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Pesukei D'Zimra"
+        },
+        {
+          "en": "The Shema",
+          "he": "ק\"ש וברכותיה",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, The Shema"
+        },
+        {
+          "en": "Amida",
+          "he": "עמידה",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Amida"
+        },
+        {
+          "en": "Vidui",
+          "he": "וידוי",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Vidui"
+        },
+        {
+          "en": "Torah Reading",
+          "he": "קריאת התורה",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Torah Reading"
+        },
+        {
+          "en": "Ashrei",
+          "he": "אשרי",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Ashrei"
+        },
+        {
+          "en": "Uva LeSion",
+          "he": "ובא לציון",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Uva LeSion"
+        },
+        {
+          "en": "Beit Yaakov",
+          "he": "בית יעקב",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Beit Yaakov"
+        },
+        {
+          "en": "Song of the Day",
+          "he": "שיר של יום",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Song of the Day"
+        },
+        {
+          "en": "Kaveh",
+          "he": "קוה",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Kaveh"
+        },
+        {
+          "en": "Alenu",
+          "he": "עלינו",
+          "ref": "Siddur Edot HaMizrach, Weekday Shacharit, Alenu"
+        }
+      ]
+    },
+    {
+      "en": "Additions for Shacharit",
+      "he": "תוספות לשחרית",
+      "children": [
+        {
+          "en": "Thirteen Principles of Faith",
+          "he": "שלשה עשר עיקרים",
+          "ref": "Siddur Edot HaMizrach, Additions for Shacharit, Thirteen Principles of Faith"
+        },
+        {
+          "en": "Ten Remembrances",
+          "he": "עשר זכירות",
+          "ref": "Siddur Edot HaMizrach, Additions for Shacharit, Ten Remembrances"
+        }
+      ]
+    },
+    {
+      "en": "Weekday Mincha",
+      "he": "מנחה לימי החול",
+      "children": [
+        {
+          "en": "Offerings",
+          "he": "קרבנות",
+          "ref": "Siddur Edot HaMizrach, Weekday Mincha, Offerings"
+        },
+        {
+          "en": "Amida",
+          "he": "עמידה",
+          "ref": "Siddur Edot HaMizrach, Weekday Mincha, Amida"
+        },
+        {
+          "en": "Vidui",
+          "he": "וידוי",
+          "ref": "Siddur Edot HaMizrach, Weekday Mincha, Vidui"
+        },
+        {
+          "en": "Alenu",
+          "he": "עלינו",
+          "ref": "Siddur Edot HaMizrach, Weekday Mincha, Alenu"
+        }
+      ]
+    },
+    {
+      "en": "Weekday Arvit",
+      "he": "ערבית לימי החול",
+      "children": [
+        {
+          "en": "Barchu",
+          "he": "ברכו",
+          "ref": "Siddur Edot HaMizrach, Weekday Arvit, Barchu"
+        },
+        {
+          "en": "The Shema",
+          "he": "ק\"ש וברכותיה",
+          "ref": "Siddur Edot HaMizrach, Weekday Arvit, The Shema"
+        },
+        {
+          "en": "Amidah",
+          "he": "עמידה",
+          "ref": "Siddur Edot HaMizrach, Weekday Arvit, Amidah"
+        },
+        {
+          "en": "Alenu",
+          "he": "עלינו",
+          "ref": "Siddur Edot HaMizrach, Weekday Arvit, Alenu"
+        }
+      ]
+    },
+    {
+      "en": "Counting of the Omer",
+      "he": "ספירת העומר",
+      "ref": "Siddur Edot HaMizrach, Counting of the Omer"
+    },
+    {
+      "en": "Blessing of the Moon",
+      "he": "ברכת הלבנה",
+      "ref": "Siddur Edot HaMizrach, Blessing of the Moon"
+    },
+    {
+      "en": "Bedtime Shema",
+      "he": "קריאת שמע שעל המיטה",
+      "ref": "Siddur Edot HaMizrach, Bedtime Shema"
+    },
+    {
+      "en": "Shabbat Candle Lighting",
+      "he": "סדר הדלקת נרות שבת",
+      "ref": "Siddur Edot HaMizrach, Shabbat Candle Lighting"
+    },
+    {
+      "en": "Song of Songs",
+      "he": "שיר השירים",
+      "ref": "Siddur Edot HaMizrach, Song of Songs"
+    },
+    {
+      "en": "Kabbalat Shabbat",
+      "he": "קבלת שבת",
+      "ref": "Siddur Edot HaMizrach, Kabbalat Shabbat"
+    },
+    {
+      "en": "Shabbat Arvit",
+      "he": "ערבית של שבת",
+      "children": [
+        {
+          "en": "Barchu",
+          "he": "ברכו",
+          "ref": "Siddur Edot HaMizrach, Shabbat Arvit, Barchu"
+        },
+        {
+          "en": "The Shema",
+          "he": "ק\"ש וברכותיה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Arvit, The Shema"
+        },
+        {
+          "en": "Magen Avot",
+          "he": "תפילת שבע",
+          "ref": "Siddur Edot HaMizrach, Shabbat Arvit, Magen Avot"
+        },
+        {
+          "en": "Alenu",
+          "he": "עלינו",
+          "ref": "Siddur Edot HaMizrach, Shabbat Arvit, Alenu"
+        }
+      ]
+    },
+    {
+      "en": "Shabbat Evening",
+      "he": "סדר ליל שבת",
+      "children": [
+        {
+          "en": "Shalom Alekhem",
+          "he": "שלום עליכם",
+          "ref": "Siddur Edot HaMizrach, Shabbat Evening, Shalom Alekhem"
+        },
+        {
+          "en": "Eshet Hayil",
+          "he": "אשת חיל",
+          "ref": "Siddur Edot HaMizrach, Shabbat Evening, Eshet Hayil"
+        },
+        {
+          "en": "Atkenu Seudata",
+          "he": "אתקינו סעודתא",
+          "ref": "Siddur Edot HaMizrach, Shabbat Evening, Atkenu Seudata"
+        },
+        {
+          "en": "Kiddush",
+          "he": "קידוש ליל שבת",
+          "ref": "Siddur Edot HaMizrach, Shabbat Evening, Kiddush"
+        },
+        {
+          "en": "Blessing of Children",
+          "he": "ברכת הבנים",
+          "ref": "Siddur Edot HaMizrach, Shabbat Evening, Blessing of Children"
+        },
+        {
+          "en": "First Meal",
+          "he": "סעודה ראשונה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Evening, First Meal"
+        },
+        {
+          "en": "Zohar",
+          "he": "זוהר לסעודה ראשונה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Evening, Zohar"
+        },
+        {
+          "en": "Songs for Shabbat",
+          "he": "שירי שבת",
+          "ref": "Siddur Edot HaMizrach, Shabbat Evening, Songs for Shabbat"
+        }
+      ]
+    },
+    {
+      "en": "Post Meal Blessing",
+      "he": "ברכת המזון",
+      "ref": "Siddur Edot HaMizrach, Post Meal Blessing"
+    },
+    {
+      "en": "Al Hamihya",
+      "he": "ברכת מעין שלוש",
+      "ref": "Siddur Edot HaMizrach, Al Hamihya"
+    },
+    {
+      "en": "Blessings on Enjoyments",
+      "he": "ברכות הנהנין",
+      "ref": "Siddur Edot HaMizrach, Blessings on Enjoyments"
+    },
+    {
+      "en": "Shabbat Shacharit",
+      "he": "שחרית של שבת",
+      "children": [
+        {
+          "en": "Psalms for Shabbat",
+          "he": "ליום השבת",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Psalms for Shabbat"
+        },
+        {
+          "en": "Pesukei D'Zimra",
+          "he": "פסוקי דזמרה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Pesukei D'Zimra"
+        },
+        {
+          "en": "The Shema",
+          "he": "ק\"ש וברכותיה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, The Shema"
+        },
+        {
+          "en": "Amidah",
+          "he": "עמידה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Amidah"
+        },
+        {
+          "en": "Torah Reading",
+          "he": "קריאת התורה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Torah Reading"
+        },
+        {
+          "en": "HaGomel",
+          "he": "ברכת הגומל",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, HaGomel"
+        },
+        {
+          "en": "Zeved HaBat",
+          "he": "סדר זבד הבת",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Zeved HaBat"
+        },
+        {
+          "en": "Shabbat Chatan",
+          "he": "לשבת חתן",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Shabbat Chatan"
+        },
+        {
+          "en": "Haftarah",
+          "he": "ברכות ההפטרה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Haftarah"
+        },
+        {
+          "en": "Birkat HaChodesh",
+          "he": "הכרזת ראש חדש",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Birkat HaChodesh"
+        },
+        {
+          "en": "Announcement of Fast",
+          "he": "הכרזת תענית",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Announcement of Fast"
+        },
+        {
+          "en": "Mi Sheberach",
+          "he": "מי שברך לקהל",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Mi Sheberach"
+        },
+        {
+          "en": "Ashrei",
+          "he": "אשרי",
+          "ref": "Siddur Edot HaMizrach, Shabbat Shacharit, Ashrei"
+        }
+      ]
+    },
+    {
+      "en": "Shabbat Mussaf",
+      "he": "מוסף של שבת",
+      "children": [
+        {
+          "en": "Amida",
+          "he": "עמידה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Mussaf, Amida"
+        },
+        {
+          "en": "Incense Offering",
+          "he": "פטום הקטורת",
+          "ref": "Siddur Edot HaMizrach, Shabbat Mussaf, Incense Offering"
+        },
+        {
+          "en": "Alenu",
+          "he": "עלינו",
+          "ref": "Siddur Edot HaMizrach, Shabbat Mussaf, Alenu"
+        }
+      ]
+    },
+    {
+      "en": "Daytime Meal",
+      "he": "סדר סעודה שניה",
+      "children": [
+        {
+          "en": "Daytime Meal",
+          "he": "סדר סעודה שניה",
+          "ref": "Siddur Edot HaMizrach, Daytime Meal, Daytime Meal"
+        },
+        {
+          "en": "Kiddush",
+          "he": "קידוש היום",
+          "ref": "Siddur Edot HaMizrach, Daytime Meal, Kiddush"
+        }
+      ]
+    },
+    {
+      "en": "Shabbat Mincha",
+      "he": "מנחה של שבת",
+      "children": [
+        {
+          "en": "Offerings",
+          "he": "קרבנות",
+          "ref": "Siddur Edot HaMizrach, Shabbat Mincha, Offerings"
+        },
+        {
+          "en": "Uva LeSion",
+          "he": "ובא לציון גואל",
+          "ref": "Siddur Edot HaMizrach, Shabbat Mincha, Uva LeSion"
+        },
+        {
+          "en": "Amida",
+          "he": "עמידה",
+          "ref": "Siddur Edot HaMizrach, Shabbat Mincha, Amida"
+        },
+        {
+          "en": "Alenu",
+          "he": "עלינו",
+          "ref": "Siddur Edot HaMizrach, Shabbat Mincha, Alenu"
+        }
+      ]
+    },
+    {
+      "en": "Third Meal",
+      "he": "סעודה שלישית",
+      "ref": "Siddur Edot HaMizrach, Third Meal"
+    },
+    {
+      "en": "Havdalah",
+      "he": "מוצאי שבת",
+      "children": [
+        {
+          "en": "Before Havdalah",
+          "he": "קודם הבדלה",
+          "ref": "Siddur Edot HaMizrach, Havdalah, Before Havdalah"
+        },
+        {
+          "en": "Havdala",
+          "he": "סדר הבדלה",
+          "ref": "Siddur Edot HaMizrach, Havdalah, Havdala"
+        },
+        {
+          "en": "Motzei Shabbat Songs",
+          "he": "שירים למוצאי שבת",
+          "ref": "Siddur Edot HaMizrach, Havdalah, Motzei Shabbat Songs"
+        },
+        {
+          "en": "Veyiten Lecha",
+          "he": "ויתן לך",
+          "ref": "Siddur Edot HaMizrach, Havdalah, Veyiten Lecha"
+        },
+        {
+          "en": "Fourth Meal",
+          "he": "סעודה רביעית",
+          "ref": "Siddur Edot HaMizrach, Havdalah, Fourth Meal"
+        }
+      ]
+    },
+    {
+      "en": "Rosh Hodesh",
+      "he": "סדר ראש חודש",
+      "children": [
+        {
+          "en": "Rosh Hodesh",
+          "he": "סדר ראש חודש",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Rosh Hodesh"
+        },
+        {
+          "en": "Hallel",
+          "he": "הלל לראש חודש ולמועדים",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Hallel"
+        },
+        {
+          "en": "Uva LeSion",
+          "he": "ובא לציון גואל",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Uva LeSion"
+        },
+        {
+          "en": "Song of the Day",
+          "he": "שיר של יום",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Song of the Day"
+        },
+        {
+          "en": "Mussaf",
+          "he": "מוסף",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Mussaf"
+        },
+        {
+          "en": "Barchi Nafshi",
+          "he": "ברכי נפשי",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Barchi Nafshi"
+        },
+        {
+          "en": "Kaveh",
+          "he": "קוה",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Kaveh"
+        },
+        {
+          "en": "Incense Offering",
+          "he": "פטום הקטורת",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Incense Offering"
+        },
+        {
+          "en": "Alenu",
+          "he": "עלינו",
+          "ref": "Siddur Edot HaMizrach, Rosh Hodesh, Alenu"
+        }
+      ]
+    },
+    {
+      "en": "Prayers for Three Festivals",
+      "he": "תפילה לשלש רגלים",
+      "children": [
+        {
+          "en": "Prayers for Three Festivals",
+          "he": "תפילה לשלש רגלים",
+          "ref": "Siddur Edot HaMizrach, Prayers for Three Festivals, Prayers for Three Festivals"
+        },
+        {
+          "en": "Song for Passover",
+          "he": "מזמור לפסח",
+          "ref": "Siddur Edot HaMizrach, Prayers for Three Festivals, Song for Passover"
+        },
+        {
+          "en": "Song for Shavuot",
+          "he": "מזמור לשבועות",
+          "ref": "Siddur Edot HaMizrach, Prayers for Three Festivals, Song for Shavuot"
+        },
+        {
+          "en": "Song for Sukkot",
+          "he": "מזמור לסוכות",
+          "ref": "Siddur Edot HaMizrach, Prayers for Three Festivals, Song for Sukkot"
+        },
+        {
+          "en": "Song for Shemini Atzeret",
+          "he": "מזמור לשמיני עצרת",
+          "ref": "Siddur Edot HaMizrach, Prayers for Three Festivals, Song for Shemini Atzeret"
+        },
+        {
+          "en": "Amidah",
+          "he": "עמידה",
+          "ref": "Siddur Edot HaMizrach, Prayers for Three Festivals, Amidah"
+        },
+        {
+          "en": "Mussaf",
+          "he": "מוסף",
+          "ref": "Siddur Edot HaMizrach, Prayers for Three Festivals, Mussaf"
+        }
+      ]
+    },
+    {
+      "en": "Hanukkah",
+      "he": "חנוכה",
+      "children": [
+        {
+          "en": "Menorah Lighting",
+          "he": "סדר ההדלקה",
+          "ref": "Siddur Edot HaMizrach, Hanukkah, Menorah Lighting"
+        },
+        {
+          "en": "Shacharit",
+          "he": " שחרית",
+          "ref": "Siddur Edot HaMizrach, Hanukkah, Shacharit"
+        }
+      ]
+    },
+    {
+      "en": "Purim",
+      "he": "פורים",
+      "children": [
+        {
+          "en": "Shabbat Zachor",
+          "he": "שבת זכור",
+          "ref": "Siddur Edot HaMizrach, Purim, Shabbat Zachor"
+        },
+        {
+          "en": "Megillah Reading",
+          "he": "קריאת המגילה",
+          "ref": "Siddur Edot HaMizrach, Purim, Megillah Reading"
+        },
+        {
+          "en": "Purim Day",
+          "he": "סדר יום פורים",
+          "ref": "Siddur Edot HaMizrach, Purim, Purim Day"
+        }
+      ]
+    },
+    {
+      "en": "Nissan",
+      "he": "חודש ניסן",
+      "children": [
+        {
+          "en": "Blessing of the Trees",
+          "he": "סדר ברכת האילנות",
+          "ref": "Siddur Edot HaMizrach, Nissan, Blessing of the Trees"
+        },
+        {
+          "en": "Learning of the Day",
+          "he": "סדר למוד לחדש ניסן",
+          "ref": "Siddur Edot HaMizrach, Nissan, Learning of the Day"
+        }
+      ]
+    },
+    {
+      "en": "Assorted Blessings and Prayers",
+      "he": "ברכות ותפילות שונות",
+      "children": [
+        {
+          "en": "Marriage",
+          "he": "סדר ארוסין ונשואין",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Marriage"
+        },
+        {
+          "en": "Sheva Berachot",
+          "he": "סדר שבע ברכות",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Sheva Berachot"
+        },
+        {
+          "en": "Brit Mila",
+          "he": "סדר ברית מילה",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Brit Mila"
+        },
+        {
+          "en": "Redeeming the First Born",
+          "he": "סדר פדיון הבן",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Redeeming the First Born"
+        },
+        {
+          "en": "Mezuza",
+          "he": "ברכת המזוזה",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Mezuza"
+        },
+        {
+          "en": "Building a Fence",
+          "he": "ברכת המעקה",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Building a Fence"
+        },
+        {
+          "en": "Separating Hallah",
+          "he": "סדר הפרשת חלה",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Separating Hallah"
+        },
+        {
+          "en": "Tevillat Kelim",
+          "he": "ברכת טבילת כלים",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Tevillat Kelim"
+        },
+        {
+          "en": "Separating Tithes",
+          "he": "סדר הפרשת תרומות ומעשרות",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Separating Tithes"
+        },
+        {
+          "en": "Rainbow",
+          "he": "ברכת הקשת",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Rainbow"
+        },
+        {
+          "en": "Blessings on Lighting and Thunder",
+          "he": "ברכת ברקים ורעמים",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Blessings on Lighting and Thunder"
+        },
+        {
+          "en": "Prayer for Taking Medicine",
+          "he": "תפלת הנוטל תרופה",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Prayer for Taking Medicine"
+        },
+        {
+          "en": "Traveler's Prayer",
+          "he": "תפלת הדרך",
+          "ref": "Siddur Edot HaMizrach, Assorted Blessings and Prayers, Traveler's Prayer"
+        }
+      ]
+    },
+    {
+      "en": "Fast Days and Mourning",
+      "he": "תעניות ואבילות",
+      "children": [
+        {
+          "en": "Fast of Gedalya",
+          "he": "סליחות לצום גדליה",
+          "ref": "Siddur Edot HaMizrach, Fast Days and Mourning, Fast of Gedalya"
+        },
+        {
+          "en": "Tenth of Tevet",
+          "he": "סליחות לעשרה בטבת",
+          "ref": "Siddur Edot HaMizrach, Fast Days and Mourning, Tenth of Tevet"
+        },
+        {
+          "en": "Fast of Esther",
+          "he": "סליחות לתענית אסתר",
+          "ref": "Siddur Edot HaMizrach, Fast Days and Mourning, Fast of Esther"
+        },
+        {
+          "en": "Seventeenth of Tammuz",
+          "he": "סליחות לי\"ז בתמוז",
+          "ref": "Siddur Edot HaMizrach, Fast Days and Mourning, Seventeenth of Tammuz"
+        },
+        {
+          "en": "Mourning",
+          "he": "אבלות",
+          "ref": "Siddur Edot HaMizrach, Fast Days and Mourning, Mourning"
+        },
+        {
+          "en": "Torah Reading for Fast Days",
+          "he": "קריאת התורה לתענית ציבור",
+          "ref": "Siddur Edot HaMizrach, Fast Days and Mourning, Torah Reading for Fast Days"
+        }
+      ]
+    },
+    {
+      "en": "Mishna Study for Shabbat",
+      "he": "משניות לשבת",
+      "children": [
+        {
+          "en": "First Meal",
+          "he": "לסעודה ראשונה",
+          "ref": "Siddur Edot HaMizrach, Mishna Study for Shabbat, First Meal"
+        },
+        {
+          "en": "Second Meal",
+          "he": "משניות שבת לסעודה שניה",
+          "ref": "Siddur Edot HaMizrach, Mishna Study for Shabbat, Second Meal"
+        },
+        {
+          "en": "Third Meal",
+          "he": "משניות שבת לסעודה שלישית",
+          "ref": "Siddur Edot HaMizrach, Mishna Study for Shabbat, Third Meal"
+        },
+        {
+          "en": "Pirkei Avot",
+          "he": "פרקי אבות",
+          "ref": "Siddur Edot HaMizrach, Mishna Study for Shabbat, Pirkei Avot"
+        }
+      ]
+    }
+  ],
+  "chabad": [
+    {
+      "en": "Shacharit",
+      "he": "שחרית",
+      "children": [
+        {
+          "en": "Upon Arising",
+          "he": "השכמת הבוקר",
+          "ref": "Weekday Siddur Chabad, Shacharit, Upon Arising"
+        },
+        {
+          "en": "Morning Blessings",
+          "he": "ברכות השחר",
+          "ref": "Weekday Siddur Chabad, Shacharit, Morning Blessings"
+        },
+        {
+          "en": "Tzitzit and Tallit",
+          "he": "ציצית וטלית גדול",
+          "ref": "Weekday Siddur Chabad, Shacharit, Tzitzit and Tallit"
+        },
+        {
+          "en": "Tefillin",
+          "he": "תפילין",
+          "ref": "Weekday Siddur Chabad, Shacharit, Tefillin"
+        },
+        {
+          "en": "Morning Prayer",
+          "he": "תפלת השחר",
+          "ref": "Weekday Siddur Chabad, Shacharit, Morning Prayer"
+        },
+        {
+          "en": "Kaddish DeRabbanan",
+          "he": "קדיש דרבנן",
+          "ref": "Weekday Siddur Chabad, Shacharit, Kaddish DeRabbanan"
+        },
+        {
+          "en": "Hodu",
+          "he": "הודו",
+          "ref": "Weekday Siddur Chabad, Shacharit, Hodu"
+        },
+        {
+          "en": "Pesukei Dezimra",
+          "he": "פסוקי דזמרה",
+          "ref": "Weekday Siddur Chabad, Shacharit, Pesukei Dezimra"
+        },
+        {
+          "en": "Blessings of the Shema",
+          "he": "ברכות קריאת שמע",
+          "ref": "Weekday Siddur Chabad, Shacharit, Blessings of the Shema"
+        },
+        {
+          "en": "The Amidah",
+          "he": "עמידה",
+          "ref": "Weekday Siddur Chabad, Shacharit, The Amidah"
+        },
+        {
+          "en": "Tachnun",
+          "he": "תחנון",
+          "ref": "Weekday Siddur Chabad, Shacharit, Tachnun"
+        },
+        {
+          "en": "Torah Reading",
+          "he": "קריאת התורה",
+          "ref": "Weekday Siddur Chabad, Shacharit, Torah Reading"
+        },
+        {
+          "en": "Ashrei Uva LeZion",
+          "he": "אשרי",
+          "ref": "Weekday Siddur Chabad, Shacharit, Ashrei Uva LeZion"
+        },
+        {
+          "en": "Song of the Day",
+          "he": "שיר של יום",
+          "ref": "Weekday Siddur Chabad, Shacharit, Song of the Day"
+        },
+        {
+          "en": "Mourner's Kaddish",
+          "he": "קדיש יתום",
+          "ref": "Weekday Siddur Chabad, Shacharit, Mourner's Kaddish"
+        },
+        {
+          "en": "Kaveh",
+          "he": "קוה",
+          "ref": "Weekday Siddur Chabad, Shacharit, Kaveh"
+        },
+        {
+          "en": "Aleinu",
+          "he": "עלינו",
+          "ref": "Weekday Siddur Chabad, Shacharit, Aleinu"
+        },
+        {
+          "en": "Rabbenu Tam",
+          "he": "תפילין דרבינו תם",
+          "ref": "Weekday Siddur Chabad, Shacharit, Rabbenu Tam"
+        },
+        {
+          "en": "Six Remembrances",
+          "he": "שש זכירות",
+          "ref": "Weekday Siddur Chabad, Shacharit, Six Remembrances"
+        }
+      ]
+    },
+    {
+      "en": "Blessings",
+      "he": "ברכות",
+      "children": [
+        {
+          "en": "The Travelers' Prayer",
+          "he": "תפלת הדרך",
+          "ref": "Weekday Siddur Chabad, Blessings, The Travelers' Prayer"
+        },
+        {
+          "en": "Various Blessings",
+          "he": "סדר ברכות",
+          "ref": "Weekday Siddur Chabad, Blessings, Various Blessings"
+        },
+        {
+          "en": "Birkat HaMazon",
+          "he": "סדר ברכת המזון",
+          "ref": "Weekday Siddur Chabad, Blessings, Birkat HaMazon"
+        },
+        {
+          "en": "Berakha Acharona",
+          "he": "ברכה אחרונה",
+          "ref": "Weekday Siddur Chabad, Blessings, Berakha Acharona"
+        },
+        {
+          "en": "Birkat HaMazon for Circumcision",
+          "he": "הרחמן לברית מילה",
+          "ref": "Weekday Siddur Chabad, Blessings, Birkat HaMazon for Circumcision"
+        },
+        {
+          "en": "Sheva Berakhot",
+          "he": "שבע ברכות",
+          "ref": "Weekday Siddur Chabad, Blessings, Sheva Berakhot"
+        }
+      ]
+    },
+    {
+      "en": "Mincha",
+      "he": "מנחה",
+      "children": [
+        {
+          "en": "Korbanot",
+          "he": "קרבנות",
+          "ref": "Weekday Siddur Chabad, Mincha, Korbanot"
+        },
+        {
+          "en": "Ashrei",
+          "he": "אשרי",
+          "ref": "Weekday Siddur Chabad, Mincha, Ashrei"
+        },
+        {
+          "en": "Amidah",
+          "he": "עמידה",
+          "ref": "Weekday Siddur Chabad, Mincha, Amidah"
+        },
+        {
+          "en": "Tachanun",
+          "he": "תחנון",
+          "ref": "Weekday Siddur Chabad, Mincha, Tachanun"
+        },
+        {
+          "en": "Aleinu",
+          "he": "עלינו",
+          "ref": "Weekday Siddur Chabad, Mincha, Aleinu"
+        }
+      ]
+    },
+    {
+      "en": "Maariv",
+      "he": "ערבית",
+      "ref": "Weekday Siddur Chabad, Maariv"
+    },
+    {
+      "en": "Sefirat HaOmer",
+      "he": "סדר ספירת העומר",
+      "ref": "Weekday Siddur Chabad, Sefirat HaOmer"
+    },
+    {
+      "en": "Bedtime Shema",
+      "he": "סדר קריאת שמע על המיטה",
+      "ref": "Weekday Siddur Chabad, Bedtime Shema"
+    },
+    {
+      "en": "Kiddush Levanah",
+      "he": "סדר קידוש לבנה",
+      "ref": "Weekday Siddur Chabad, Kiddush Levanah"
+    },
+    {
+      "en": "Lulav",
+      "he": "לולב",
+      "ref": "Weekday Siddur Chabad, Lulav"
+    },
+    {
+      "en": "Hallel",
+      "he": "סדר הלל",
+      "ref": "Weekday Siddur Chabad, Hallel"
+    },
+    {
+      "en": "Rosh Chodesh",
+      "he": "ראש חודש",
+      "ref": "Weekday Siddur Chabad, Rosh Chodesh"
+    },
+    {
+      "en": "Musaf for Festivals",
+      "he": "מוסף לשלש רגלים",
+      "ref": "Weekday Siddur Chabad, Musaf for Festivals"
+    },
+    {
+      "en": "Annulment of Vows",
+      "he": "סדר התרת נדרים",
+      "ref": "Weekday Siddur Chabad, Annulment of Vows"
+    },
+    {
+      "en": "Kapparot",
+      "he": "סדר כפרות",
+      "ref": "Weekday Siddur Chabad, Kapparot"
+    },
+    {
+      "en": "Chanukah",
+      "he": "חנוכה",
+      "ref": "Weekday Siddur Chabad, Chanukah"
+    },
+    {
+      "en": "Purim",
+      "he": "פורים",
+      "ref": "Weekday Siddur Chabad, Purim"
+    },
+    {
+      "en": "Reading of the Nassi",
+      "he": "פרשת הנשיאים לחודש ניסן",
+      "ref": "Weekday Siddur Chabad, Reading of the Nassi"
+    },
+    {
+      "en": "Blessings of Marriage Ceremony",
+      "he": "ברכות אירוסין ונשואין",
+      "ref": "Weekday Siddur Chabad, Blessings of Marriage Ceremony"
+    },
+    {
+      "en": "Order of a Circumcision",
+      "he": "סדר המילה",
+      "ref": "Weekday Siddur Chabad, Order of a Circumcision"
+    },
+    {
+      "en": "Pidyon HaBen",
+      "he": "סדר פדיון הבן",
+      "ref": "Weekday Siddur Chabad, Pidyon HaBen"
+    },
+    {
+      "en": "Mishnayot for a Mourner",
+      "he": "סדר הלימוד לאבל",
+      "ref": "Weekday Siddur Chabad, Mishnayot for a Mourner"
+    }
+  ]
+}

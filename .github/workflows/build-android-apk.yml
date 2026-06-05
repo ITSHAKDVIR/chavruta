@@ -1,0 +1,120 @@
+name: Build Android APK
+
+# Free alternative to EAS Build — runs the same gradle build EAS would run, on
+# GitHub-hosted Linux runners. Public repos get unlimited Actions minutes;
+# private repos get 2,000 free minutes/month (a build takes ~15 min, so ~130
+# builds/month free). No EAS quota consumed.
+#
+# Two triggers:
+#   - manual: Actions tab → "Run workflow"
+#   - push to main: every push to the main branch builds automatically
+#
+# The APK lands as a workflow artifact you can download from the Actions run
+# page (zipped). It's debug-signed by default → installable on any Android
+# device with "Install unknown apps" enabled. For Play-Store-ready signed
+# APKs you'll need to add the keystore as a GitHub Secret (see notes at end).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.11.0'
+          cache: 'npm'
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 35
+          build-tools: '35.0.0'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Expo prebuild (generates android/ folder)
+        run: npx expo prebuild --platform android --no-install --clean
+        env:
+          # Skip auto-installing pods/npm — we already did that.
+          EXPO_NO_TELEMETRY: '1'
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        env:
+          GRADLE_OPTS: "-Xmx4g -Dorg.gradle.jvmargs='-Xmx4g'"
+
+      - name: Locate APK
+        id: locate
+        run: |
+          APK=$(find android/app/build/outputs/apk -name "*.apk" -not -name "*unsigned*" | head -1)
+          echo "Found APK: $APK"
+          ls -la "$APK"
+          echo "apk_path=$APK" >> $GITHUB_OUTPUT
+          # Read version from app.json
+          VERSION=$(node -e "console.log(require('./app.json').expo.version)")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chavruta-v${{ steps.locate.outputs.version }}-apk
+          path: ${{ steps.locate.outputs.apk_path }}
+          retention-days: 30
+
+      # Optional: create a GitHub Release with the APK attached, on push to main.
+      # Uncomment if you'd rather get a downloadable Release link instead of a
+      # workflow-artifact zip.
+      #
+      # - name: Create Release
+      #   if: github.event_name == 'push'
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     tag_name: v${{ steps.locate.outputs.version }}-${{ github.run_number }}
+      #     name: Chavruta v${{ steps.locate.outputs.version }} (build ${{ github.run_number }})
+      #     files: ${{ steps.locate.outputs.apk_path }}
+
+# ---------- Notes ----------
+#
+# How to use:
+# 1. Push this repo to GitHub (https://github.com/new). Private repo is fine.
+# 2. Go to Actions tab. The workflow will run automatically on every push,
+#    or click "Run workflow" to trigger manually.
+# 3. When it finishes (~15 min), click the run → scroll to "Artifacts" →
+#    download "chavruta-vX.Y.Z-apk.zip". Unzip → install the APK on your phone.
+#
+# Production signing (for Play Store):
+#   The APK this workflow produces is signed with the debug key by default —
+#   fine for personal install, NOT acceptable for Play Store.
+#   To produce a Play-Store-ready APK:
+#     a. Export your keystore from EAS:
+#          npx eas-cli credentials --platform android
+#          → choose "Download credentials" → save the .jks file
+#     b. Encode it: `base64 -w 0 release.jks > release.jks.b64`
+#     c. In GitHub repo → Settings → Secrets → New repository secret:
+#          ANDROID_KEYSTORE      = (paste the b64 content)
+#          ANDROID_KEYSTORE_PWD  = (the keystore password)
+#          ANDROID_KEY_ALIAS     = (key alias)
+#          ANDROID_KEY_PWD       = (key password)
+#     d. Add a "Decode keystore" step + signing config in android/app/build.gradle.
+#        Ask Claude to add it when ready.

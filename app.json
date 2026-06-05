@@ -1,0 +1,117 @@
+{
+  "expo": {
+    "name": "חברותא",
+    "slug": "chavruta-app",
+    "scheme": "chavruta",
+    "version": "2.8.2",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.itzhakdvir.chavruta",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "כדי לחשב זמני תפילה לפי המיקום שלך.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "כדי להציע ברכה כשתתקרב לים גם כשהאפליקציה ברקע.",
+        "NSCameraUsageDescription": "האפליקציה משתמשת במצלמה לצילום פערים למדידת לבוד, לוחות זמני תפילה, ועוד שימושים הלכתיים.",
+        "NSPhotoLibraryUsageDescription": "האפליקציה מבקשת גישה לתמונות כדי לאפשר לך לבחור תמונות לניתוח הלכתי (לבוד, לוחות, וכו')."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a1f3d",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.itzhakdvir.chavruta",
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "כדי לתת תזכורת לברכת הים כשתתקרב לים, האפליקציה משתמשת במיקום שלך."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#d4a437"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "האפליקציה מבקשת גישה לתמונות כדי לאפשר לך לבחור תמונות לניתוח הלכתי (לבוד, לוחות זמני תפילה, וכו').",
+          "cameraPermission": "האפליקציה משתמשת במצלמה לצילום פערים למדידת לבוד, לוחות זמני תפילה, ועוד שימושים הלכתיים."
+        }
+      ],
+      "expo-audio",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class com.facebook.react.bridge.** { *; }",
+            "buildArchs": [
+              "arm64-v8a",
+              "armeabi-v7a"
+            ]
+          }
+        }
+      ],
+      "./plugins/withQuietMode.js",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Rubik-300Light.ttf",
+            "./assets/fonts/Rubik-400Regular.ttf",
+            "./assets/fonts/Rubik-500Medium.ttf",
+            "./assets/fonts/Rubik-600SemiBold.ttf",
+            "./assets/fonts/Rubik-700Bold.ttf",
+            "./assets/fonts/Rubik-800ExtraBold.ttf"
+          ]
+        }
+      ]
+    ],
+    "newArchEnabled": true,
+    "jsEngine": "hermes",
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "25b00629-0db0-4b7f-8715-e9ea654e372d"
+      }
+    },
+    "owner": "havruta",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/25b00629-0db0-4b7f-8715-e9ea654e372d"
+    }
+  }
+}

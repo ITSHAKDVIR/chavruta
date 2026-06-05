@@ -1,0 +1,666 @@
+import { HDate, HebrewCalendar, flags, months } from '@hebcal/core';
+
+/**
+ * Parses Sefaria HTML siddur text into structured paragraphs with
+ * recognized seasonal/conditional markers. Used to hide irrelevant
+ * insertions (e.g., זכרנו לחיים when not in עשרת ימי תשובה).
+ *
+ * Handles 3 patterns Sefaria uses:
+ *   A. Inline:        <small>בעשי"ת:</small> זָכְרֵנוּ...
+ *   B. Split:         <small>בימות הגשמים:</small>  followed by next paragraph "טַל וּמָטָר"
+ *   C. Halachic note: <small>אם שכח לומר... חוזר...</small>  (whole paragraph)
+ */
+
+export type ParagraphKind =
+  | 'normal'         // ordinary tefila text
+  | 'halachic-note'  // instructional note (whole paragraph in <small>)
+  | 'conditional'    // text that only applies under a condition (e.g., בעשי"ת)
+  | 'alternative';   // text that REPLACES other text under a condition (e.g., המלך הקדוש)
+
+export type ConditionTag =
+  | 'aseret-yemei-teshuva'
+  | 'rosh-chodesh'
+  | 'yom-tov'
+  | 'chol-hamoed'
+  | 'chanukah'
+  | 'purim'
+  | 'fast'
+  | 'motzei-shabbat'
+  | 'shabbat'
+  | 'weekday'
+  | 'summer-tal'      // ימות החמה: Pesach (musaf) → Shmini Atzeret
+  | 'winter-geshem'   // ימות הגשמים: Shmini Atzeret → Pesach
+  | 'tal-umatar'      // 7 Cheshvan / Dec 4-5 → 15 Nisan: ותן טל ומטר
+  | 'in-israel'
+  | 'in-diaspora'
+  | 'sukkot'
+  | 'pesach'
+  | 'shavuot'
+  | 'shmini-atzeret'
+  | 'rosh-hashana'
+  | 'yom-kippur'
+  // "כשחל ביום X" - when the current section's day falls on weekday X
+  | 'fell-sun'
+  | 'fell-mon'
+  | 'fell-tue'
+  | 'fell-wed'
+  | 'fell-thu'
+  | 'fell-fri'
+  | 'fell-sat'
+  | 'unknown';
+
+export type ParsedParagraph = {
+  body: string;
+  kind: ParagraphKind;
+  tags?: ConditionTag[];
+  marker?: string;
+  /** Internal: true when this paragraph's "marker" is an unrecognized rubric/
+   *  directive (e.g. "ואומר החזן חצי קדיש") rather than a date condition. */
+  _rubric?: boolean;
+};
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&thinsp;/g, ' ');
+}
+
+function stripFormatting(s: string): string {
+  // Keep <small> markers for our parsing; strip ALL other HTML display tags.
+  // Includes: bold, italic, big, font, em, strong, mark, code, header levels, etc.
+  return s.replace(
+    /<\/?(?:b|i|u|sup|sub|span|br|p|div|big|font|em|strong|mark|code|h[1-6]|table|tr|td|th|thead|tbody|caption|nav|article|section|aside|figure|figcaption)\b[^>]*>/gi,
+    '',
+  ).trim();
+}
+
+/** Heuristic: does this look like a marker phrase (short directive ending with colon)?
+ *  vs. a halachic note (long explanation)? */
+function isMarkerPhrase(text: string): boolean {
+  const t = text.trim();
+  if (t.length > 80) return false;
+  // Halachic notes typically include conditional/sequential words
+  if (/(אם שכח|ונזכר|חוזר|במנחה אומר|דה"ח|דה״ח|דאם|דהיינו)/.test(t)) return false;
+  // Must end with colon or "אומרים זה" / "אומר" / "מוסיף"
+  return /[:：]$/.test(t) || /אומר(ים)?\s+זה|מוסיף(ים)?|יאמר/.test(t);
+}
+
+/** Map a Hebrew marker text to known condition tags. */
+export function markerToTags(marker: string): ConditionTag[] {
+  const m = marker.replace(/[״"׳']/g, '').replace(/[:.]/g, '').trim();
+  const tags: ConditionTag[] = [];
+
+  if (/(בעשית|בעשרת ימי תשובה)/.test(m)) tags.push('aseret-yemei-teshuva');
+  if (/(בראש השנה|ברה ה|בראש)/.test(m) && /שנה|השנה/.test(m)) tags.push('rosh-hashana');
+  if (/(ביום הכפורים|ביום הכיפורים|ביוהכ)/.test(m)) tags.push('yom-kippur');
+
+  if (/(ברח|בראש חדש|בראש חודש|בראש החדש|לרח|לראש חודש|לראש חדש)/.test(m)) tags.push('rosh-chodesh');
+
+  if (/(ביוט|ביום טוב|בשלש רגלים|בחג|בחגים|בשלוש רגלים)/.test(m)) tags.push('yom-tov');
+  if (/(בחהמ|בחול המועד|בחוהמ)/.test(m)) tags.push('chol-hamoed');
+
+  if (/(בסוכות|חג הסוכות|לסכות|לסוכות)/.test(m)) { tags.push('sukkot'); tags.push('yom-tov'); }
+  if (/(בפסח|חג הפסח|חג המצות|במצות|לפסח)/.test(m)) { tags.push('pesach'); tags.push('yom-tov'); }
+  if (/(בשבועות|חג השבועות|לשבועות)/.test(m)) { tags.push('shavuot'); tags.push('yom-tov'); }
+  if (/(שמיני עצרת|בעצרת|שמ ע|לשמיני עצרת)/.test(m)) { tags.push('shmini-atzeret'); tags.push('yom-tov'); }
+
+  if (/בחנוכה/.test(m)) tags.push('chanukah');
+  if (/בפורים/.test(m)) tags.push('purim');
+
+  if (/(בתענית|בצום|תענית ציבור)/.test(m)) tags.push('fast');
+
+  if (/(במוצש|במוצאי שבת|במוצאי שבת ויום טוב|מוצש)/.test(m)) tags.push('motzei-shabbat');
+
+  // "בשבת" / "בשבתות" = on Shabbat — BUT exclude day-of-week phrases like
+  // "בראשון בשבת" / "בשישי בשבת" which mean "on day N of the week", not Shabbat.
+  if (/(בשבת|בשבתות)/.test(m)
+      && !/(במוצש|במוצאי)/.test(m)
+      && !/ב(ראשון|שני|שלישי|רביעי|חמישי|שישי|ששי)\s+ב?שבת/.test(m)) {
+    tags.push('shabbat');
+  }
+  if (/(בחול|ביום חול|בימי החול)/.test(m) && !/(בחול המועד|בחוהמ)/.test(m)) tags.push('weekday');
+
+  // Tal/Geshem (Israeli and other variations)
+  if (/(בימות הגשמים|בחורף|משיב הרוח ומוריד הגשם|מוסף שמיני עצרת)/.test(m)) tags.push('winter-geshem');
+  if (/(בימות החמה|בקיץ|מוריד הטל)/.test(m)) tags.push('summer-tal');
+  // "ז' במרחשון" (7 Cheshvan) marks the START of "ותן טל ומטר" (winter rain
+  // request). It belongs with tal-umatar markers, NOT with summer-tal.
+  if (/(טל ומטר|ז במרחשון|מז במרחשון|בז במרחשון|מז חשון|בז חשון|ז חשון|דצמבר)/.test(m)) tags.push('tal-umatar');
+
+  if (/(בארץ ישראל|באי|בארץ)/.test(m) && !/וחול|וחו ל/.test(m)) tags.push('in-israel');
+  // "in-diaspora" requires an UNAMBIGUOUS marker — bare "בחול" is also "on a
+  // weekday" (it would double-tag). Require explicit "בחו"ל / חוץ לארץ" forms.
+  if (/(בחול הארץ|בחוץ לארץ|בחוצה לארץ|בחול לארץ|לחו ל|לחול|לחוץ לארץ)/.test(m)) tags.push('in-diaspora');
+
+  // "כשחל ביום X" / "אם חל ביום X" - the current day falls on weekday X.
+  // Hebrew weekday letters: א=Sun, ב=Mon, ג=Tue, ד=Wed, ה=Thu, ו=Fri, ש/שבת=Sat.
+  // Used heavily in Hoshanot — the order depends on which day of Sukkot falls
+  // on which weekday in the current year.
+  if (/(כשחל|אם חל|חל)\s*ביום\s*א/.test(m)) tags.push('fell-sun');
+  if (/(כשחל|אם חל|חל)\s*ביום\s*ב/.test(m)) tags.push('fell-mon');
+  if (/(כשחל|אם חל|חל)\s*ביום\s*ג/.test(m)) tags.push('fell-tue');
+  if (/(כשחל|אם חל|חל)\s*ביום\s*ד/.test(m)) tags.push('fell-wed');
+  if (/(כשחל|אם חל|חל)\s*ביום\s*ה/.test(m)) tags.push('fell-thu');
+  if (/(כשחל|אם חל|חל)\s*ביום\s*ו/.test(m)) tags.push('fell-fri');
+  if (/(כשחל|אם חל|חל)\s*(ביום\s*ש|בשבת)/.test(m)) tags.push('fell-sat');
+
+  return tags;
+}
+
+function isAlternativeMarker(marker: string): boolean {
+  return /במקום|אומר במקום|חותם|חתימה/.test(marker);
+}
+
+/** Parse a single raw paragraph from Sefaria into our structured form.
+ *  This is a low-level pass; merging marker-only with next paragraph is done after. */
+export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?: boolean } {
+  if (!raw) return { body: '', kind: 'normal' };
+
+  let txt = decodeEntities(raw).trim();
+  txt = stripFormatting(txt);
+
+  // Case A: whole paragraph wrapped in <small>...</small>
+  const wholeSmall = /^<small>([\s\S]*?)<\/small>\s*$/i.exec(txt);
+  if (wholeSmall) {
+    const inner = wholeSmall[1].trim();
+    // Sub-case: marker-only (directive that will apply to following paragraphs).
+    // If markerToTags found a date condition → 'marker-only' (consumes 1 paragraph).
+    // If no date tags → RUBRIC (e.g. "ואומר החזן חצי קדיש"): applies to ALL
+    // following paragraphs in this leaf as one visual group.
+    if (isMarkerPhrase(inner)) {
+      const marker = inner.replace(/[:：]\s*$/, '').trim();
+      const tags = markerToTags(marker);
+      // Local helper: strip any remaining HTML (nested <small>, <b>...) from
+      // text we're about to emit as body. Used by all the "prayer-text-as-
+      // marker" / "section-label" fast paths below so HTML never leaks.
+      const stripHtml = (s: string) => s
+        .replace(/<\/?small>/gi, '')
+        .replace(/<\/?[a-zA-Z][^>]*>/g, '')
+        .trim();
+      // Section label as standalone paragraph (e.g. "קדיש דרבנן", "משנה א").
+      if (tags.length === 0 && /^(משנה|פרק|מזמור|תהלים|תהילים|קדיש|הלל|ברייתא)\s+\S/.test(marker)) {
+        return { body: stripHtml(marker), kind: 'halachic-note' };
+      }
+      // Prayer text wrapped as "marker" — e.g. "ברוך שם כבוד מלכותו...". Same
+      // consonant-count heuristic + directive prefix check as Case B.
+      const markerConsonants = marker.replace(/[֑-ׇ\s]/g, '').length;
+      const startsWithDirective =
+        /^(יניח|יאמר|יקרא|אומר|מברך|עונה|סגולה|לאחר|וחוזר|יש נוהגים|בלחש|בקול|כשאומר|בעת|כשעומד|וכשעומד|אם אין|אם יש|כשמגיע|וכש)/.test(marker);
+      if (tags.length === 0 && markerConsonants > 15 && !startsWithDirective) {
+        return { body: stripHtml(marker), kind: 'normal' };
+      }
+      // No date tags → a rubric/directive (e.g. "ואומר החזן", "ויאמר בלחש").
+      // We CAN'T reliably decide how many paragraphs the directive scopes over
+      // (כל הקדיש? רק ברוך שם?), so render the directive as a small italic
+      // halachic-note line and leave following paragraphs as their natural
+      // prayer text. No multi-paragraph rubric box — too easy to over-wrap.
+      if (tags.length === 0) {
+        return { body: stripHtml(marker), kind: 'halachic-note' };
+      }
+      // Date-only marker (e.g. בעשי"ת:) — attach to NEXT normal paragraph.
+      return {
+        body: '',
+        kind: 'conditional',
+        marker,
+        tags,
+        _markerOnly: true,
+      };
+    }
+    // Sub-case: Modim DeRabbanan (kahal's response during chazara).
+    // Sefaria wraps it in <small> inside the Modim leaf. Distinguish from
+    // regular Modim by the unique phrase "אלהי כל בשר" / "יוצרנו יוצר בראשית".
+    const innerBare = inner.replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
+    if (/^מודים אנחנו לך שאתה/.test(innerBare) &&
+        /(אלהי כל בשר|יוצרנו יוצר בראשית)/.test(innerBare)) {
+      const body = inner.replace(/<\/?[a-zA-Z][^>]*>/g, '').trim();
+      return {
+        body,
+        kind: 'conditional',
+        marker: 'מודים דרבנן (הקהל בחזרת הש״ץ)',
+        tags: ['unknown'],
+      };
+    }
+    // Sub-case: Atta Chonantanu — Motzei Shabbat insert in the 4th Amidah
+    // blessing ("אתה חונן לאדם דעת"). Sefaria wraps the entire insert in
+    // <small> with no marker. Detect by the opening words.
+    if (/^אתה חוננתנו/.test(innerBare)) {
+      const body = inner.replace(/<\/?[a-zA-Z][^>]*>/g, '').trim();
+      return {
+        body,
+        kind: 'conditional',
+        marker: 'במוצאי שבת ויו״ט',
+        tags: ['motzei-shabbat'],
+      };
+    }
+    // Sub-case: Ve'titen Lanu — Yom Tov insert in Kedushat HaYom. Similar
+    // pattern: long Hebrew prayer text wrapped in <small>.
+    if (/^ותתן לנו|^ותתן־לנו/.test(innerBare)) {
+      const body = inner.replace(/<\/?[a-zA-Z][^>]*>/g, '').trim();
+      return {
+        body,
+        kind: 'conditional',
+        marker: 'ביום טוב',
+        tags: ['yom-tov'],
+      };
+    }
+    // Sub-case: halachic note. Strip ANY remaining HTML tags from inner so
+    // nested <small>directives</small> don't leak as raw "<small>" text.
+    const cleanInner = inner
+      .replace(/<\/?small>/gi, '')
+      .replace(/<\/?[a-zA-Z][^>]*>/g, '')
+      .trim();
+    return { body: cleanInner, kind: 'halachic-note' };
+  }
+
+  // Case B: paragraph starts with <small>marker:</small> followed by text
+  const leadSmall = /^<small>([^<]+?)<\/small>\s*[:：]?\s*([\s\S]+)$/i.exec(txt);
+  if (leadSmall) {
+    const marker = leadSmall[1].trim().replace(/[:：]$/, '').trim();
+    const body = leadSmall[2]
+      .replace(/<\/?small>/gi, '')
+      .replace(/<\/?[a-zA-Z][^>]*>/g, '')
+      .trim();
+    const tags = markerToTags(marker);
+    // Section label (e.g. "משנה א", "פרק ב", "קדיש דרבנן") — short, no tags,
+    // not a directive. Render the label inline as part of the body to avoid
+    // a conditional badge or rubric box that would mislead the reader.
+    const isSectionLabel =
+      tags.length === 0 &&
+      /^(משנה|פרק|מזמור|תהלים|תהילים|קדיש|הלל|ברייתא)\s+\S/.test(marker);
+    if (isSectionLabel) {
+      return { body: `${marker}\n${body}`, kind: 'normal' };
+    }
+    // Very short label/count marker (e.g. "ג"פ" = 3 times, "א/ב/ג" = mishna
+    // numbering) — emit inline so it doesn't trigger a conditional box.
+    const isShortLabel = tags.length === 0 && marker.length <= 6 &&
+      /^[א-ת\d"׳״.\s]+$/.test(marker);
+    if (isShortLabel) {
+      return { body: `${marker}\n${body}`, kind: 'normal' };
+    }
+    // Long unrecognized marker — actual prayer text Sefaria wrapped weirdly.
+    // Detect by consonant count (strip nikud + spaces) AND verify it doesn't
+    // start with a directive verb (יניח, מברך, אומר, סגולה לומר, לאחר...).
+    // Long prayer phrases like "ברוך שם כבוד מלכותו לעולם ועד" should be
+    // absorbed into body; long directives stay as rubrics.
+    const markerConsonants = marker.replace(/[֑-ׇ\s]/g, '').length;
+    const startsWithDirective =
+      /^(יניח|יאמר|יקרא|אומר|מברך|עונה|סגולה|לאחר|וחוזר|יש נוהגים|בלחש|בקול|כשאומר|בעת|כשעומד|וכשעומד|אם אין|אם יש|כשמגיע|וכש)/.test(marker);
+    if (tags.length === 0 && markerConsonants > 15 && !startsWithDirective) {
+      return { body: `${marker}\n${body}`, kind: 'normal' };
+    }
+    // Rubric/directive with a body attached (e.g. "ואומר ברכו: ברכו את ה'").
+    // Don't wrap in a conditional box that might overscope. Render the
+    // directive as a small inline prefix (in parens) and the body as normal
+    // prayer text — same as printed siddurs do.
+    if (tags.length === 0 && !isAlternativeMarker(marker)) {
+      return { body: `(${marker}) ${body}`, kind: 'normal' };
+    }
+    const kind: ParagraphKind = isAlternativeMarker(marker) ? 'alternative' : 'conditional';
+    return {
+      body,
+      kind,
+      marker,
+      tags,
+    };
+  }
+
+  // Case C: no leading marker → normal text. Strip any inline <small> AND
+  // any leftover HTML that survived (the final safety net for tags like
+  // <big>, <em> that slipped through Sefaria's data).
+  const body = txt.replace(/<\/?small>/gi, '').replace(/<\/?[a-zA-Z][^>]*>/g, '').trim();
+  // Content-pattern detection — some paragraphs in Sefaria have NO marker
+  // but begin with phrases that imply a seasonal condition (e.g. על הניסים
+  // is only said on Chanukah/Purim, יעלה ויבוא only on R"H/חוה"מ/יו"ט).
+  // Strip nikud + leading <b>/<i> for the regex check.
+  const bare = body.replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
+  // ועל הנסים / על הנסים — Chanukah/Purim insertion in Modim
+  if (/^ו?על ה?נסים|^ו?על הניסים/.test(bare)) {
+    return { body, kind: 'conditional', marker: 'בחנוכה ופורים', tags: ['chanukah', 'purim'] };
+  }
+  if (/^אלהינו ואלהי אבותינו יעלה ויבא/.test(bare) || /^יעלה ויבא/.test(bare)) {
+    return { body, kind: 'conditional', marker: 'בר״ח, חוה״מ ויו״ט',
+             tags: ['rosh-chodesh', 'chol-hamoed', 'yom-tov'] };
+  }
+  return { body, kind: 'normal' };
+}
+
+/** Parse a list of raw paragraphs, merging marker-only paragraphs with the next one. */
+/** Strip any HTML tags (`<big>`, `<small>`, etc.) Sefaria sometimes embeds. */
+function stripHtml(s: string): string {
+  if (!s) return s;
+  // Remove any html tag (and any malformed escaped variants like &lt;big&gt; or &lt;/big&gt;).
+  return s
+    .replace(/<\/?[a-zA-Z][^>]*>/g, '')
+    .replace(/&lt;\/?[a-zA-Z][^&]*&gt;/g, '')
+    .replace(/<[^>]*\/>/g, '');
+}
+
+/**
+ * Many siddurs embed inline alternates inside parentheses:
+ *   "לעלא מן כל (בעשי"ת לעלא לעלא מכל) ברכתא..."
+ *   "עושה שלום (בעשי"ת השלום) במרומיו..."
+ * Where the parenthetical text starts with a seasonal marker phrase. We split
+ * the paragraph so the alternate is its own conditional, leaving prefix and
+ * suffix as normal text. Returns null if no inline-paren pattern is found.
+ */
+function preExtractInlineParens(raw: string): string[] | null {
+  // Pattern: ( [<small>]MARKER[</small>] ALT ) where MARKER is a known season
+  // phrase. Sefaria sometimes wraps the marker in inline <small> within the
+  // parens, e.g. "(<small>בעשי"ת</small> לעלא לעלא מכל)" in קדיש לעלא.
+  const markerRx = /(בעשי["״]ת|בעשרת ימי תשובה(?:\s+אומרים)?|בחנוכה|בפורים|בר["״]ח|בראש חודש|בחוה["״]מ|בחול המועד|ביו["״]ט|ביום טוב)/;
+  const fullRx = new RegExp(
+    `\\(\\s*(?:<small>\\s*)?${markerRx.source}(?:\\s*<\\/small>)?\\s+([^()<]+?)\\s*\\)`,
+    'g',
+  );
+  if (!fullRx.test(raw)) return null;
+  fullRx.lastIndex = 0;
+  const out: string[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = fullRx.exec(raw)) !== null) {
+    const prefix = raw.slice(last, m.index).trim();
+    if (prefix) out.push(prefix);
+    const marker = m[1].trim();
+    const alt = m[2].trim();
+    // Emit as Case-B alternative style — semantically these are "say X instead of Y"
+    out.push(`<small>${marker} במקום:</small> ${alt}`);
+    last = m.index + m[0].length;
+  }
+  const tail = raw.slice(last).trim();
+  if (tail) out.push(tail);
+  return out.length > 0 ? out : null;
+}
+
+/**
+ * Some Sefaria nusachs (Edot HaMizrach, Sephardi) embed seasonal alternates
+ * INLINE within a regular tefila paragraph using nested <small> tags:
+ *
+ *   "...באהבה: <small><small>בעשרת ימי תשובה אומרים:</small>
+ *      זכרנו לחיים, מלך חפץ בחיים...</small>. מלך עוזר ומושיע..."
+ *
+ * Our parser is paragraph-based, so we split such paragraphs into:
+ *   1. Prefix (normal text up to the nested-small)
+ *   2. The seasonal alternate (as a standalone <small>marker:</small> body block
+ *      → caught by Case B as a conditional)
+ *   3. Suffix (the rest of the regular text)
+ *
+ * Repeats until no more nested patterns. Returns the array of raw paragraph
+ * strings that parseParagraphRaw should handle individually.
+ */
+function preExtractInlineConditionals(raw: string): string[] {
+  // <small><small>MARKER:</small> BODY</small> — colon may also be at end
+  const pattern = /<small><small>([^<]+?)<\/small>\s*([^<]+?)<\/small>/;
+  const out: string[] = [];
+  let remaining = raw;
+  let guard = 0;
+  while (guard++ < 20) {
+    const m = pattern.exec(remaining);
+    if (!m) {
+      if (remaining.trim()) out.push(remaining);
+      break;
+    }
+    const prefix = remaining.slice(0, m.index);
+    const marker = m[1].replace(/[:：]\s*$/, '').trim();
+    const body = m[2].trim();
+    const suffix = remaining.slice(m.index + m[0].length);
+    if (prefix.trim()) out.push(prefix);
+    // Re-emit as a regular Case-B style: <small>marker:</small> body — the
+    // existing parser handles this perfectly via markerToTags.
+    out.push(`<small>${marker}:</small> ${body}`);
+    remaining = suffix;
+  }
+  return out;
+}
+
+export function parseParagraphs(raw: string[]): ParsedParagraph[] {
+  const result: ParsedParagraph[] = [];
+  let pendingMarker: { marker: string; tags: ConditionTag[]; alternative: boolean } | null = null;
+
+  // First pass: split paragraphs with INLINE nested <small> conditionals
+  // (Edot HaMizrach / Sephardi pattern) into separate raw fragments so the
+  // normal Case-B parser sees each fragment standalone.
+  //
+  // We INTENTIONALLY do NOT split inline parenthetical alternates
+  // (e.g. "לעלא מן כל (בעשי"ת לעלא לעלא מכל) ברכתא"). Printed siddurs use
+  // exactly this convention — the alternate stays inline in parens so the
+  // sentence reads continuously. Splitting would break the kaddish into
+  // multiple paragraphs with awkward gaps.
+  const expanded: string[] = [];
+  for (const r of raw) {
+    if (/<small><small>/i.test(r)) {
+      expanded.push(...preExtractInlineConditionals(r));
+    } else {
+      expanded.push(r);
+    }
+  }
+
+  for (const rRaw of expanded) {
+    // DO NOT stripHtml here — that wipes <small> markers that parseParagraphRaw
+    // depends on to identify conditional paragraphs. parseParagraphRaw uses
+    // stripFormatting which preserves <small> on purpose.
+    const p = parseParagraphRaw(rRaw);
+    if (!p.body && !p._markerOnly) continue;
+
+    if (p._markerOnly) {
+      // Date-specific marker (e.g. בעשי"ת) — attach to next normal paragraph.
+      pendingMarker = {
+        marker: p.marker!,
+        tags: p.tags ?? ['unknown'],
+        alternative: isAlternativeMarker(p.marker!),
+      };
+      continue;
+    }
+
+    if (pendingMarker && p.kind === 'normal') {
+      // Convert next normal paragraph into the conditional that the marker was pointing to
+      result.push({
+        body: p.body,
+        kind: pendingMarker.alternative ? 'alternative' : 'conditional',
+        marker: pendingMarker.marker,
+        tags: pendingMarker.tags,
+      });
+      pendingMarker = null;
+      continue;
+    }
+
+    // If a marker was pending but the next was already conditional/note,
+    // drop the pending marker (don't emit an empty conditional badge with
+    // no body — those look like floating orphans to the reader).
+    if (pendingMarker) {
+      pendingMarker = null;
+    }
+
+    result.push({
+      body: p.body,
+      kind: p.kind,
+      marker: p.marker,
+      tags: p.tags,
+    });
+  }
+
+  // Dangling pending marker — drop it. Don't emit a floating empty badge.
+  pendingMarker = null;
+
+  return result;
+}
+
+/** Compute which condition tags apply today. */
+export function activeTags(date: Date = new Date(), inIsrael = true): Set<ConditionTag> {
+  const out = new Set<ConditionTag>();
+  out.add(inIsrael ? 'in-israel' : 'in-diaspora');
+
+  const hd = new HDate(date);
+  const m = hd.getMonth();
+  const d = hd.getDate();
+  const gregDay = date.getDay();
+
+  const events = HebrewCalendar.calendar({ start: hd, end: hd, il: inIsrael, sedrot: false });
+  const isRoshChodesh = events.some((e) => e.getFlags() & flags.ROSH_CHODESH);
+  const isFastDay = events.some((e) => e.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST));
+  const isYomTov = events.some((e) => e.getFlags() & flags.CHAG);
+  const isCholHamoed = events.some((e) => e.getFlags() & flags.CHOL_HAMOED);
+
+  if (isRoshChodesh) out.add('rosh-chodesh');
+  if (isYomTov) out.add('yom-tov');
+  if (isCholHamoed) out.add('chol-hamoed');
+  if (isFastDay) out.add('fast');
+
+  // Specific yom-tov tags
+  if (m === months.TISHREI) {
+    if (d === 1 || d === 2) out.add('rosh-hashana');
+    if (d === 10) out.add('yom-kippur');
+    if (d >= 15 && d <= 21) out.add('sukkot');
+    if (d === 22 || (!inIsrael && d === 23)) out.add('shmini-atzeret');
+  }
+  if (m === months.NISAN && d >= 15 && d <= 21) out.add('pesach');
+  if (m === months.SIVAN && (d === 6 || (!inIsrael && d === 7))) out.add('shavuot');
+
+  // Aseret Yemei Teshuva
+  if (m === months.TISHREI && d >= 1 && d <= 10) out.add('aseret-yemei-teshuva');
+
+  // Chanukah
+  if ((m === months.KISLEV && d >= 25) || (m === months.TEVET && d <= 2)) out.add('chanukah');
+
+  // Purim
+  const adarMonth = HDate.isLeapYear(hd.getFullYear()) ? months.ADAR_II : months.ADAR_I;
+  if (m === adarMonth && (d === 14 || (inIsrael && d === 15))) out.add('purim');
+
+  // Shabbat / motzei
+  if (gregDay === 6) out.add('shabbat');
+  else out.add('weekday');
+  if (gregDay === 0) out.add('motzei-shabbat');
+  if (gregDay === 6 && date.getHours() >= 18) out.add('motzei-shabbat');
+
+  // Tal/Geshem
+  const isAdar = m === months.ADAR_I || m === months.ADAR_II;
+  const isWinter =
+    (m === months.TISHREI && d >= 22) ||
+    m === months.CHESHVAN ||
+    m === months.KISLEV ||
+    m === months.TEVET ||
+    m === months.SHVAT ||
+    isAdar ||
+    (m === months.NISAN && d <= 15);
+  if (isWinter) out.add('winter-geshem');
+  else out.add('summer-tal');
+
+  const isTalUmatar =
+    (m === months.CHESHVAN && d >= 7) ||
+    m === months.KISLEV ||
+    m === months.TEVET ||
+    m === months.SHVAT ||
+    isAdar ||
+    (m === months.NISAN && d <= 15);
+  if (isTalUmatar) out.add('tal-umatar');
+
+  return out;
+}
+
+/** The Hebrew "day name" to inject into יעלה ויבוא today, if applicable. */
+export function yaalehDayName(date: Date = new Date(), inIsrael = true): string | null {
+  const hd = new HDate(date);
+  const m = hd.getMonth();
+  const d = hd.getDate();
+  const events = HebrewCalendar.calendar({ start: hd, end: hd, il: inIsrael, sedrot: false });
+  const isRC = events.some((e) => e.getFlags() & flags.ROSH_CHODESH);
+  if (m === months.TISHREI && d === 1) return 'הַזִּכָּרוֹן הַזֶּה';
+  if (m === months.TISHREI && d === 2) return 'הַזִּכָּרוֹן הַזֶּה';
+  if (m === months.TISHREI && d >= 15 && d <= 21) return 'חַג הַסֻּכּוֹת הַזֶּה';
+  if (m === months.TISHREI && d === 22) return 'שְׁמִינִי חַג הָעֲצֶרֶת הַזֶּה';
+  if (m === months.NISAN && d >= 15 && d <= 21) return 'חַג הַמַּצּוֹת הַזֶּה';
+  if (m === months.SIVAN && (d === 6 || (!inIsrael && d === 7))) return 'חַג הַשָּׁבֻעוֹת הַזֶּה';
+  if (isRC) return 'רֹאשׁ הַחֹדֶשׁ הַזֶּה';
+  return null;
+}
+
+/** Maps a JS getDay() value (0=Sun..6=Sat) to the corresponding "fell-" tag. */
+export function weekdayTag(day: number): ConditionTag {
+  return (['fell-sun', 'fell-mon', 'fell-tue', 'fell-wed', 'fell-thu', 'fell-fri', 'fell-sat'][day] ??
+    'fell-sun') as ConditionTag;
+}
+
+/** True if the text contains Hebrew nikud (vowel marks). Tefilah text always
+ *  has nikud; halachic notes & section labels rarely do. We use the absence
+ *  of nikud as a heuristic to distinguish "voice" lines (prayer) from
+ *  "instructional" lines (rubrics). */
+export function hasNikud(text: string): boolean {
+  return /[֑-ׇ]/.test(text || '');
+}
+
+/** Decide whether to render a parsed paragraph today. */
+export function shouldRender(
+  p: ParsedParagraph,
+  active: Set<ConditionTag>,
+  opts: { showAll: boolean; showNotes: boolean },
+): boolean {
+  // User-facing rule: "without halachic notes" means hide every line that
+  // isn't vocalized — that catches rubric annotations whether or not the
+  // parser tagged them as halachic-note. Vocalized text always shows.
+  if (!opts.showNotes && !hasNikud(p.body)) return false;
+  if (p.kind === 'halachic-note') return opts.showNotes;
+  if (p.kind === 'normal') return true;
+  if (opts.showAll) return true;
+  if (!p.tags || p.tags.length === 0) return true;
+  // Unknown tags are often speaker indicators ("קהל", "חזן", "קהל וחזן") or
+  // formatting directives — NOT seasonal conditionals. Default to showing so
+  // we don't accidentally hide Kedushah body, Modim DeRabbanan, etc.
+  if (p.tags.includes('unknown')) return true;
+  return p.tags.some((t) => active.has(t));
+}
+
+/** Some markers can be enhanced with today's specific name, e.g., יעלה ויבוא gets the holiday. */
+export function enhanceConditionalText(p: ParsedParagraph, date: Date = new Date(), inIsrael = true): string {
+  if (!p.body) return p.body;
+  // Yaaleh VeYavo - inject the day name
+  if (/יַעֲלֶה וְיָבֹא|יעלה ויבא|יעלה ויבוא/.test(p.body)) {
+    const name = yaalehDayName(date, inIsrael);
+    if (name) {
+      // Replace generic phrasings with the right name
+      return p.body.replace(/בְּיוֹם\s+[^\s]+\s+הַזֶּה/g, `בְּיוֹם ${name}`)
+                   .replace(/בְּיוֹם\s+(רֹאשׁ הַחֹדֶשׁ|חַג[^\s]*\s*[^\s]*)\s+הַזֶּה/g, `בְּיוֹם ${name}`);
+    }
+  }
+  return p.body;
+}
+
+/**
+ * Strip inline parenthetical alternates that aren't applicable today.
+ *
+ * Many siddurs embed seasonal alternates inside parens within otherwise-
+ * normal prayer text, e.g.:
+ *   "לְעֵלָּא מִן־כָּל (בעשי"ת לְעֵלָּא לְעֵלָּא מִכָּל) בִּרְכָתָא..."
+ *   "עוֹשֶׂה שָׁלוֹם (בעשי"ת הַשָּׁלוֹם) בִּמְרוֹמָיו..."
+ *
+ * When the marker is NOT in season today, the parenthetical is removed
+ * entirely so the sentence reads cleanly. When IN season, we keep the
+ * alternate visible (the reader is expected to substitute mentally — that's
+ * the standard siddur convention).
+ *
+ * Only triggers for marker phrases markerToTags() recognizes, so generic
+ * parens like "(אמן)" or "(תהילים פ"ה)" are left alone.
+ */
+export function stripInactiveInlineParens(body: string, active: Set<ConditionTag>): string {
+  if (!body) return body;
+  // Match (   [<small>]MARKER[</small>]   ALT   )
+  const pattern = /\s*\(\s*(?:<small>\s*)?([^()<\s][^()<]{0,40}?)(?:\s*<\/small>)?\s+([^()<]{1,200}?)\s*\)\s*/g;
+  return body.replace(pattern, (full, marker, alt) => {
+    const tags = markerToTags(marker.trim());
+    if (tags.length === 0) {
+      // Not a recognized seasonal marker — leave parenthetical alone
+      // (could be a citation, response, or other inline note).
+      return full;
+    }
+    const inSeason = tags.some((t) => active.has(t));
+    if (inSeason) {
+      // Keep the parenthetical visible so the reader can use the alternate
+      return ` (${marker.trim()}: ${alt.trim()}) `;
+    }
+    // Out of season — strip the parenthetical entirely, preserving a single space
+    return ' ';
+  }).replace(/\s+/g, ' ').replace(/\s+([:׃.,])/g, '$1').trim();
+}

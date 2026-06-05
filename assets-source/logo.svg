@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- App logo: gold Chet (ח) in a gold frame, on deep-navy gradient background.
+       The Chet is hand-crafted with proportions tuned for visual recognition
+       as a Hebrew letter (not Greek pi / doorway). -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1f3d"/>
+      <stop offset="50%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#2c5282"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0c75e"/>
+      <stop offset="50%" stop-color="#d4a437"/>
+      <stop offset="100%" stop-color="#b8862a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d4a437" stop-opacity="0.18"/>
+      <stop offset="70%" stop-color="#d4a437" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="380" fill="url(#glow)"/>
+
+  <!-- Outer gold frame -->
+  <rect x="120" y="120" width="784" height="784" rx="140" ry="140"
+        fill="none" stroke="url(#gold)" stroke-width="22"/>
+  <rect x="148" y="148" width="728" height="728" rx="118" ry="118"
+        fill="none" stroke="#d4a437" stroke-width="2" stroke-opacity="0.35"/>
+
+  <!-- Hebrew letter ח (Chet) — hand-drawn for proper letter shape:
+       - Top beam THICKER than legs (typical Hebrew calligraphy)
+       - Beam slightly overhangs both legs (like a roof)
+       - Right leg has a small shoulder/horn at top-right (traditional form)
+       - Left leg straight (the "ז"-like leg in some scripts)
+       - Bottom feet flat -->
+  <g fill="url(#gold)">
+    <!-- Top beam: 110 thick, overhangs legs by ~25 each side -->
+    <path d="M 260 290
+             L 764 290
+             L 764 400
+             L 260 400
+             Z"/>
+
+    <!-- Right shoulder/horn (small triangular thickening, Hebrew calligraphy mark) -->
+    <path d="M 260 290
+             L 290 250
+             L 320 290
+             Z"/>
+
+    <!-- Right leg: 105 wide, hangs from beam -->
+    <path d="M 285 400
+             L 390 400
+             L 390 740
+             L 285 740
+             Z"/>
+
+    <!-- Left leg: 105 wide, slightly thinner than right (traditional asymmetry) -->
+    <path d="M 634 400
+             L 739 400
+             L 739 740
+             L 634 740
+             Z"/>
+  </g>
+
+  <!-- Small decorative dot below (subtle accent) -->
+  <circle cx="512" cy="800" r="11" fill="#d4a437" opacity="0.55"/>
+</svg>

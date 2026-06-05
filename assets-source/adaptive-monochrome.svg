@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Monochrome adaptive icon (Android 13+ themed icons). Pure black on
+       transparent so the OS can tint it with the user's theme color. -->
+  <rect x="220" y="220" width="584" height="584" rx="110" ry="110"
+        fill="none" stroke="#000" stroke-width="20"/>
+
+  <g fill="#000" transform="translate(0, 8)">
+    <path d="M 340 350 L 684 350 L 684 425 L 340 425 Z"/>
+    <path d="M 340 350 L 360 322 L 380 350 Z"/>
+    <path d="M 357 425 L 432 425 L 432 670 L 357 670 Z"/>
+    <path d="M 592 425 L 667 425 L 667 670 L 592 670 Z"/>
+  </g>
+
+  <circle cx="512" cy="720" r="9" fill="#000"/>
+</svg>

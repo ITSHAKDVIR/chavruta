@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- ADAPTIVE ICON FOREGROUND
+       Safe zone: inner 66% (center 672x672 area). Outer area may be cropped. -->
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0c75e"/>
+      <stop offset="50%" stop-color="#d4a437"/>
+      <stop offset="100%" stop-color="#b8862a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Frame inside safe zone -->
+  <rect x="220" y="220" width="584" height="584" rx="110" ry="110"
+        fill="none" stroke="url(#gold)" stroke-width="20"/>
+
+  <!-- Chet centered in safe zone, scaled to fit -->
+  <g fill="url(#gold)" transform="translate(0, 8)">
+    <!-- Top beam -->
+    <path d="M 340 350 L 684 350 L 684 425 L 340 425 Z"/>
+    <!-- Right shoulder horn -->
+    <path d="M 340 350 L 360 322 L 380 350 Z"/>
+    <!-- Right leg -->
+    <path d="M 357 425 L 432 425 L 432 670 L 357 670 Z"/>
+    <!-- Left leg -->
+    <path d="M 592 425 L 667 425 L 667 670 L 592 670 Z"/>
+  </g>
+
+  <!-- Accent dot -->
+  <circle cx="512" cy="720" r="9" fill="#d4a437" opacity="0.55"/>
+</svg>

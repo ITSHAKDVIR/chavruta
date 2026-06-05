@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Splash icon: logo without background (Expo splash uses a separate bg color) -->
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0c75e"/>
+      <stop offset="50%" stop-color="#d4a437"/>
+      <stop offset="100%" stop-color="#b8862a"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="120" y="120" width="784" height="784" rx="140" ry="140"
+        fill="none" stroke="url(#gold)" stroke-width="22"/>
+
+  <g fill="url(#gold)">
+    <path d="M 260 290 L 764 290 L 764 400 L 260 400 Z"/>
+    <path d="M 260 290 L 290 250 L 320 290 Z"/>
+    <path d="M 285 400 L 390 400 L 390 740 L 285 740 Z"/>
+    <path d="M 634 400 L 739 400 L 739 740 L 634 740 Z"/>
+  </g>
+
+  <circle cx="512" cy="800" r="11" fill="#d4a437" opacity="0.55"/>
+</svg>

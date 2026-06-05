@@ -1,0 +1,1228 @@
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { ScrollView, StyleSheet, Text, View, Pressable, ActivityIndicator, Linking, Modal, Platform } from 'react-native';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { Card } from '../../src/components/Card';
+import { Button } from '../../src/components/Button';
+import { getString, Keys } from '../../src/storage/storage';
+import { useSiddurPrefs, shouldHideForPrefs } from '../../src/storage/siddurPrefs';
+import { toggleSystemDnd, hasDndPermission, requestDndPermission } from '../../src/native/quietMode';
+import { useLocation } from '../../src/hooks/useLocation';
+import {
+  getNodesAtPath,
+  slugify,
+  collectLeaves,
+  collectLeavesFromList,
+  getNusachTree,
+  Nusach,
+  NUSACH_LABEL,
+  FlatLeaf,
+  SiddurNode,
+} from '../../src/data/siddurTree';
+import { isSectionRelevantToday } from '../../src/data/siddurRelevance';
+import { getActiveMusafLink } from '../../src/data/musafLinks';
+import { fetchSefariaText } from '../../src/services/sefaria';
+import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, ParsedParagraph } from '../../src/services/siddurParser';
+import { CholimReminder } from '../../src/components/CholimReminder';
+import { getInsertsForDate, TefilaInsert } from '../../src/data/tefilaInserts';
+import { computeZmanim } from '../../src/data/hebcal';
+import { getPrayerKind } from '../../src/data/prayerTimeWindows';
+import { PrayerTimeBanner } from '../../src/components/PrayerTimeBanner';
+import { colors, radius, spacing } from '../../src/theme/colors';
+import { typography } from '../../src/theme/typography';
+
+/** When viewing a node, if total descendant leaves ≤ this number, render running text.
+ *  Otherwise, show navigation list (so user can drill down).
+ *  Sized for a whole service (Ashkenaz Shacharit = ~106 leaves). */
+const RUNNING_TEXT_MAX_LEAVES = 150;
+
+/**
+ * Sefaria's "Song of the Day" leaf contains ALL 7 daily psalms with
+ * Hebrew section markers like "בראשון בשבת:", "בשני בשבת:", etc. We keep
+ * only the section that matches today's day-of-week, so the user sees
+ * just their relevant psalm instead of all seven.
+ */
+/** Strip Hebrew nikud (vowel marks) for regex matching. Sefaria sometimes
+ *  returns text with nikud (e.g. "בָּרְבִיעִי") and sometimes without; we
+ *  normalize to bare consonants so a single regex matches either form. */
+const NIKUD_RX = /[֑-ׇ]/g;
+
+/** Headers preceding intro paragraphs. Sefaria uses "בראשון בשבת:" etc.
+ *  We match the bare-consonant form (post nikud-strip). */
+const DAY_OF_WEEK_MARKERS = [
+  /^ב?ראשון\s+ב?שבת/,  // Sunday
+  /^ב?שני\s+ב?שבת/,    // Monday
+  /^ב?שלישי\s+ב?שבת/,  // Tuesday
+  /^ב?רביעי\s+ב?שבת/,  // Wednesday
+  /^ב?חמישי\s+ב?שבת/,  // Thursday
+  /^ב?שישי\s+ב?שבת/,   // Friday
+  /^ב?שבת|^יום\s+השבת/, // Shabbat
+];
+
+function filterDailyPsalmForToday(lines: string[], dow: number): string[] {
+  // Map raw line index → which day's marker it starts with (or -1).
+  // Strip HTML tags + nikud before matching (Sefaria sometimes returns
+  // markers like "<small>בָּרִאשׁוֹן בַּשַּׁבָּת:</small>").
+  const markerIdxs: { dow: number; idx: number }[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const bare = lines[i].replace(/<[^>]+>/g, '').replace(NIKUD_RX, '').trim();
+    for (let d = 0; d < DAY_OF_WEEK_MARKERS.length; d++) {
+      if (DAY_OF_WEEK_MARKERS[d].test(bare)) {
+        markerIdxs.push({ dow: d, idx: i });
+        break;
+      }
+    }
+  }
+  if (markerIdxs.length === 0) return lines;
+  // Keep intro lines (before the first marker), and today's section only.
+  const myMarker = markerIdxs.find((m) => m.dow === dow);
+  if (!myMarker) return lines; // unknown day; show everything
+  const myIdxInList = markerIdxs.indexOf(myMarker);
+  const nextMarker = markerIdxs[myIdxInList + 1];
+  const introEnd = markerIdxs[0].idx;
+  const sectionEnd = nextMarker ? nextMarker.idx : lines.length;
+  return [...lines.slice(0, introEnd), ...lines.slice(myMarker.idx, sectionEnd)];
+}
+
+type LoadedLeaf = FlatLeaf & {
+  paragraphs?: ParsedParagraph[];
+  loading?: boolean;
+  error?: boolean;
+};
+
+/**
+ * Curated list of the 5-11 MAIN sections per prayer. Each entry has:
+ *   - label: Hebrew chip text
+ *   - match: list of English/Hebrew substrings to find the right leaf
+ *
+ * When the user taps a chip we look up the first leaf whose trail OR section
+ * name matches, and scroll to its ref. Anything not found is skipped.
+ */
+type CuratedSection = { label: string; match: string[] };
+
+const CURATED_TOC_BY_PRAYER: Record<string, CuratedSection[]> = {
+  Shacharit: [
+    { label: 'ברכות השחר',      match: ['Preparatory', 'Morning Blessings', 'ברכות השחר'] },
+    { label: 'קרבנות',          match: ['Korbanot', 'קרבנות', 'Sacrifices'] },
+    { label: 'פסוקי דזמרה',     match: ['Pesukei Dezimra', 'Pesukei DeZimra', 'פסוקי דזמרה'] },
+    { label: 'ברכות קריאת שמע', match: ['Blessings of the Shema', 'Shema'] },
+    { label: 'שמונה עשרה',      match: ['Amidah', 'Amida', 'שמונה עשרה', 'עמידה'] },
+    { label: 'חזרת הש״ץ',       match: ['Repetition', 'Chazarat', 'חזרת'] },
+    { label: 'תחנון',           match: ['Tachanun', 'תחנון'] },
+    { label: 'קריאת התורה',     match: ['Torah Reading', 'קריאת התורה'] },
+    { label: 'אשרי',            match: ['Ashrei', 'אשרי'] },
+    { label: 'שיר של יום',      match: ['Song of the Day', 'שיר של יום', 'Daily Psalm'] },
+    { label: 'עלינו לשבח',      match: ['Aleinu', 'Alenu', 'עלינו'] },
+  ],
+  Minchah: [
+    { label: 'אשרי',         match: ['Ashrei', 'אשרי'] },
+    { label: 'קריאת התורה',  match: ['Torah Reading', 'קריאת התורה'] },
+    { label: 'שמונה עשרה',   match: ['Amida', 'Amidah', 'שמונה עשרה'] },
+    { label: 'חזרת הש״ץ',    match: ['Repetition', 'Chazarat', 'חזרת'] },
+    { label: 'תחנון',        match: ['Tachanun', 'תחנון'] },
+    { label: 'עלינו לשבח',   match: ['Aleinu', 'Alenu', 'עלינו'] },
+  ],
+  Mincha: [
+    { label: 'אשרי',         match: ['Ashrei', 'אשרי'] },
+    { label: 'קריאת התורה',  match: ['Torah Reading', 'קריאת התורה'] },
+    { label: 'שמונה עשרה',   match: ['Amida', 'Amidah', 'שמונה עשרה'] },
+    { label: 'חזרת הש״ץ',    match: ['Repetition', 'Chazarat', 'חזרת'] },
+    { label: 'תחנון',        match: ['Tachanun', 'תחנון'] },
+    { label: 'עלינו לשבח',   match: ['Aleinu', 'Alenu', 'עלינו'] },
+  ],
+  Maariv: [
+    { label: 'והוא רחום',         match: ['Vehu Rachum', 'והוא רחום'] },
+    { label: 'ברכו',              match: ['Barchu', 'ברכו'] },
+    { label: 'ברכות קריאת שמע',   match: ['Blessings of the Shema'] },
+    { label: 'שמונה עשרה',        match: ['Amidah', 'Amida', 'שמונה עשרה'] },
+    { label: 'תוספות מוצש״ק',     match: ['Motza', 'Motzei', 'מוצאי'] },
+    { label: 'ספירת העומר',       match: ['Sefirat', 'ספירת'] },
+    { label: 'עלינו לשבח',         match: ['Aleinu', 'Alenu', 'עלינו'] },
+    { label: 'קריאת שמע על המיטה', match: ['Bedtime', 'al Hamita', 'על המיטה'] },
+  ],
+  Arvit: [
+    { label: 'והוא רחום',         match: ['Vehu Rachum', 'והוא רחום'] },
+    { label: 'ברכו',              match: ['Barchu', 'ברכו'] },
+    { label: 'ברכות קריאת שמע',   match: ['Blessings of the Shema'] },
+    { label: 'שמונה עשרה',        match: ['Amidah', 'Amida', 'שמונה עשרה'] },
+    { label: 'עלינו לשבח',         match: ['Aleinu', 'Alenu', 'עלינו'] },
+  ],
+};
+
+/** Look up the curated section list for the current prayer's English name. */
+function getCuratedList(hereEn: string): CuratedSection[] | null {
+  const key = hereEn.replace(/^Weekday\s+/i, '').trim();
+  // Direct match
+  if (CURATED_TOC_BY_PRAYER[key]) return CURATED_TOC_BY_PRAYER[key];
+  // Try fuzzy: contains
+  const lower = key.toLowerCase();
+  for (const k of Object.keys(CURATED_TOC_BY_PRAYER)) {
+    if (lower.includes(k.toLowerCase()) || k.toLowerCase().includes(lower)) {
+      return CURATED_TOC_BY_PRAYER[k];
+    }
+  }
+  return null;
+}
+
+/** Build a TOC from the curated list, dropping sections whose leaves aren't
+ *  present in this nusach. Returns {label, ref} pairs ready to render. */
+function buildCuratedTOC(hereEn: string, leaves: LoadedLeaf[]): { label: string; ref: string }[] {
+  const list = getCuratedList(hereEn);
+  if (!list) return [];
+  const out: { label: string; ref: string }[] = [];
+  for (const section of list) {
+    // Find the first leaf whose trail OR section name matches any of the keys
+    const match = leaves.find((l) => {
+      const hay = [l.en, l.he, ...l.trail.flatMap((t) => [t.en, t.he])].join(' | ').toLowerCase();
+      return section.match.some((m) => hay.includes(m.toLowerCase()));
+    });
+    if (match) out.push({ label: section.label, ref: match.ref });
+  }
+  return out;
+}
+
+export default function SiddurReader() {
+  const router = useRouter();
+  const { nusach: rawNusach, path: rawPath } = useLocalSearchParams<{ nusach?: string; path?: string }>();
+  const { location } = useLocation();
+  const inIsrael = location.countryCode === 'IL';
+
+  const [storedNusach, setStoredNusach] = useState<Nusach>('ashkenazi');
+
+  useEffect(() => {
+    (async () => {
+      const stored = await getString(Keys.nusach, 'ashkenazi');
+      if (['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad'].includes(stored)) {
+        setStoredNusach(stored as Nusach);
+      }
+    })();
+  }, []);
+
+  const nusach: Nusach = (rawNusach && ['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad'].includes(rawNusach)
+    ? (rawNusach as Nusach)
+    : storedNusach);
+
+  const slugs = useMemo(() => (rawPath ? rawPath.split('/').filter(Boolean) : []), [rawPath]);
+  const { here, children, trail } = useMemo(() => getNodesAtPath(nusach, slugs), [nusach, slugs]);
+
+  // Decide: navigation list or running text?
+  const allLeavesUnderHere = useMemo(() => {
+    if (here?.ref) return [{ ref: here.ref, he: here.he, en: here.en, trail: [] }] as FlatLeaf[];
+    if (here?.children) return collectLeaves(here);
+    if (slugs.length === 0) return collectLeavesFromList(getNusachTree(nusach));
+    return [];
+  }, [here?.ref, here?.children, nusach, slugs.length]);
+
+  // Siddur prefs (minyan/yachid, optional sections, quiet mode). Loaded
+  // before allLeavesFiltered so the filter has the latest value.
+  const [prefs, setPrefs] = useSiddurPrefs();
+
+  // Filter leaves by:
+  //   1. User prefs (minyan, optional sections)
+  //   2. Date relevance (ברכי נפשי only on ר"ח, לדוד only באלול-הוש"ר, etc.)
+  //   3. SILENT AMIDAH ONLY — קדושה is hidden because the silent (תפילה ראשונה)
+  //      doesn't include it. קדושה is rendered separately in the chazara collapse.
+  // Match the EXACT "Amidah" trail node — not "Post Amidah" (which contains
+  // וידוי and shouldn't appear in chazara) and not "Long Tachanun" etc.
+  const isAmidahLeaf = (l: { en: string; trail: { en: string; he: string }[] }) =>
+    l.trail.some((t) => /^Amid(ah|a)$|^עמידה$|^שמונה עשרה$/i.test(t.en.trim()) ||
+                        /^עמידה$|^שמונה עשרה$/.test((t.he || '').trim()));
+  const isKedushahLeaf = (l: { en: string; he: string }) =>
+    /^(Kedushah|Kedusha|Keduasha)$/i.test(l.en) || /^קדושה$/i.test(l.he);
+  // ברכת כהנים is said by the כהנים only during חזרת הש"ץ — never silently.
+  const isBirkatKohanimLeaf = (l: { en: string; he: string }) =>
+    /Birkat Kohanim|Priestly Blessing|ברכת כהנים/i.test(`${l.en} ${l.he}`);
+  const isConcludingPassage = (l: { en: string; he: string }) =>
+    /Concluding Passage|Elohai Netzor|Elokai Netzor|אל[הוו]?הי נצור|אלקי נצור|אלוהי נצור|חתימה/i.test(`${l.en} ${l.he}`);
+  // Kedushah stays in allLeavesFiltered so the chazara collapse can render it,
+  // but we SKIP it in the main (silent) leaves loop.
+  const allLeavesFiltered = useMemo(
+    () => allLeavesUnderHere.filter((l) => {
+      if (shouldHideForPrefs(l.en, prefs)) return false;
+      if (l.trail.some((t) => shouldHideForPrefs(t.en, prefs))) return false;
+      // Pass Hebrew name so chu"l/EY designations like "(outside of Israel)"
+      // can gate by location.
+      if (!isSectionRelevantToday(l.en, new Date(), inIsrael, l.he)) return false;
+      if (l.trail.some((t) => !isSectionRelevantToday(t.en, new Date(), inIsrael, t.he))) return false;
+      return true;
+    }),
+    [allLeavesUnderHere, prefs, inIsrael],
+  );
+  // Running text ONLY when the user has drilled into a specific service or
+  // sub-section. At top-level containers like "ימי חול" (slugs.length === 1
+  // and not itself a leaf) — show navigation list so the user picks Shacharit
+  // /Mincha/Maariv first. The previous logic was just a leaf count threshold,
+  // which broke once date filtering shrunk Weekday below the threshold and
+  // dumped ALL three prayers as one running blob.
+  const hereIsLeaf = !!here?.ref;
+  const isAtTopContainer = slugs.length === 1 && !hereIsLeaf;
+  const isRunningText =
+    !isAtTopContainer &&
+    allLeavesFiltered.length > 0 &&
+    allLeavesFiltered.length <= RUNNING_TEXT_MAX_LEAVES;
+
+  // Today is Mon/Thu? Used to surface the קריאת התורה link in the right place.
+  const dayOfWeek = new Date().getDay();
+  const isMonOrThu = dayOfWeek === 1 || dayOfWeek === 4;
+
+  // Inserts for today
+  const inserts = useMemo(() => getInsertsForDate(new Date(), inIsrael), [inIsrael]);
+  // Active condition tags for today (אומר היום בעשי"ת? בר"ח? etc.)
+  const active = useMemo(() => activeTags(new Date(), inIsrael), [inIsrael]);
+
+  // Halachic-window banner: detect if user is reading Shacharit/Mincha/Maariv
+  // and warn them if the time is wrong or the end is approaching.
+  const prayerKind = useMemo(
+    () => getPrayerKind(here?.en, trail),
+    [here?.en, trail],
+  );
+  const zmanim = useMemo(
+    () => (prayerKind ? computeZmanim(new Date(), location) : null),
+    [prayerKind, location],
+  );
+
+  // User toggles
+  const [showAll, setShowAll] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  // Chazara collapse: shown right after אלוקי נצור. When open, re-renders the
+  // entire Amidah with קדושה + מודים דרבנן included and אלוקי נצור excluded.
+  // Date-aware additions (יעלה ויבוא, ובספר חיים, ותן טל ומטר, וכו') apply
+  // to both renderings because they live in the same paragraph-level tags.
+  const [chazaraOpen, setChazaraOpen] = useState(false);
+
+  // Tracks whether the Android Notification-Policy permission has been
+  // granted. When false we show an explainer card so the user knows the toggle
+  // can't actually silence anything until they grant access in Settings.
+  const [dndPermission, setDndPermission] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    (async () => setDndPermission(await hasDndPermission()))();
+  }, []);
+
+  // Auto-disable DND when leaving this screen — DND should ONLY be active
+  // while the user is actively reading the prayer. If they navigate away, even
+  // if they forgot to toggle off, DND turns off automatically so they don't
+  // miss notifications all day. Same on initial mount: if a previous session
+  // left DND on, we don't blindly trust the persisted flag — only honor it
+  // when the user explicitly taps the toggle in this session.
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount: turn DND off no matter what.
+      toggleSystemDnd(false).catch(() => {});
+    };
+  }, []);
+
+  // ===== Running text fetch =====
+  const [leaves, setLeaves] = useState<LoadedLeaf[]>([]);
+
+  useEffect(() => {
+    if (!isRunningText) {
+      setLeaves([]);
+      return;
+    }
+    // Initialize with loading placeholders — use filtered list
+    setLeaves(allLeavesFiltered.map((l) => ({ ...l, loading: true })));
+
+    // Fetch all in parallel
+    let cancelled = false;
+    (async () => {
+      const todayDow = new Date().getDay();
+      const results = await Promise.all(
+        allLeavesFiltered.map(async (leaf) => {
+          try {
+            const t = await fetchSefariaText(leaf.ref);
+            if (t && t.heText.length > 0) {
+              let lines = t.heText;
+              // שיר של יום: filter content to TODAY's day section only.
+              // Sefaria uses markers like "בראשון בשבת:", "בשני בשבת:" etc.
+              // Keep paragraphs from today's marker until the next day marker.
+              if (/Song of the Day|שיר של יום|Daily Psalm|Psalm of the Day/i.test(`${leaf.en} ${leaf.he}`)) {
+                lines = filterDailyPsalmForToday(lines, todayDow);
+              }
+              const parsed = parseParagraphs(lines);
+              return { ...leaf, paragraphs: parsed, loading: false };
+            }
+            return { ...leaf, loading: false, error: true };
+          } catch {
+            return { ...leaf, loading: false, error: true };
+          }
+        }),
+      );
+      if (!cancelled) setLeaves(results);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isRunningText, allLeavesFiltered.map((l) => l.ref).join('|')]);
+
+  // ===== Scroll-to-section for TOC =====
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionPositions = useRef<Record<string, number>>({});
+
+  function jumpTo(ref: string) {
+    const y = sectionPositions.current[ref];
+    if (y !== undefined && scrollRef.current) {
+      scrollRef.current.scrollTo({ y: Math.max(0, y - 60), animated: true });
+    }
+  }
+
+  function navigateTo(slug: string) {
+    const newPath = [...slugs, slug].join('/');
+    router.push(`/tfilon/read?nusach=${nusach}&path=${encodeURIComponent(newPath)}` as any);
+  }
+
+  function navigateBreadcrumb(idx: number) {
+    if (idx === -1) {
+      router.replace(`/tfilon/read?nusach=${nusach}` as any);
+    } else {
+      const newPath = slugs.slice(0, idx + 1).join('/');
+      router.replace(`/tfilon/read?nusach=${nusach}&path=${encodeURIComponent(newPath)}` as any);
+    }
+  }
+
+  const title = here ? here.he || here.en : `סידור ${NUSACH_LABEL[nusach]}`;
+  const showTOC = isRunningText && leaves.length > 1;
+
+  // Top-bar dropdown: list of curated sections for this prayer, jump to any.
+  // Uses the same curated list as the in-page TOC chips.
+  const [navOpen, setNavOpen] = useState(false);
+  const curatedNavItems = useMemo(() => {
+    if (!isRunningText || leaves.length === 0) return [];
+    return buildCuratedTOC(here?.en || '', leaves);
+  }, [here?.en, leaves]);
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.topBar}>
+        <Pressable onPress={() => router.back()} hitSlop={10}>
+          <Text style={[typography.bodyBold, { color: colors.primary }]}>‹ חזרה</Text>
+        </Pressable>
+        {curatedNavItems.length > 0 ? (
+          <Pressable
+            onPress={() => setNavOpen(true)}
+            hitSlop={10}
+            style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}
+          >
+            <Text style={[typography.bodyBold, { color: colors.primary }]}>📑 ניווט</Text>
+            <Text style={{ color: colors.primary, fontSize: 12 }}>▾</Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {/* Top-bar navigation modal — quick jump between prayer sections. */}
+      <Modal visible={navOpen} animationType="fade" transparent onRequestClose={() => setNavOpen(false)}>
+        <Pressable style={styles.navBackdrop} onPress={() => setNavOpen(false)}>
+          <Pressable style={styles.navSheet} onPress={(e) => e.stopPropagation()}>
+            <Text style={[typography.h2, { color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.md }]}>
+              ניווט בתפילה
+            </Text>
+            <ScrollView style={{ maxHeight: 500 }}>
+              {curatedNavItems.map((c) => (
+                <Pressable
+                  key={c.ref}
+                  onPress={() => { jumpTo(c.ref); setNavOpen(false); }}
+                  style={styles.navItem}
+                >
+                  <Text style={{ color: colors.textMuted, fontSize: 18 }}>‹</Text>
+                  <Text style={[typography.h3, { color: colors.textPrimary, flex: 1, textAlign: 'right' }]}>
+                    {c.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
+        <ScreenHeader title={title} />
+        {/* Nusach indicator — tap to jump to settings and change it. */}
+        <Pressable
+          onPress={() => router.push('/more' as any)}
+          hitSlop={10}
+          style={{ paddingHorizontal: spacing.lg, marginTop: -spacing.sm, marginBottom: spacing.sm, alignSelf: 'flex-end' }}
+        >
+          <Text style={[typography.small, { color: colors.primary }]}>
+            סידור {NUSACH_LABEL[nusach]} · לחץ לשינוי
+          </Text>
+        </Pressable>
+
+        {/* Breadcrumb */}
+        {trail.length > 0 && (
+          <View style={styles.breadcrumb}>
+            <Pressable onPress={() => navigateBreadcrumb(-1)} hitSlop={6}>
+              <Text style={[typography.small, { color: colors.primary }]}>בית הסידור</Text>
+            </Pressable>
+            {trail.map((t, i) => (
+              <View key={i} style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}>
+                <Text style={[typography.small, { color: colors.textMuted }]}>›</Text>
+                <Pressable onPress={() => navigateBreadcrumb(i)} hitSlop={6}>
+                  <Text
+                    style={[
+                      typography.small,
+                      {
+                        color: i === trail.length - 1 ? colors.textPrimary : colors.primary,
+                        fontWeight: i === trail.length - 1 ? '700' : '400',
+                      },
+                    ]}
+                  >
+                    {t.he || t.en}
+                  </Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md, marginTop: spacing.sm }}>
+          {/* Prayer-time warning banner: shows if reading Shacharit/Mincha/Maariv
+              outside its halachic window, or near its end. */}
+          {prayerKind && zmanim && (
+            <PrayerTimeBanner kind={prayerKind} zmanim={zmanim} />
+          )}
+
+          {/* Tefila inserts banner — glass, not gold-filled (per user feedback) */}
+          {isRunningText && inserts.length > 0 && (
+            <Card variant="default" onPress={() => router.push('/tools/tefila-today' as any)}>
+              <View style={{ flexDirection: 'row-reverse', alignItems: 'flex-start', gap: spacing.md }}>
+                <Text style={{ fontSize: 24 }}>📿</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.primary }]}>תוספות לתפילה היום</Text>
+                  <Text style={[typography.small, { color: colors.textPrimary, marginTop: 2 }]}>
+                    {inserts.map((i) => i.title).join(' · ')}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.textMuted, marginTop: 4 }]}>
+                    הטקסט מ-Sefaria הוא טקסט בסיסי וסטטי. לחץ כאן לרשימה מלאה.
+                  </Text>
+                </View>
+                <Text style={{ color: colors.textMuted, fontSize: 18 }}>‹</Text>
+              </View>
+            </Card>
+          )}
+
+          {/* Musaf shortcut — surfaced on Rosh Chodesh / Chol HaMoed weekdays
+              when the user is viewing Shacharit. Tapping navigates to the
+              appropriate Musaf section for the current nusach. */}
+          {isRunningText && /Shacharit|שחרית/i.test(`${here?.en || ''} ${here?.he || ''}`) && (() => {
+            const musaf = getActiveMusafLink(new Date(), inIsrael, nusach);
+            if (!musaf) return null;
+            return (
+              <Card
+                variant="accent"
+                onPress={() => router.push(`/tfilon/read?nusach=${nusach}&path=${encodeURIComponent(musaf.path)}` as any)}
+              >
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md }}>
+                  <Text style={{ fontSize: 26 }}>🕊️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>{musaf.label}</Text>
+                    <Text style={[typography.small, { color: colors.textPrimary, marginTop: 2 }]}>
+                      היום מתפללים מוסף נוסף על תפילת שחרית. לחץ למעבר ישיר.
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.primaryDark, fontSize: 18 }}>‹</Text>
+                </View>
+              </Card>
+            );
+          })()}
+
+          {/* Cholim reminder — shown on any Shemoneh-Esreh / Amidah view so
+              the user remembers to mention their cholim list at "רפאנו". */}
+          {(here?.en || trail.some((t) => /Amid|Shacharit|Mincha|Maariv|Arvit/i.test(t.en))) &&
+            /Amid|Shacharit|Mincha|Maariv|Arvit/i.test(here?.en || trail.map((t) => t.en).join(' ')) && (
+              <CholimReminder />
+          )}
+
+          {/* TOC — curated list of MAIN sections per prayer instead of all
+              106 leaves. Each chip jumps to the first leaf in that section. */}
+          {showTOC && (() => {
+            const curated = buildCuratedTOC(here?.en || '', leaves);
+            if (curated.length === 0) return null;
+            return (
+              <Card>
+                <Text style={[typography.bodyBold, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
+                  📑 קפיצה מהירה
+                </Text>
+                <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 }}>
+                  {curated.map((c) => (
+                    <Pressable key={c.ref} onPress={() => jumpTo(c.ref)} style={styles.tocChip}>
+                      <Text style={[typography.caption, { color: colors.primaryDark }]}>{c.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </Card>
+            );
+          })()}
+
+          {/* Navigation list mode - filtered by today relevance */}
+          {!isRunningText && children.length > 0 && (() => {
+            const visible = children.filter((c) => isSectionRelevantToday(c.en, new Date(), inIsrael));
+            const hidden = children.length - visible.length;
+            const list = showAll ? children : visible;
+            return (
+              <>
+                {hidden > 0 && (
+                  <Pressable onPress={() => setShowAll(!showAll)}>
+                    <Text style={[typography.small, { color: colors.primary, textAlign: 'center', marginVertical: spacing.xs }]}>
+                      {showAll ? '◀ הסתר לא רלוונטי' : `הצג גם חלקים לא רלוונטיים להיום (+${hidden}) ▶`}
+                    </Text>
+                  </Pressable>
+                )}
+                {list.map((c, i) => {
+                  const relevant = isSectionRelevantToday(c.en, new Date(), inIsrael);
+                  return (
+                    <Card key={`${c.en}-${i}`} onPress={() => navigateTo(slugify(c.en))}>
+                      <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md, opacity: relevant ? 1 : 0.55 }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.h3, { color: colors.textPrimary }]}>{c.he || c.en}</Text>
+                          {!relevant && (
+                            <Text style={[typography.small, { color: colors.textMuted, marginTop: 2 }]}>
+                              לא רלוונטי היום
+                            </Text>
+                          )}
+                        </View>
+                        <Text style={{ color: colors.textMuted, fontSize: 22 }}>‹</Text>
+                      </View>
+                    </Card>
+                  );
+                })}
+              </>
+            );
+          })()}
+
+          {!isRunningText && children.length === 0 && allLeavesUnderHere.length === 0 && (
+            <Card variant="accent">
+              <Text style={[typography.body, { color: colors.primaryDark }]}>
+                אין כאן קטעים זמינים בנוסח זה.
+              </Text>
+            </Card>
+          )}
+
+          {/* Prominent quiet-mode toggle at TOP of siddur.
+              Only shown on actual prayer-reading pages (isRunningText). DND
+              auto-disables when the user leaves this screen — see useEffect
+              cleanup above. */}
+          {isRunningText ? (
+            <Card variant="default" padding="md">
+              <Pressable
+                onPress={async () => {
+                  // On Android: if permission missing, take the user to grant
+                  // it first. We do NOT set quietMode=true yet — the user has
+                  // to re-tap once they're back.
+                  if (Platform.OS === 'android' && dndPermission === false) {
+                    await requestDndPermission();
+                    return;
+                  }
+                  const next = !prefs.quietMode;
+                  setPrefs({ ...prefs, quietMode: next });
+                  await toggleSystemDnd(next);
+                }}
+                hitSlop={4}
+                style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md }}
+              >
+                <View
+                  style={{
+                    width: 44, height: 44, borderRadius: 22,
+                    backgroundColor: prefs.quietMode ? colors.primary : colors.glass,
+                    borderWidth: 2,
+                    borderColor: prefs.quietMode ? colors.primaryDark : colors.glassBorder,
+                    alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ fontSize: 22 }}>{prefs.quietMode ? '🔕' : '🔔'}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>
+                    {Platform.OS === 'android' && dndPermission === false
+                      ? '⚠ נדרשת הרשאה — לחץ לפתיחת ההגדרות'
+                      : prefs.quietMode
+                        ? 'מצב שקט פעיל — יוסר אוטומטית בעת יציאה'
+                        : 'הפעל מצב שקט לתפילה'}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                    {Platform.OS === 'ios'
+                      ? 'iOS: ודאו ידנית שמצב "Focus" פעיל'
+                      : dndPermission === false
+                        ? 'באנדרואיד צריך לאשר "Notification Policy / נא לא להפריע" פעם אחת. לחץ ועבור לאפליקציה "חברותא" ברשימה > הפעל את ההרשאה.'
+                        : prefs.quietMode
+                          ? 'התראות whatsapp/sms חסומות. ההשתקה תכבה אוטומטית כשתצא מהסידור.'
+                          : 'בלחיצה — נא לא להפריע יופעל רק בזמן שאתה בסידור'}
+                  </Text>
+                </View>
+              </Pressable>
+            </Card>
+          ) : null}
+
+          {/* Siddur preferences sheet — minyan, optional sections */}
+          {isRunningText && (
+            <Card>
+              <Pressable onPress={() => setPrefsOpen((v) => !v)} hitSlop={4} style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm }}>
+                <Text style={{ fontSize: 18 }}>⚙</Text>
+                <Text style={[typography.bodyBold, { color: colors.textPrimary, flex: 1 }]}>
+                  הגדרות תפילה {prefs.withMinyan ? '· במניין' : '· יחיד'}
+                </Text>
+                <Text style={[typography.small, { color: colors.primary }]}>
+                  {prefsOpen ? '◀ סגור' : 'פתח ▼'}
+                </Text>
+              </Pressable>
+              {prefsOpen ? (
+                <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+                  <PrefToggle
+                    label="במניין"
+                    when="קדושה, מודים דרבנן, חזרת הש״ץ, קדיש"
+                    value={prefs.withMinyan}
+                    onChange={(v) => setPrefs({ ...prefs, withMinyan: v })}
+                  />
+                  <PrefToggle
+                    label="ברכת כהנים"
+                    when="במניין (חו״ל: יו״ט; א״י: כל יום במזרחי)"
+                    value={prefs.includeBirkatKohanim}
+                    onChange={(v) => setPrefs({ ...prefs, includeBirkatKohanim: v })}
+                  />
+                  <PrefToggle
+                    label="הוצאת ספר תורה"
+                    when="ב׳, ה׳, ר״ח, חגים, תעניות"
+                    value={prefs.includeTorahService}
+                    onChange={(v) => setPrefs({ ...prefs, includeTorahService: v })}
+                  />
+                  <PrefToggle
+                    label="קישור לקריאת התורה בב׳/ה׳"
+                    when="3 עליות מהפרשה הקרובה (לתצוגה גם בימים אחרים)"
+                    value={prefs.includeMondayThursdayLeyning}
+                    onChange={(v) => setPrefs({ ...prefs, includeMondayThursdayLeyning: v })}
+                  />
+                  <PrefToggle
+                    label="ברכי נפשי"
+                    when="ראש חודש"
+                    value={prefs.includeBarchiNafshi}
+                    onChange={(v) => setPrefs({ ...prefs, includeBarchiNafshi: v })}
+                  />
+                  <PrefToggle
+                    label="לדוד ה׳ אורי וישעי"
+                    when="מאלול עד הושענא רבה"
+                    value={prefs.includeLeDavidHashemOri}
+                    onChange={(v) => setPrefs({ ...prefs, includeLeDavidHashemOri: v })}
+                  />
+                  <PrefToggle
+                    label="הלל"
+                    when="ר״ח, חנוכה, חוה״מ סוכות + פסח, יו״ט"
+                    value={prefs.includeHallel}
+                    onChange={(v) => setPrefs({ ...prefs, includeHallel: v })}
+                  />
+                  <PrefToggle
+                    label="אבינו מלכנו"
+                    when="עשרת ימי תשובה + תעניות ציבור"
+                    value={prefs.includeAvinuMalkenu}
+                    onChange={(v) => setPrefs({ ...prefs, includeAvinuMalkenu: v })}
+                  />
+                  <PrefToggle
+                    label="תפילה לשלום המדינה"
+                    when="שבת + יו״ט (מנהג רוב בתי הכנסת בא״י)"
+                    value={prefs.includeTefilaLaMedina}
+                    onChange={(v) => setPrefs({ ...prefs, includeTefilaLaMedina: v })}
+                  />
+                  <PrefToggle
+                    label="תפילה לשלום החיילים"
+                    when="שבת + יו״ט"
+                    value={prefs.includeTefilaLaTzva}
+                    onChange={(v) => setPrefs({ ...prefs, includeTefilaLaTzva: v })}
+                  />
+                  <PrefToggle
+                    label="מי שבירך לחולים"
+                    when="בקריאת התורה — אופציונלי"
+                    value={prefs.includeMishBeirachCholim}
+                    onChange={(v) => setPrefs({ ...prefs, includeMishBeirachCholim: v })}
+                  />
+                </View>
+              ) : null}
+            </Card>
+          )}
+
+          {/* Display toggles */}
+          {isRunningText && (
+            <Card>
+              <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.sm }}>
+                <Pressable
+                  onPress={() => setShowAll(!showAll)}
+                  style={[styles.toggleChip, showAll && styles.toggleChipActive]}
+                  hitSlop={6}
+                >
+                  <Text style={[typography.caption, { color: showAll ? colors.textInverse : colors.textPrimary }]}>
+                    {showAll ? '✓ ' : ''}הצג את כל התוספות (כולל לא רלוונטיות)
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setShowNotes(!showNotes)}
+                  style={[styles.toggleChip, showNotes && styles.toggleChipActive]}
+                  hitSlop={6}
+                >
+                  <Text style={[typography.caption, { color: showNotes ? colors.textInverse : colors.textPrimary }]}>
+                    {showNotes ? '✓ ' : ''}הצג הערות הלכתיות
+                  </Text>
+                </Pressable>
+              </View>
+              <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.sm }]}>
+                ברירת המחדל: רק הקטעים המתאימים להיום מוצגים.
+              </Text>
+            </Card>
+          )}
+
+          {/* Running text mode */}
+          {isRunningText && (() => {
+            // אלקי נצור marks the END of the silent עמידה. After it we render
+            // the chazara collapse (silent → public repetition).
+            const isElohaiNetzor = (l: LoadedLeaf) =>
+              /Elohai Netzor|Elokai Netzor|אל[הוו]?הי נצור|אלקי נצור|אלוהי נצור/i.test(`${l.en} ${l.he}`);
+            let lastAmidahIdx = -1;
+            if (prefs.withMinyan) {
+              for (let i = 0; i < leaves.length; i++) {
+                if (isElohaiNetzor(leaves[i])) lastAmidahIdx = i;
+              }
+            }
+
+            // קריאת התורה לב'/ה' link — anchored after הוצאת ספר תורה (or
+            // the more general Torah Reading container). The Sefaria siddur tree
+            // already provides the actual leyning text; we just add a quick
+            // jump to the dedicated screen for the special Mon/Thu reading.
+            const trailText = (l: LoadedLeaf) =>
+              `${l.en} ${l.he} ${l.trail.map((t) => `${t.en} ${t.he}`).join(' ')}`;
+            const findLastIdx = (re: RegExp) => {
+              for (let i = leaves.length - 1; i >= 0; i--) {
+                if (re.test(trailText(leaves[i]))) return i;
+              }
+              return -1;
+            };
+            const torahAnchorIdx = findLastIdx(/Removing the Torah from Ark|הוצאת ספר תורה/i)
+                                   || findLastIdx(/Torah Reading|קריאת התורה/i);
+            return (
+            <Card padding="xl">
+              {leaves.map((leaf, idx) => {
+                // Skip Kedushah + Birkat Kohanim in silent עמידה (chazara-only)
+                if (isAmidahLeaf(leaf) && (isKedushahLeaf(leaf) || isBirkatKohanimLeaf(leaf))) return null;
+                // Hide section if ALL its paragraphs would be filtered out — avoids
+                // empty headers like "תהילים קל", "ויברך דוד", etc. when seasonal
+                // content was removed.
+                if (leaf.paragraphs && leaf.paragraphs.length > 0) {
+                  const visibleCount = leaf.paragraphs.filter((p) =>
+                    shouldRender(p, active, { showAll, showNotes })).length;
+                  if (visibleCount === 0) return null;
+                }
+                const subTitle = leaf.he || leaf.en;
+                // Determine if a MAJOR chapter divider should show (first leaf in a chapter)
+                const prevChapter = idx > 0 ? leaves[idx - 1].trail[0]?.he : undefined;
+                const myChapter = leaf.trail[0]?.he;
+                const showChapterHeader =
+                  myChapter && (idx === 0 || myChapter !== prevChapter);
+                return (
+                  <View
+                    key={`${leaf.ref}-${idx}`}
+                    onLayout={(e) => {
+                      sectionPositions.current[leaf.ref] = e.nativeEvent.layout.y;
+                    }}
+                  >
+                    {showChapterHeader && (
+                      <View style={[styles.chapterDivider, idx > 0 && { marginTop: spacing.xxl }]}>
+                        <View style={styles.chapterLine} />
+                        <Text style={[typography.h2, styles.chapterTitle]}>{myChapter}</Text>
+                        <View style={styles.chapterLine} />
+                      </View>
+                    )}
+                    <View style={[styles.sectionBlock, idx > 0 && !showChapterHeader && styles.sectionDivider]}>
+                      <Text style={[typography.h3, styles.sectionTitle]}>{subTitle}</Text>
+                      {leaf.loading && (
+                        <View style={{ paddingVertical: spacing.md }}>
+                          <ActivityIndicator color={colors.primary} />
+                        </View>
+                      )}
+                      {leaf.error && (
+                        <Text style={[typography.small, { color: colors.danger, marginTop: spacing.sm }]}>
+                          לא ניתן לטעון. נסה לפתוח בספריא ↗
+                        </Text>
+                      )}
+                      {leaf.paragraphs &&
+                        leaf.paragraphs.map((p, j) => {
+                          if (!shouldRender(p, active, { showAll, showNotes })) return null;
+                          if (p.kind === 'halachic-note') {
+                            return (
+                              <Text key={j} style={[typography.small, styles.halachicNote]}>
+                                {p.body}
+                              </Text>
+                            );
+                          }
+                          if (p.kind === 'conditional' || p.kind === 'alternative') {
+                            // Inject day name into Yaaleh VeYavo etc.
+                            const enhancedBody = enhanceConditionalText(p, new Date(), inIsrael);
+                            // Is this currently in season?
+                            // 'unknown' tag = we don't know when, treat as in-season
+                            // so it doesn't show a false "לא היום" badge.
+                            const inSeason = !p.tags || p.tags.length === 0 ||
+                              p.tags.includes('unknown') ||
+                              p.tags.some((t) => active.has(t));
+                            return (
+                              <View key={j} style={[styles.conditionalBlock, !inSeason && styles.conditionalBlockMuted]}>
+                                {p.marker && (
+                                  <Text style={[typography.caption, styles.conditionalMarker]}>
+                                    🔹 {p.marker}
+                                    {p.kind === 'alternative' ? ' (במקום)' : ''}
+                                    {!inSeason && ' · לא היום'}
+                                  </Text>
+                                )}
+                                <Text
+                                  style={[
+                                    typography.sacred,
+                                    styles.paragraph,
+                                    inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted,
+                                  ]}
+                                >
+                                  {enhancedBody}
+                                </Text>
+                              </View>
+                            );
+                          }
+                          // Unvocalized paragraphs (no nikud) are rubric /
+                          // instructional — render in a smaller serif style
+                          // distinct from the vocalized prayer text.
+                          const unvocalized = !hasNikud(p.body);
+                          // Strip inline (בעשי"ת ...) parens that aren't in season today
+                          const renderBody = stripInactiveInlineParens(p.body, active);
+                          return (
+                            <Text
+                              key={j}
+                              style={[
+                                unvocalized ? styles.rubric : typography.sacred,
+                                styles.paragraph,
+                              ]}
+                            >
+                              {renderBody}
+                            </Text>
+                          );
+                        })}
+                    </View>
+                    {/* Inline COLLAPSE AFTER אלוקי נצור: חזרת הש"ץ.
+                        Closed: button "🕊 חזרת הש"ץ ▼"
+                        Open: re-renders the entire Amidah with קדושה shown +
+                              אלוקי נצור excluded. Same paragraph-level tags
+                              apply so seasonal additions stay accurate. */}
+                    {idx === lastAmidahIdx ? (
+                      <View style={{ marginTop: spacing.lg, marginBottom: spacing.md }}>
+                        <Pressable
+                          onPress={() => setChazaraOpen((v) => !v)}
+                          style={styles.inlineNextLink}
+                          hitSlop={6}
+                        >
+                          <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>
+                            🕊  חזרת הש״ץ {chazaraOpen ? '▾' : '▸'}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                            {chazaraOpen
+                              ? 'סגור חזרת הש״ץ'
+                              : 'לחץ להציג — כולל קדושה ומודים דרבנן'}
+                          </Text>
+                        </Pressable>
+                        {chazaraOpen ? (
+                          <View style={styles.chazaraBlock}>
+                            <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginBottom: spacing.md }]}>
+                              ⟦ חזרת הש״ץ — כל הברכות עם קדושה ומודים דרבנן ⟧
+                            </Text>
+                            {leaves.filter((l) => isAmidahLeaf(l) && !isConcludingPassage(l)).map((cleaf, j) => (
+                              <View key={`chazara-${cleaf.ref}-${j}`} style={{ marginBottom: spacing.sm }}>
+                                <Text style={[typography.h3, styles.sectionTitle]}>{cleaf.he || cleaf.en}</Text>
+                                {cleaf.loading ? (
+                                  <ActivityIndicator color={colors.primary} size="small" />
+                                ) : cleaf.error ? (
+                                  <Text style={[typography.small, { color: colors.danger }]}>
+                                    שגיאה בטעינה
+                                  </Text>
+                                ) : (
+                                  cleaf.paragraphs?.map((p, k) => {
+                                    if (!shouldRender(p, active, { showAll, showNotes })) return null;
+                                    if (p.kind === 'halachic-note') {
+                                      return showNotes ? (
+                                        <Text key={k} style={[typography.small, styles.halachicNote]}>{p.body}</Text>
+                                      ) : null;
+                                    }
+                                    if (p.kind === 'conditional' || p.kind === 'alternative') {
+                                      const body = enhanceConditionalText(p, new Date(), inIsrael);
+                                      const inSeason = !p.tags || p.tags.length === 0 ||
+                                        p.tags.includes('unknown') ||
+                                        p.tags.some((t) => active.has(t));
+                                      return (
+                                        <View key={k} style={[styles.conditionalBlock, !inSeason && styles.conditionalBlockMuted]}>
+                                          {p.marker ? (
+                                            <Text style={[typography.caption, styles.conditionalMarker]}>
+                                              🔹 {p.marker}{p.kind === 'alternative' ? ' (במקום)' : ''}{!inSeason ? ' · לא היום' : ''}
+                                            </Text>
+                                          ) : null}
+                                          <Text style={[typography.sacred, styles.paragraph, inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted]}>
+                                            {body}
+                                          </Text>
+                                        </View>
+                                      );
+                                    }
+                                    const unvoc = !hasNikud(p.body);
+                                    const chazaraRenderBody = stripInactiveInlineParens(p.body, active);
+                                    return (
+                                      <Text key={k} style={[unvoc ? styles.rubric : typography.sacred, styles.paragraph]}>
+                                        {chazaraRenderBody}
+                                      </Text>
+                                    );
+                                  })
+                                )}
+                              </View>
+                            ))}
+                          </View>
+                        ) : null}
+                      </View>
+                    ) : null}
+                    {/* Inline anchor for קריאת התורה (Mon/Thu) — right after הוצאת ספר תורה. */}
+                    {idx === torahAnchorIdx && prefs.includeMondayThursdayLeyning ? (
+                      <Pressable
+                        onPress={() => router.push('/tfilon/leyning' as any)}
+                        style={styles.inlineNextLink}
+                      >
+                        <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>
+                          📖  קריאת התורה לשני/חמישי ←
+                        </Text>
+                        <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                          {isMonOrThu
+                            ? '3 עליות מהפרשה הקרובה'
+                            : 'מוצג רק בימי ב׳ ו-ה׳ (לתצוגה מקדימה)'}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </Card>
+            );
+          })()}
+
+          {/* (All optional inserts and leyning link are now rendered INLINE
+              inside the leaves loop, anchored to their canonical positions —
+              see insertsAt and torahAnchorIdx above. Nothing here.) */}
+
+          {isRunningText && here?.ref && (
+            <Pressable
+              onPress={() => Linking.openURL(`https://www.sefaria.org.il/${encodeURIComponent(here.ref!)}?lang=he`)}
+              style={{ alignSelf: 'center', marginTop: spacing.lg }}
+              hitSlop={10}
+            >
+              <Text style={[typography.caption, { color: colors.textMuted }]}>
+                טקסטים מאת Sefaria · CC-BY
+              </Text>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.bg },
+  topBar: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.lg,
+  },
+  navBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  navSheet: {
+    backgroundColor: '#0a1f3d',
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+  },
+  navItem: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.glassBorder,
+    gap: spacing.sm,
+  },
+  breadcrumb: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    gap: 4,
+    marginTop: -spacing.md,
+    marginBottom: spacing.sm,
+  },
+  tocChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  toggleChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  toggleChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryDark,
+  },
+  conditionalBlock: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRightWidth: 4,
+    borderRightColor: '#8B3A62', // burgundy - distinct from primary brown
+    backgroundColor: 'rgba(139, 58, 98, 0.07)',
+    borderRadius: radius.sm,
+  },
+  conditionalBlockMuted: {
+    borderRightColor: colors.border,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    opacity: 0.55,
+  },
+  conditionalMarker: {
+    color: '#e6a3c2', // light pink/burgundy — visible on dark navy
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+    fontSize: 12,
+  },
+  paragraphConditional: {
+    marginTop: 2,
+    color: colors.textPrimary, // white — fully readable on the dark navy background
+    fontWeight: '500',
+  },
+  paragraphConditionalMuted: {
+    marginTop: 2,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+  },
+  halachicNote: {
+    color: colors.textMuted,
+    fontStyle: 'italic',
+    marginTop: spacing.sm,
+    lineHeight: 20,
+    opacity: 0.85,
+  },
+  // Rubric / instructional text style — smaller and visually distinct from
+  // the vocalized prayer text (which uses typography.sacred).
+  rubric: {
+    fontFamily: 'Rubik-Regular',
+    fontSize: 13,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+    lineHeight: 19,
+    textAlign: 'right',
+  },
+  chapterDivider: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+    marginTop: spacing.md,
+  },
+  chapterLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.primary,
+    opacity: 0.5,
+  },
+  chapterTitle: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  sectionBlock: {
+    paddingVertical: spacing.sm,
+  },
+  sectionDivider: {
+    borderTopWidth: 1,
+    borderTopColor: '#E8DFCC',
+    marginTop: spacing.sm,
+    paddingTop: spacing.md,
+  },
+  sectionTitle: {
+    color: colors.primaryDark,
+    marginBottom: 4,
+  },
+  paragraph: {
+    color: colors.textPrimary,
+    lineHeight: 32,
+    textAlign: 'right',
+    marginTop: spacing.sm,
+  },
+  inlineNextLink: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: 'rgba(184,134,42,0.10)',
+    borderRightWidth: 4,
+    borderRightColor: '#b8862a',
+    borderRadius: radius.sm,
+    alignItems: 'flex-end',
+  },
+  chazaraBlock: {
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: 'rgba(184,134,42,0.06)',
+    borderRadius: radius.md,
+    borderRightWidth: 4,
+    borderRightColor: '#b8862a',
+  },
+});
+
+/** Inline checkbox row used in the preferences sheet. The "when" prop is a
+ *  small secondary line indicating WHEN this section is traditionally said
+ *  (e.g. "ראש חודש בלבד", "מאלול עד הושענא רבה"). */
+function PrefToggle({ label, when, value, onChange }: { label: string; when?: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <Pressable
+      onPress={() => onChange(!value)}
+      hitSlop={4}
+      style={{
+        flexDirection: 'row-reverse',
+        alignItems: 'flex-start',
+        gap: spacing.sm,
+        paddingVertical: 6,
+      }}
+    >
+      <View
+        style={{
+          width: 22, height: 22, borderRadius: 5,
+          borderWidth: 1.5,
+          borderColor: value ? colors.primary : colors.border,
+          backgroundColor: value ? colors.primary : 'transparent',
+          alignItems: 'center', justifyContent: 'center',
+          marginTop: 2,
+        }}
+      >
+        {value ? <Text style={{ color: colors.textInverse, fontWeight: '700', fontSize: 14 }}>✓</Text> : null}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[typography.body, { color: colors.textPrimary }]}>
+          {label}
+        </Text>
+        {when ? (
+          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+            ↳ {when}
+          </Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}

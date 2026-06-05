@@ -1,0 +1,13 @@
+diff --git a/node_modules/@hebcal/noaa/dist/index.js b/node_modules/@hebcal/noaa/dist/index.js
+index 3605290..c928ce6 100644
+--- a/node_modules/@hebcal/noaa/dist/index.js
++++ b/node_modules/@hebcal/noaa/dist/index.js
+@@ -1,5 +1,7 @@
++// Patched by yahadut-app: top-level await caused a web-bundle syntax error.
++// app/_layout.tsx preloads temporal-polyfill/global, so this guard is just defensive.
+ if (typeof globalThis.Temporal === 'undefined') {
+-    await import('temporal-polyfill/global');
++    require('temporal-polyfill/global');
+ }
+ /**
+  * java.lang.Math.toRadians
