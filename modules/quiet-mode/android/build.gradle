@@ -1,0 +1,19 @@
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'maven-publish'
+
+group = 'com.itzhakdvir.chavruta.quietmode'
+version = '1.0.0'
+
+android {
+  compileSdkVersion safeExtGet('compileSdkVersion', 34)
+  namespace 'com.itzhakdvir.chavruta.quietmode'
+  defaultConfig { minSdkVersion safeExtGet('minSdkVersion', 24) }
+}
+
+dependencies { implementation project(':expo-modules-core') }
+
+def safeExtGet(prop, fallback) {
+  rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
