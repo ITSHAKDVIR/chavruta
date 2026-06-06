@@ -17,6 +17,7 @@ import {
   getNusachTree,
   Nusach,
   NUSACH_LABEL,
+  NUSACH_KEYS,
   FlatLeaf,
   SiddurNode,
 } from '../../src/data/siddurTree';
@@ -193,13 +194,13 @@ export default function SiddurReader() {
   useEffect(() => {
     (async () => {
       const stored = await getString(Keys.nusach, 'ashkenazi');
-      if (['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad'].includes(stored)) {
+      if ((NUSACH_KEYS as string[]).includes(stored)) {
         setStoredNusach(stored as Nusach);
       }
     })();
   }, []);
 
-  const nusach: Nusach = (rawNusach && ['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad'].includes(rawNusach)
+  const nusach: Nusach = (rawNusach && (NUSACH_KEYS as string[]).includes(rawNusach)
     ? (rawNusach as Nusach)
     : storedNusach);
 
@@ -484,8 +485,27 @@ export default function SiddurReader() {
             <PrayerTimeBanner kind={prayerKind} zmanim={zmanim} />
           )}
 
-          {/* Tefila inserts banner — glass, not gold-filled (per user feedback) */}
-          {isRunningText && inserts.length > 0 && (
+          {/* Honest disclosure for Yemenite Baladi: Sefaria does not yet host
+              a dedicated Baladi (Tiklal) tree, so the structure shown is the
+              Edot Mizrach skeleton. Baladi-specific wording differences (e.g.
+              ברוך שאמר, נוסח הקדושה, פתיחות הברכות) are NOT yet inlined —
+              the user should consult a printed Tiklal for those. */}
+          {nusach === 'baladi' && (
+            <Card variant="accent">
+              <Text style={[typography.bodyBold, { color: colors.primaryDark, marginBottom: 4 }]}>
+                ℹ נוסח תימני בלדי
+              </Text>
+              <Text style={[typography.small, { color: colors.primaryDark }]}>
+                המבנה מבוסס על נוסח עדות מזרח (התקלאל הבלדי לא קיים עדיין ב-Sefaria).
+                הבדלי נוסח בלדי ספציפיים (פתיחת ברכות, קדושה, סדר התיקון) — מומלץ להיעזר בתקלאל מודפס.
+              </Text>
+            </Card>
+          )}
+
+          {/* Tefila inserts banner — glass, not gold-filled (per user feedback).
+              Only on Shacharit/Mincha/Maariv (prayerKind set) — NOT on Birkat
+              Hamazon, Brachot, etc. which don't have יעלה ויבוא / על הניסים. */}
+          {isRunningText && prayerKind && inserts.length > 0 && (
             <Card variant="default" onPress={() => router.push('/tools/tefila-today' as any)}>
               <View style={{ flexDirection: 'row-reverse', alignItems: 'flex-start', gap: spacing.md }}>
                 <Text style={{ fontSize: 24 }}>📿</Text>
@@ -601,10 +621,11 @@ export default function SiddurReader() {
           )}
 
           {/* Prominent quiet-mode toggle at TOP of siddur.
-              Only shown on actual prayer-reading pages (isRunningText). DND
-              auto-disables when the user leaves this screen — see useEffect
-              cleanup above. */}
-          {isRunningText ? (
+              Only shown on actual prayer-reading pages (Shacharit/Mincha/Maariv).
+              NOT on Birkat HaMazon / Brachot — those are short enough that DND
+              isn't worth the friction. DND auto-disables when the user leaves
+              this screen — see useEffect cleanup above. */}
+          {isRunningText && prayerKind ? (
             <Card variant="default" padding="md">
               <Pressable
                 onPress={async () => {
@@ -655,8 +676,10 @@ export default function SiddurReader() {
             </Card>
           ) : null}
 
-          {/* Siddur preferences sheet — minyan, optional sections */}
-          {isRunningText && (
+          {/* Siddur preferences sheet — minyan, optional sections.
+              Only relevant for tefila in minyan (Shacharit/Mincha/Maariv) —
+              never for ברכת המזון, ברכות הראייה, וכו'. */}
+          {isRunningText && prayerKind && (
             <Card>
               <Pressable onPress={() => setPrefsOpen((v) => !v)} hitSlop={4} style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm }}>
                 <Text style={{ fontSize: 18 }}>⚙</Text>

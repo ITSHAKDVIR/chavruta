@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Card } from '../../src/components/Card';
 import { getString, setString, Keys } from '../../src/storage/storage';
-import { getNusachTree, slugify, Nusach, NUSACH_LABEL, SiddurNode } from '../../src/data/siddurTree';
+import { getNusachTree, slugify, Nusach, NUSACH_LABEL, NUSACH_KEYS, SiddurNode } from '../../src/data/siddurTree';
 import { isSectionRelevantToday } from '../../src/data/siddurRelevance';
 import { useLocation } from '../../src/hooks/useLocation';
 import { colors, radius, spacing } from '../../src/theme/colors';
@@ -43,7 +43,7 @@ export default function SidurIndex() {
   useEffect(() => {
     (async () => {
       const stored = await getString(Keys.nusach, 'ashkenazi');
-      if (['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad'].includes(stored)) {
+      if ((NUSACH_KEYS as string[]).includes(stored)) {
         setNusachState(stored as Nusach);
       }
     })();

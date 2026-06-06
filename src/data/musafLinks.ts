@@ -22,7 +22,7 @@
  */
 import { HDate, HebrewCalendar, flags } from '@hebcal/core';
 
-export type Nusach = 'ashkenazi' | 'sephardi' | 'edot-mizrach' | 'chabad';
+export type Nusach = 'ashkenazi' | 'sephardi' | 'edot-mizrach' | 'chabad' | 'baladi';
 
 export type MusafLink = {
   /** Hebrew label for the banner ("מוסף לראש חודש" / "מוסף לחול המועד" etc.) */
@@ -39,6 +39,8 @@ const RC_PATHS: Record<Nusach, string> = {
   sephardi: 'rosh-chodesh/mussaf',
   'edot-mizrach': 'rosh-hodesh/mussaf',
   chabad: 'rosh-chodesh',
+  // Baladi uses the Edot Mizrach tree until a dedicated Baladi index exists.
+  baladi: 'rosh-hodesh/mussaf',
 };
 
 const REGALIM_PATHS: Record<Nusach, string> = {
@@ -46,6 +48,7 @@ const REGALIM_PATHS: Record<Nusach, string> = {
   sephardi: 'holidays/yom-tov-musaf-amidah',
   'edot-mizrach': 'prayers-for-three-festivals/mussaf',
   chabad: 'musaf-for-festivals',
+  baladi: 'prayers-for-three-festivals/mussaf',
 };
 
 /**

@@ -16,6 +16,7 @@ const NUSACH_LABELS: Record<string, string> = {
   sephardi: 'ספרד',
   'edot-mizrach': 'עדות מזרח',
   chabad: 'חב"ד',
+  baladi: 'תימני בלדי',
 };
 
 type SettingsItem = {
@@ -40,7 +41,7 @@ export default function MoreScreen() {
   }, []);
 
   async function cycleNusach() {
-    const order = ['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad'];
+    const order = ['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad', 'baladi'];
     const next = order[(order.indexOf(nusach) + 1) % order.length];
     setNusach(next);
     await setString(Keys.nusach, next);
