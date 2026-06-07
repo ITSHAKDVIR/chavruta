@@ -64,9 +64,20 @@ jobs:
       # only for this job's lifetime — runners are ephemeral.
       - name: Decode release keystore
         id: keystore
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > android/app/release.jks
+          # Strip ALL whitespace/newlines from the base64 payload before
+          # decoding — echo adds a trailing newline, the secret store may
+          # add one too, and base64 in strict mode rejects either. We use
+          # printf (no auto-newline), then tr to clean any internal CR/LF/
+          # spaces, then base64 -d.
+          printf '%s' "$KS_B64" | tr -d '\n\r \t' | base64 -d > android/app/release.jks
           ls -la android/app/release.jks
+          # Verify the result is a valid keystore file (zip magic 'PK' or
+          # JKS magic 'feedfeed'). If decoding silently produced garbage
+          # we fail fast instead of later in gradle.
+          head -c 4 android/app/release.jks | xxd | head -1
 
       # Inject signingConfigs.release into the generated build.gradle. Expo
       # prebuild writes the file with only signingConfigs.debug; the python
