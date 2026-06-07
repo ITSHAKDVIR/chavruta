@@ -44,7 +44,7 @@ export const NOTIF_DEFINITIONS: Array<{
   { id: 'sof-zman-tfila', title: 'סוף זמן תפילה', description: 'לפני סוף זמן תפילה (גר"א)', emoji: '⏰', group: 'tefila' },
   { id: 'daf-yomi-reminder', title: 'דף יומי', description: 'תזכורת יומית בבוקר', emoji: '📚', group: 'learning' },
   { id: 'mishna-yomi-reminder', title: 'משנה יומית', description: 'תזכורת יומית בערב', emoji: '📖', group: 'learning' },
-  { id: 'parent-call', title: 'כיבוד הורים', description: 'שיחה שבועית להורים (יום ראשון 18:00)', emoji: '📞', group: 'personal' },
+  { id: 'parent-call', title: 'כיבוד הורים', description: 'תזכורת שבועית לשיחה להורים', emoji: '📞', group: 'personal' },
   { id: 'birkat-levana', title: 'ברכת הלבנה', description: 'מתחילת זמן הברכה', emoji: '🌙', group: 'mitzvot' },
   { id: 'birkat-ilanot-nisan', title: 'ברכת האילנות', description: 'בתחילת ניסן - לראות אילני מאכל', emoji: '🌳', group: 'mitzvot' },
   { id: 'shema-al-mita', title: 'קריאת שמע על המיטה', description: 'תזכורת בלילה 23:00', emoji: '🌃', group: 'tefila' },
@@ -187,10 +187,10 @@ export async function rescheduleAll(location: StoredLocation): Promise<{ schedul
       await schedule(t, '📖 משנה יומית', 'תזכורת ללמוד משניות');
     }
 
-    // Parent call (Sunday)
-    if (prefs['parent-call'] && d.getDay() === 0) {
+    // Parent call (configurable weekday + time)
+    if (prefs['parent-call'] && d.getDay() === settings.parentCallWeekday) {
       const t = new Date(d);
-      t.setHours(18, 0, 0, 0);
+      t.setHours(settings.parentCallHour, settings.parentCallMinute, 0, 0);
       await schedule(t, '📞 שיחה להורים', 'כיבוד אב ואם - שיחה שבועית');
     }
 

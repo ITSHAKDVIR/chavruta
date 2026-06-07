@@ -34,6 +34,10 @@ export type NotifSettings = {
   /** Fast day eve reminder time. */
   fastEveHour: number;
   fastEveMinute: number;
+  /** Weekly parent-call reminder. weekday: 0=Sunday ... 6=Saturday. */
+  parentCallWeekday: number;
+  parentCallHour: number;
+  parentCallMinute: number;
 };
 
 export const DEFAULT_SETTINGS: NotifSettings = {
@@ -56,6 +60,11 @@ export const DEFAULT_SETTINGS: NotifSettings = {
   roshChodeshEveMinute: 0,
   fastEveHour: 18,
   fastEveMinute: 0,
+  // Default: Sunday at 18:00 — same as the previous hardcoded value, so
+  // existing users see no behavior change until they change it.
+  parentCallWeekday: 0,
+  parentCallHour: 18,
+  parentCallMinute: 0,
 };
 
 const KEY = '@yahadut/notif-settings';

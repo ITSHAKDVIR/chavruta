@@ -84,9 +84,9 @@ export default function ChuppahScreen() {
 
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
           <Card variant={daysToWedding !== null && daysToWedding < 0 ? 'accent' : 'primary'}>
-            <Text style={[typography.bodyBold, { color: colors.textInverse }]}>תאריך החתונה (עברי):</Text>
+            <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>תאריך החתונה (עברי):</Text>
 
-            <Text style={[typography.caption, { color: colors.textInverse, opacity: 0.85, marginTop: spacing.sm, marginBottom: 4 }]}>יום:</Text>
+            <Text style={[typography.caption, { color: colors.textPrimary, opacity: 0.85, marginTop: spacing.sm, marginBottom: 4 }]}>יום:</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row-reverse', gap: 4 }}>
                 {daysList.map((d) => (
@@ -95,7 +95,7 @@ export default function ChuppahScreen() {
                     onPress={() => setHebDate({ ...hebDate, day: d })}
                     style={[styles.pickChip, hebDate.day === d && styles.pickChipActive]}
                   >
-                    <Text style={[typography.caption, { color: hebDate.day === d ? colors.primary : colors.textInverse, fontWeight: '700' }]}>
+                    <Text style={[typography.caption, { color: hebDate.day === d ? colors.textInverse : colors.textPrimary, fontWeight: '700' }]}>
                       {hebrewNumeral(d)}
                     </Text>
                   </Pressable>
@@ -103,7 +103,7 @@ export default function ChuppahScreen() {
               </View>
             </ScrollView>
 
-            <Text style={[typography.caption, { color: colors.textInverse, opacity: 0.85, marginTop: spacing.sm, marginBottom: 4 }]}>חודש:</Text>
+            <Text style={[typography.caption, { color: colors.textPrimary, opacity: 0.85, marginTop: spacing.sm, marginBottom: 4 }]}>חודש:</Text>
             <View style={{ flexDirection: 'row-reverse', gap: 4, flexWrap: 'wrap' }}>
               {HEB_MONTHS.map((m) => (
                 <Pressable
@@ -111,14 +111,14 @@ export default function ChuppahScreen() {
                   onPress={() => setHebDate({ ...hebDate, month: m.key })}
                   style={[styles.pickChip, hebDate.month === m.key && styles.pickChipActive]}
                 >
-                  <Text style={[typography.caption, { color: hebDate.month === m.key ? colors.primary : colors.textInverse, fontWeight: '700' }]}>
+                  <Text style={[typography.caption, { color: hebDate.month === m.key ? colors.textInverse : colors.textPrimary, fontWeight: '700' }]}>
                     {m.name}
                   </Text>
                 </Pressable>
               ))}
             </View>
 
-            <Text style={[typography.caption, { color: colors.textInverse, opacity: 0.85, marginTop: spacing.sm, marginBottom: 4 }]}>שנה:</Text>
+            <Text style={[typography.caption, { color: colors.textPrimary, opacity: 0.85, marginTop: spacing.sm, marginBottom: 4 }]}>שנה:</Text>
             <View style={{ flexDirection: 'row-reverse', gap: 4, flexWrap: 'wrap' }}>
               {yearsList.map((y) => (
                 <Pressable
@@ -126,7 +126,7 @@ export default function ChuppahScreen() {
                   onPress={() => setHebDate({ ...hebDate, year: y })}
                   style={[styles.pickChip, hebDate.year === y && styles.pickChipActive]}
                 >
-                  <Text style={[typography.caption, { color: hebDate.year === y ? colors.primary : colors.textInverse, fontWeight: '700' }]}>
+                  <Text style={[typography.caption, { color: hebDate.year === y ? colors.textInverse : colors.textPrimary, fontWeight: '700' }]}>
                     {hebrewDateInfo(new HDate(1, months.TISHREI, y).greg()).yearHe}
                   </Text>
                 </Pressable>
@@ -134,12 +134,12 @@ export default function ChuppahScreen() {
             </View>
 
             {daysToWedding !== null && (
-              <Text style={[typography.h2, { color: colors.textInverse, marginTop: spacing.md }]}>
+              <Text style={[typography.h2, { color: colors.primary, marginTop: spacing.md }]}>
                 {daysToWedding > 0 ? `עוד ${daysToWedding} ימים 💒` : daysToWedding === 0 ? '💒 היום!' : `${-daysToWedding} ימים אחרי החתונה`}
               </Text>
             )}
             {weddingGreg && (
-              <Text style={[typography.small, { color: colors.textInverse, opacity: 0.9, marginTop: 4 }]}>
+              <Text style={[typography.small, { color: colors.textPrimary, opacity: 0.9, marginTop: 4 }]}>
                 {weddingGreg.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </Text>
             )}
@@ -241,8 +241,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickChipActive: {
-    backgroundColor: '#FFF',
-    borderColor: '#FFF',
+    backgroundColor: colors.primary,
+    borderColor: colors.primaryDark,
   },
   tab: {
     flex: 1,

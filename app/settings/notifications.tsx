@@ -37,7 +37,10 @@ const HAS_SETTINGS = new Set<NotifId>([
   'mishna-yomi-reminder',
   'rosh-chodesh',
   'fast-day',
+  'parent-call',
 ]);
+
+const WEEKDAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -57,6 +60,7 @@ function settingsSummary(id: NotifId, s: NotifSettings): string | null {
     case 'mishna-yomi-reminder': return `כל ערב ב-${pad2(s.mishnaHour)}:${pad2(s.mishnaMinute)}`;
     case 'rosh-chodesh': return `ערב ר"ח ב-${pad2(s.roshChodeshEveHour)}:${pad2(s.roshChodeshEveMinute)}`;
     case 'fast-day': return `ערב הצום ב-${pad2(s.fastEveHour)}:${pad2(s.fastEveMinute)}`;
+    case 'parent-call': return `כל יום ${WEEKDAYS_HE[s.parentCallWeekday]} ב-${pad2(s.parentCallHour)}:${pad2(s.parentCallMinute)}`;
     default: return null;
   }
 }
@@ -188,6 +192,45 @@ function renderSettingsFor(
           minute={s.fastEveMinute}
           onChange={(h, m) => patch({ fastEveHour: h, fastEveMinute: m })}
         />
+      );
+    case 'parent-call':
+      return (
+        <View>
+          <Text style={[typography.bodyBold, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
+            יום השיחה השבועית
+          </Text>
+          <View style={{ flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 }}>
+            {WEEKDAYS_HE.map((label, idx) => {
+              const active = s.parentCallWeekday === idx;
+              return (
+                <Pressable
+                  key={idx}
+                  onPress={() => patch({ parentCallWeekday: idx })}
+                  style={{
+                    paddingHorizontal: spacing.md,
+                    paddingVertical: spacing.sm,
+                    borderRadius: radius.md,
+                    backgroundColor: active ? colors.primary : colors.surfaceAlt,
+                    borderWidth: 1,
+                    borderColor: active ? colors.primaryDark : colors.border,
+                  }}
+                >
+                  <Text style={[typography.caption, { color: active ? colors.textInverse : colors.textPrimary, fontWeight: '700' }]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={{ marginTop: spacing.md }}>
+            <TimePicker
+              label="שעת התזכורת"
+              hour={s.parentCallHour}
+              minute={s.parentCallMinute}
+              onChange={(h, m) => patch({ parentCallHour: h, parentCallMinute: m })}
+            />
+          </View>
+        </View>
       );
     default:
       return null;

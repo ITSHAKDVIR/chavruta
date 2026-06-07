@@ -25,7 +25,12 @@ export const colors = {
   textPrimary: '#FFFFFF',
   textSecondary: 'rgba(255,255,255,0.78)',
   textMuted: 'rgba(255,255,255,0.55)',
-  textInverse: '#0a1f3d',   // for use on gold backgrounds
+  // Historically `textInverse` was navy (#0a1f3d) for use on solid-gold cards.
+  // After Card primary/accent variants migrated to GLASS (dark) backgrounds,
+  // navy-on-glass became invisible across dozens of tool screens. We now use
+  // white — readable on BOTH the new dark-glass cards AND the few remaining
+  // gold-fill components (white-on-gold still has acceptable ~8:1 contrast).
+  textInverse: '#FFFFFF',
 
   // ─── Brand ───────────────────────────────────────────────────────
   primary: '#d4a437',       // gold — primary CTA, highlights
