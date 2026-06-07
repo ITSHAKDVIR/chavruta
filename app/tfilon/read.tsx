@@ -485,22 +485,6 @@ export default function SiddurReader() {
             <PrayerTimeBanner kind={prayerKind} zmanim={zmanim} />
           )}
 
-          {/* Honest disclosure for Yemenite Baladi: Sefaria does not yet host
-              a dedicated Baladi (Tiklal) tree, so the structure shown is the
-              Edot Mizrach skeleton. Baladi-specific wording differences (e.g.
-              ברוך שאמר, נוסח הקדושה, פתיחות הברכות) are NOT yet inlined —
-              the user should consult a printed Tiklal for those. */}
-          {nusach === 'baladi' && (
-            <Card variant="accent">
-              <Text style={[typography.bodyBold, { color: colors.primaryDark, marginBottom: 4 }]}>
-                ℹ נוסח תימני בלדי
-              </Text>
-              <Text style={[typography.small, { color: colors.primaryDark }]}>
-                המבנה מבוסס על נוסח עדות מזרח (התקלאל הבלדי לא קיים עדיין ב-Sefaria).
-                הבדלי נוסח בלדי ספציפיים (פתיחת ברכות, קדושה, סדר התיקון) — מומלץ להיעזר בתקלאל מודפס.
-              </Text>
-            </Card>
-          )}
 
           {/* Tefila inserts banner — glass, not gold-filled (per user feedback).
               Only on Shacharit/Mincha/Maariv (prayerKind set) — NOT on Birkat

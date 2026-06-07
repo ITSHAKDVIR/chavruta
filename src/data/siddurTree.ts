@@ -7,29 +7,21 @@ export type SiddurNode = {
   children?: SiddurNode[];
 };
 
-export type Nusach = 'ashkenazi' | 'sephardi' | 'edot-mizrach' | 'chabad' | 'baladi';
+export type Nusach = 'ashkenazi' | 'sephardi' | 'edot-mizrach' | 'chabad';
 
-const TREES = raw as Record<string, SiddurNode[]>;
+const TREES = raw as Record<Nusach, SiddurNode[]>;
 
 export const NUSACH_LABEL: Record<Nusach, string> = {
   ashkenazi: 'אשכנז',
   sephardi: 'ספרד',
   'edot-mizrach': 'עדות מזרח',
   chabad: 'חב"ד',
-  baladi: 'תימני בלדי',
 };
 
 /** All valid nusach strings, used by code that loads from storage. */
-export const NUSACH_KEYS: Nusach[] = ['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad', 'baladi'];
+export const NUSACH_KEYS: Nusach[] = ['ashkenazi', 'sephardi', 'edot-mizrach', 'chabad'];
 
 export function getNusachTree(n: Nusach): SiddurNode[] {
-  // Yemenite Baladi shares the structural skeleton with Edot Mizrach (both
-  // are Sephardic-family liturgies). Sefaria does not currently host a
-  // dedicated Baladi siddur tree, so we fall back to Edot Mizrach for the
-  // index — UI surfaces a notice so the user knows the texts may differ
-  // slightly from the Baladi Tiklal. Per-prayer Baladi variants (e.g.
-  // wording in Amida, ברוך שאמר, etc.) will be layered in over time.
-  if (n === 'baladi') return TREES['edot-mizrach'] ?? [];
   return TREES[n] ?? [];
 }
 

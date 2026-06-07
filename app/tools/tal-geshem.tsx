@@ -87,9 +87,9 @@ export default function TalGeshemChazakaScreen() {
   useEffect(() => {
     (async () => {
       const stored = await getString(Keys.nusach, 'ashkenazi');
-      // Sephardi/Edot Mizrach/Baladi all share the Sephardic-family nusach for
+      // Sephardi + Edot Mizrach share the Sephardic-family nusach for
       // ותן טל ומטר phrasing — only Ashkenazi differs.
-      const isSefardicFamily = ['sephardi', 'edot-mizrach', 'baladi'].includes(stored);
+      const isSefardicFamily = ['sephardi', 'edot-mizrach'].includes(stored);
       setNusachState((isSefardicFamily ? 'sephardi' : 'ashkenazi') as Nusach);
     })();
   }, []);
