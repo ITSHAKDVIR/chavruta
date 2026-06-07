@@ -26,6 +26,7 @@ import { getActiveMusafLink } from '../../src/data/musafLinks';
 import { fetchSefariaText } from '../../src/services/sefaria';
 import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, ParsedParagraph } from '../../src/services/siddurParser';
 import { CholimReminder } from '../../src/components/CholimReminder';
+import { PermissionExplainer } from '../../src/components/PermissionExplainer';
 import { getInsertsForDate, TefilaInsert } from '../../src/data/tefilaInserts';
 import { computeZmanim } from '../../src/data/hebcal';
 import { getPrayerKind } from '../../src/data/prayerTimeWindows';
@@ -294,13 +295,31 @@ export default function SiddurReader() {
   const [chazaraOpen, setChazaraOpen] = useState(false);
 
   // Tracks whether the Android Notification-Policy permission has been
-  // granted. When false we show an explainer card so the user knows the toggle
-  // can't actually silence anything until they grant access in Settings.
+  // granted. On first user tap, if missing, we show the explainer modal —
+  // a card-on-card visual would clutter the silent-amidah view.
   const [dndPermission, setDndPermission] = useState<boolean | null>(null);
+  const [dndModalOpen, setDndModalOpen] = useState(false);
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     (async () => setDndPermission(await hasDndPermission()))();
   }, []);
+  // Re-check permission whenever the user returns to the app (i.e. after
+  // tapping "המשך" and granting in system settings). expo-router doesn't
+  // expose focus events the same way; we use a setInterval as a cheap proxy
+  // for "did the user come back". 1-second poll is fine while the modal is
+  // open — it stops once the value flips to true.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    if (dndPermission === true) return;
+    const t = setInterval(async () => {
+      const ok = await hasDndPermission();
+      if (ok) {
+        setDndPermission(true);
+        clearInterval(t);
+      }
+    }, 1500);
+    return () => clearInterval(t);
+  }, [dndPermission]);
 
   // Auto-disable DND when leaving this screen — DND should ONLY be active
   // while the user is actively reading the prayer. If they navigate away, even
@@ -608,21 +627,30 @@ export default function SiddurReader() {
               Only shown on actual prayer-reading pages (Shacharit/Mincha/Maariv).
               NOT on Birkat HaMazon / Brachot — those are short enough that DND
               isn't worth the friction. DND auto-disables when the user leaves
-              this screen — see useEffect cleanup above. */}
+              this screen — see useEffect cleanup above.
+
+              Click behavior:
+                quietMode on → toggle off immediately
+                quietMode off, permission GRANTED → toggle on immediately
+                quietMode off, permission MISSING → open the explainer modal,
+                  then on "המשך" open system settings. The screen will detect
+                  permission grant via the polling effect above. */}
           {isRunningText && prayerKind ? (
             <Card variant="default" padding="md">
               <Pressable
                 onPress={async () => {
-                  // On Android: if permission missing, take the user to grant
-                  // it first. We do NOT set quietMode=true yet — the user has
-                  // to re-tap once they're back.
-                  if (Platform.OS === 'android' && dndPermission === false) {
-                    await requestDndPermission();
+                  if (prefs.quietMode) {
+                    // Already on → just turn off.
+                    setPrefs({ ...prefs, quietMode: false });
+                    await toggleSystemDnd(false);
                     return;
                   }
-                  const next = !prefs.quietMode;
-                  setPrefs({ ...prefs, quietMode: next });
-                  await toggleSystemDnd(next);
+                  if (Platform.OS === 'android' && dndPermission === false) {
+                    setDndModalOpen(true);
+                    return;
+                  }
+                  setPrefs({ ...prefs, quietMode: true });
+                  await toggleSystemDnd(true);
                 }}
                 hitSlop={4}
                 style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md }}
@@ -640,25 +668,45 @@ export default function SiddurReader() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.bodyBold, { color: colors.textPrimary }]}>
-                    {Platform.OS === 'android' && dndPermission === false
-                      ? '⚠ נדרשת הרשאה — לחץ לפתיחת ההגדרות'
-                      : prefs.quietMode
-                        ? 'מצב שקט פעיל — יוסר אוטומטית בעת יציאה'
-                        : 'הפעל מצב שקט לתפילה'}
+                    {prefs.quietMode
+                      ? 'מצב שקט פעיל — יוסר אוטומטית ביציאה'
+                      : 'השתקת התראות בזמן התפילה'}
                   </Text>
                   <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
                     {Platform.OS === 'ios'
-                      ? 'iOS: ודאו ידנית שמצב "Focus" פעיל'
-                      : dndPermission === false
-                        ? 'באנדרואיד צריך לאשר "Notification Policy / נא לא להפריע" פעם אחת. לחץ ועבור לאפליקציה "חברותא" ברשימה > הפעל את ההרשאה.'
-                        : prefs.quietMode
-                          ? 'התראות whatsapp/sms חסומות. ההשתקה תכבה אוטומטית כשתצא מהסידור.'
-                          : 'בלחיצה — נא לא להפריע יופעל רק בזמן שאתה בסידור'}
+                      ? 'iOS — הפעל "Focus" ידנית מהמרכז הבקרה'
+                      : prefs.quietMode
+                        ? 'התראות whatsapp/sms חסומות עכשיו. סגירת הסידור תכבה את ההשתקה.'
+                        : 'לחץ לחסימת התראות עד היציאה מהסידור.'}
                   </Text>
                 </View>
               </Pressable>
             </Card>
           ) : null}
+
+          {/* Permission explainer modal — shown the FIRST time the user taps
+              the DND toggle (or any future time if they revoked the permission).
+              We don't describe the system UI specifics because they vary by
+              Android version + vendor (One UI / MIUI / Pixel etc.). */}
+          <PermissionExplainer
+            visible={dndModalOpen}
+            title="🔕 השתקת התראות בזמן התפילה"
+            why={
+              'כדי לחסום התראות וצלצולים בזמן שאתה בסידור, חברותא צריכה הרשאת "נא לא להפריע".\n\n' +
+              'זוהי הרשאת מערכת חד-פעמית — אחרי האישור ההשתקה מתבצעת אוטומטית בכניסה לסידור ומוסרת ביציאה.'
+            }
+            whatNext={
+              'יפתח מסך הגדרות המערכת. חפש את "חברותא" (או "Chavruta") ברשימה — ' +
+              'יכול להיות שתצטרך לגלול. לחץ עליה והפעל את ה-toggle. אחר כך חזור לאפליקציה.'
+            }
+            onContinue={async () => {
+              setDndModalOpen(false);
+              await requestDndPermission();
+              // polling useEffect will pick up the grant and flip dndPermission to true
+            }}
+            onCancel={() => setDndModalOpen(false)}
+          />
+
 
           {/* Siddur preferences sheet — minyan, optional sections.
               Only relevant for tefila in minyan (Shacharit/Mincha/Maariv) —

@@ -27,7 +27,9 @@ import {
   hebrewMonthName,
   hebrewYearString,
 } from '../../src/data/hebrewMonth';
-import { isSyncSupported, syncAll, pushReminder, deleteRemoteEvent } from '../../src/services/calendarSync';
+import { isSyncSupported, syncAll, pushReminder, deleteRemoteEvent, hasCalendarPermission } from '../../src/services/calendarSync';
+import { PermissionExplainer } from '../../src/components/PermissionExplainer';
+import { Linking } from 'react-native';
 
 const HEB_WEEKDAYS_SHORT = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 type CellEvent = { desc: string; category: string };
@@ -66,6 +68,10 @@ export default function CalendarScreen() {
   const [reminders, setReminders] = useState<CalendarReminder[]>([]);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [editingReminder, setEditingReminder] = useState<CalendarReminder | null>(null);
+  const [calPermModalOpen, setCalPermModalOpen] = useState(false);
+  // When true the user just denied calendar perm — show a "fix in Settings"
+  // modal instead of the regular explainer.
+  const [calPermDenied, setCalPermDenied] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -190,8 +196,26 @@ export default function CalendarScreen() {
       Alert.alert('סנכרון יומן', 'סנכרון עם יומן המכשיר זמין רק במכשיר נייד (iOS/Android). באנדרואיד עם חשבון Google מסונכרן - התזכורות יופיעו גם ב-Google Calendar.');
       return;
     }
+    // Check permission BEFORE prompting; if missing, show the explainer.
+    const granted = await hasCalendarPermission();
+    if (!granted) {
+      setCalPermDenied(false);
+      setCalPermModalOpen(true);
+      return;
+    }
+    await runSync();
+  }
+
+  async function runSync() {
     const result = await syncAll();
     if (result.error) {
+      // If permission was REVOKED between check and sync, surface the
+      // settings-redirect modal so the user knows how to re-grant it.
+      if (/הרשאה|permission/i.test(result.error)) {
+        setCalPermDenied(true);
+        setCalPermModalOpen(true);
+        return;
+      }
       Alert.alert('שגיאה', result.error);
     } else {
       Alert.alert('סנכרון הושלם', `${result.synced} מתוך ${result.total} תזכורות סונכרנו ליומן המכשיר`);
@@ -377,6 +401,35 @@ export default function CalendarScreen() {
         dateISO={selectedISO}
         editing={editingReminder}
         onSaved={refreshReminders}
+      />
+
+      {/* Calendar permission explainer — shown before any system prompt so
+          the user knows WHY the calendar dialog is about to appear. Two
+          modes: first-time ask (default) and re-grant from settings (after
+          a prior denial). */}
+      <PermissionExplainer
+        visible={calPermModalOpen}
+        title="📅 גישה ליומן המכשיר"
+        why={
+          'כדי שתזכורות שתסמן כאן יופיעו גם ביומן הטלפון (ו-Google Calendar אם מסונכרן), ' +
+          'חברותא צריכה גישת קריאה+כתיבה ליומן.\n\n' +
+          'הנתונים נשארים במכשיר שלך — שום דבר לא נשלח לחברותא או לשרת אחר.'
+        }
+        whatNext={
+          calPermDenied
+            ? 'בעבר ביטלת את ההרשאה. יפתח דף האפליקציה בהגדרות. שם: "הרשאות" → "יומן" → "אפשר".'
+            : 'תוצג בקשת מערכת לאישור. לחץ "אפשר" — אחרי האישור הסנכרון יתחיל אוטומטית.'
+        }
+        onContinue={async () => {
+          setCalPermModalOpen(false);
+          if (calPermDenied) {
+            // User previously denied → can't re-prompt; must go to settings.
+            try { await Linking.openSettings(); } catch {}
+            return;
+          }
+          await runSync();
+        }}
+        onCancel={() => setCalPermModalOpen(false)}
       />
     </SafeAreaView>
   );

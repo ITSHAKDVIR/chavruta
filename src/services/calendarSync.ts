@@ -33,6 +33,19 @@ export async function requestCalendarPermission(): Promise<boolean> {
   return status === 'granted';
 }
 
+/** Returns the CURRENT permission state without prompting the user. Used by
+ *  UI flows that need to decide whether to show an explainer modal first. */
+export async function hasCalendarPermission(): Promise<boolean> {
+  const Calendar = await loadModule();
+  if (!Calendar) return false;
+  try {
+    const { status } = await Calendar.getCalendarPermissionsAsync();
+    return status === 'granted';
+  } catch {
+    return false;
+  }
+}
+
 /** Returns the chosen target calendar id, prompting the user if first time. */
 export async function getTargetCalendarId(): Promise<string | null> {
   const Calendar = await loadModule();
