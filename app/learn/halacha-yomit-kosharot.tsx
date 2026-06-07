@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, Platform } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { HDate } from '@hebcal/core';
-import { WebView } from 'react-native-webview';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Card } from '../../src/components/Card';
 import { getHalachaForDate } from '../../src/data/halachaYomit';
@@ -137,20 +136,43 @@ export default function HalachaYomitKosharotReader() {
 }
 
 /**
- * Embedded YouTube player using react-native-webview. Standard 16:9 ratio.
- * The video appears as a real player with play/pause/fullscreen — no need to
- * leave the app to watch the halacha.
+ * Tap-to-open YouTube card.
+ *
+ * Previously this rendered an inline WebView iframe pointing at the
+ * youtube-nocookie embed URL, but many of הרב דביר's videos return YouTube
+ * Error 153 ("Playback on other websites has been disabled by the video
+ * owner") — even via the nocookie domain. That's an OWNER-side restriction
+ * we cannot work around: the only way to actually play the video is to
+ * leave the app and open the official YouTube app/site.
+ *
+ * The new card shows a high-quality YouTube thumbnail with a play overlay
+ * and tapping it deep-links into YouTube. We try the youtube:// scheme
+ * first so the native app opens directly; if that fails (no app installed)
+ * we fall back to the https:// URL which the OS resolves to the browser.
  */
 function VideoPlayer({ videoUrl, title }: { videoUrl: string; title?: string }) {
   const { width } = useWindowDimensions();
   const videoId = youtubeIdFromUrl(videoUrl);
   if (!videoId) return null;
   // Subtract horizontal padding (spacing.lg * 2 from the parent View)
-  const playerWidth = width - spacing.lg * 2;
-  const playerHeight = Math.round((playerWidth * 9) / 16);
-  // Use youtube-nocookie.com domain — bypasses error 153 (embed-disabled videos
-  // often work via the privacy-enhanced domain). Plus playsinline + jsapi.
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0&enablejsapi=1&modestbranding=1`;
+  // and the Card's internal padding (md = spacing.md on each side).
+  const cardInnerWidth = width - spacing.lg * 2 - spacing.md * 2;
+  const thumbHeight = Math.round((cardInnerWidth * 9) / 16);
+
+  const httpsUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  const appUrl = `vnd.youtube://${videoId}`;
+  const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+  async function open() {
+    // Try the native YouTube app first; fall back to the web URL so the
+    // browser opens if YouTube isn't installed.
+    try {
+      const canApp = await Linking.canOpenURL(appUrl);
+      await Linking.openURL(canApp ? appUrl : httpsUrl);
+    } catch {
+      try { await Linking.openURL(httpsUrl); } catch {}
+    }
+  }
 
   return (
     <Card padding="md">
@@ -162,25 +184,41 @@ function VideoPlayer({ videoUrl, title }: { videoUrl: string; title?: string }) 
           {title}
         </Text>
       )}
-      <View style={{ height: playerHeight, borderRadius: radius.md, overflow: 'hidden', backgroundColor: '#000' }}>
-        {Platform.OS === 'web' ? (
-          // @ts-ignore — iframe is valid in react-native-web
-          <iframe
-            src={embedUrl}
-            style={{ width: '100%', height: '100%', border: 0 }}
-            allowFullScreen
-            title={title || 'YouTube video'}
-          />
-        ) : (
-          <WebView
-            source={{ uri: embedUrl }}
-            style={{ flex: 1, backgroundColor: '#000' }}
-            allowsFullscreenVideo
-            javaScriptEnabled
-            domStorageEnabled
-          />
-        )}
-      </View>
+      <Pressable
+        onPress={open}
+        style={{ height: thumbHeight, borderRadius: radius.md, overflow: 'hidden', backgroundColor: '#000' }}
+        hitSlop={4}
+      >
+        <Image
+          source={{ uri: thumbUrl }}
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+        />
+        {/* Play-button overlay — a centered triangle inside a translucent gold disc. */}
+        <View
+          style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <View
+            style={{
+              width: 64, height: 64, borderRadius: 32,
+              backgroundColor: 'rgba(212,164,55,0.92)',
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+            }}
+          >
+            <Text style={{ fontSize: 30, color: '#0a1f3d', marginLeft: 4 }}>▶</Text>
+          </View>
+        </View>
+      </Pressable>
+      <Pressable onPress={open} hitSlop={6} style={{ marginTop: spacing.sm, alignSelf: 'center' }}>
+        <Text style={[typography.small, { color: colors.primary, fontWeight: '600' }]}>
+          ▶ פתח ביוטיוב
+        </Text>
+      </Pressable>
     </Card>
   );
 }
