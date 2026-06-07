@@ -58,19 +58,73 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build release APK
+      # Decode the release keystore from the GitHub Secret into the standard
+      # android/app location. The base64 was uploaded via
+      # `gh secret set ANDROID_KEYSTORE`. The keystore stays on the runner
+      # only for this job's lifetime — runners are ephemeral.
+      - name: Decode release keystore
+        id: keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > android/app/release.jks
+          ls -la android/app/release.jks
+
+      # Inject signingConfigs.release into the generated build.gradle. Expo
+      # prebuild writes the file without signing config; we patch it here
+      # so gradle's release builds get signed with the upload key. The
+      # secrets reach gradle via env vars (RELEASE_*) at build time.
+      - name: Configure release signing
+        run: |
+          GRADLE_FILE=android/app/build.gradle
+          # Insert signingConfigs.release block right before "buildTypes {".
+          # The 'sed' patch is idempotent — if "signingConfigs {" already
+          # exists with a release key we leave it alone.
+          if ! grep -q "signingConfigs {" "$GRADLE_FILE"; then
+            python3 -c "
+import re
+with open('$GRADLE_FILE','r') as f: src = f.read()
+inject = '''
+    signingConfigs {
+        release {
+            storeFile file('release.jks')
+            storePassword System.getenv('RELEASE_STORE_PASSWORD')
+            keyAlias System.getenv('RELEASE_KEY_ALIAS')
+            keyPassword System.getenv('RELEASE_KEY_PASSWORD')
+        }
+    }
+'''
+src = src.replace('android {', 'android {' + inject, 1)
+# Switch release buildType to use the release signing config.
+src = re.sub(r'(release\s*\{[^}]*?signingConfig\s+)signingConfigs\.debug', r'\\1signingConfigs.release', src)
+with open('$GRADLE_FILE','w') as f: f.write(src)
+print('Patched ' + '$GRADLE_FILE')
+"
+          fi
+          echo "--- updated build.gradle (head + signing section) ---"
+          head -90 "$GRADLE_FILE"
+
+      - name: Build release APK + AAB (signed for Play Store)
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: |
+          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
         env:
           GRADLE_OPTS: "-Xmx4g -Dorg.gradle.jvmargs='-Xmx4g'"
+          RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PWD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PWD }}
 
-      - name: Locate APK
+      - name: Locate artifacts
         id: locate
         run: |
           APK=$(find android/app/build/outputs/apk -name "*.apk" -not -name "*unsigned*" | head -1)
+          AAB=$(find android/app/build/outputs/bundle -name "*.aab" | head -1 || true)
           echo "Found APK: $APK"
           ls -la "$APK"
           echo "apk_path=$APK" >> $GITHUB_OUTPUT
+          if [ -n "$AAB" ]; then
+            echo "Found AAB: $AAB"
+            ls -la "$AAB"
+            echo "aab_path=$AAB" >> $GITHUB_OUTPUT
+          fi
           # Read version from app.json
           VERSION=$(node -e "console.log(require('./app.json').expo.version)")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -80,6 +134,17 @@ jobs:
         with:
           name: chavruta-v${{ steps.locate.outputs.version }}-apk
           path: ${{ steps.locate.outputs.apk_path }}
+          retention-days: 30
+
+      # The AAB is what you upload to Google Play Console (Internal/Closed/
+      # Production tracks). The APK above is for sideloading directly onto
+      # devices for testing.
+      - name: Upload AAB as artifact (Play Store)
+        if: steps.locate.outputs.aab_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: chavruta-v${{ steps.locate.outputs.version }}-aab
+          path: ${{ steps.locate.outputs.aab_path }}
           retention-days: 30
 
       # Optional: create a GitHub Release with the APK attached, on push to main.
