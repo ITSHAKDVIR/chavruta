@@ -69,38 +69,14 @@ jobs:
           ls -la android/app/release.jks
 
       # Inject signingConfigs.release into the generated build.gradle. Expo
-      # prebuild writes the file without signing config; we patch it here
-      # so gradle's release builds get signed with the upload key. The
-      # secrets reach gradle via env vars (RELEASE_*) at build time.
+      # prebuild writes the file with only signingConfigs.debug; the python
+      # script patches in a release entry pointing to release.jks + env-var
+      # credentials, and switches the release buildType to use it.
       - name: Configure release signing
         run: |
-          GRADLE_FILE=android/app/build.gradle
-          # Insert signingConfigs.release block right before "buildTypes {".
-          # The 'sed' patch is idempotent — if "signingConfigs {" already
-          # exists with a release key we leave it alone.
-          if ! grep -q "signingConfigs {" "$GRADLE_FILE"; then
-            python3 -c "
-import re
-with open('$GRADLE_FILE','r') as f: src = f.read()
-inject = '''
-    signingConfigs {
-        release {
-            storeFile file('release.jks')
-            storePassword System.getenv('RELEASE_STORE_PASSWORD')
-            keyAlias System.getenv('RELEASE_KEY_ALIAS')
-            keyPassword System.getenv('RELEASE_KEY_PASSWORD')
-        }
-    }
-'''
-src = src.replace('android {', 'android {' + inject, 1)
-# Switch release buildType to use the release signing config.
-src = re.sub(r'(release\s*\{[^}]*?signingConfig\s+)signingConfigs\.debug', r'\\1signingConfigs.release', src)
-with open('$GRADLE_FILE','w') as f: f.write(src)
-print('Patched ' + '$GRADLE_FILE')
-"
-          fi
-          echo "--- updated build.gradle (head + signing section) ---"
-          head -90 "$GRADLE_FILE"
+          python3 .github/scripts/inject-signing.py android/app/build.gradle
+          echo "--- patched build.gradle (signing block) ---"
+          sed -n '/signingConfigs/,/^    }/p' android/app/build.gradle | head -30
 
       - name: Build release APK + AAB (signed for Play Store)
         working-directory: android
