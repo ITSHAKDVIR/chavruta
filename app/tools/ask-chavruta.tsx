@@ -151,10 +151,11 @@ export default function AskChavrutaScreen() {
   async function pickImage(useCamera: boolean) {
     try {
       const ImagePicker: any = await import('expo-image-picker');
-      const perm = useCamera
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (perm.status !== 'granted') { Alert.alert('הרשאה נדחתה'); return; }
+      if (useCamera) {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (perm.status !== 'granted') { Alert.alert('הרשאה נדחתה'); return; }
+      }
+      // launchImageLibraryAsync uses Android Photo Picker — no permission needed.
       const opts = { base64: true, quality: 0.7 as const };
       const res = useCamera
         ? await ImagePicker.launchCameraAsync(opts)

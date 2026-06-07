@@ -65,13 +65,14 @@ export default function LavudPhotoScreen() {
     setResult(null);
     try {
       const ImagePicker: any = await import('expo-image-picker');
-      const perm = useCamera
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (perm.status !== 'granted') {
-        setError('צריך לאשר גישה למצלמה / גלריה');
-        return;
+      if (useCamera) {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (perm.status !== 'granted') {
+          setError('צריך לאשר גישה למצלמה');
+          return;
+        }
       }
+      // launchImageLibraryAsync uses Android Photo Picker — no permission needed.
       const opts = { allowsEditing: true, quality: 0.7 as const };
       const res = useCamera
         ? await ImagePicker.launchCameraAsync(opts)

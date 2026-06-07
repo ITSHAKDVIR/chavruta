@@ -123,11 +123,7 @@ export default function PhotoToRabbiScreen() {
   }
 
   async function pickFromGallery() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('הרשאת גלריה נדחתה');
-      return;
-    }
+    // launchImageLibraryAsync uses Android Photo Picker — no permission needed.
     const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7, allowsEditing: true });
     if (!result.canceled && result.assets[0]) setPhoto(result.assets[0].uri);
   }

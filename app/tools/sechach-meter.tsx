@@ -26,13 +26,14 @@ export default function SechachMeterScreen() {
 
   async function pickPhoto(useCamera: boolean) {
     try {
-      const perm = useCamera
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (perm.status !== 'granted') {
-        Alert.alert('הרשאה נדחתה', 'לא ניתן להמשיך ללא הרשאת מצלמה/גלריה');
-        return;
+      if (useCamera) {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (perm.status !== 'granted') {
+          Alert.alert('הרשאה נדחתה', 'לא ניתן להמשיך ללא הרשאת מצלמה');
+          return;
+        }
       }
+      // launchImageLibraryAsync uses Android Photo Picker — no permission needed.
       const res = useCamera
         ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.6 })
         : await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.6 });

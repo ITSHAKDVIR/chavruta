@@ -42,14 +42,14 @@ type Stage = 'idle' | 'reading' | 'done' | 'error' | 'notCosmetic';
 
 async function pickImageAndConvertToBase64(source: 'camera' | 'library'): Promise<string | null> {
   const ImagePicker: any = await import('expo-image-picker');
-  const perm =
-    source === 'camera'
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) {
-    Alert.alert('הרשאה נדחתה', 'יש לאפשר גישה כדי להעלות תמונה.');
-    return null;
+  if (source === 'camera') {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('הרשאה נדחתה', 'יש לאפשר גישה למצלמה.');
+      return null;
+    }
   }
+  // launchImageLibraryAsync uses Android Photo Picker — no permission needed.
   const opts = {
     mediaTypes: 'images' as any,
     quality: 0.7,

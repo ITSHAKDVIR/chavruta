@@ -53,11 +53,7 @@ export default function ShulTimesScreen() {
   async function pickPhoto() {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      const { status: lib } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (lib !== 'granted') {
-        Alert.alert('הרשאה נדחתה');
-        return;
-      }
+      // Camera denied — fall back to Android Photo Picker (no permission needed).
       const res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.6 });
       if (!res.canceled) { setPhoto(res.assets[0].uri); setPhotoBase64(res.assets[0].base64 ?? null); }
       return;
