@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.itzhakdvir.chavruta",
+      "bundleIdentifier": "com.chavruta.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "כדי לחשב זמני תפילה לפי המיקום שלך.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "כדי להציע ברכה כשתתקרב לים גם כשהאפליקציה ברקע.",
