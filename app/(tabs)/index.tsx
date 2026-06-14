@@ -25,7 +25,7 @@ import { ToolDetailModal } from '../../src/components/ToolDetailModal';
 import { colors, radius, spacing } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 
-const CLUSTER_HEIGHT = 380;
+const CLUSTER_HEIGHT = 520;
 
 export default function HomeScreen() {
   useTick(60_000);

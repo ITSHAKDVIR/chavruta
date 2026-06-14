@@ -3,7 +3,7 @@
     "name": "חברותא",
     "slug": "chavruta-app",
     "scheme": "chavruta",
-    "version": "2.9.0",
+    "version": "2.9.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -26,7 +26,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.itzhakdvir.chavruta",
-      "versionCode": 4,
+      "versionCode": 5,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",

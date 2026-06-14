@@ -4,10 +4,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useFrameCallback,
-  withSpring,
   SharedValue,
 } from 'react-native-reanimated';
-import { Gyroscope } from 'expo-sensors';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { TOOLS, Tool } from '../data/tools';
 import { Icon, IconName } from './Icon';
 import { colors } from '../theme/colors';
@@ -21,7 +20,7 @@ type Props = {
   onPick: (tool: Tool) => void;
 };
 
-const ICON_SIZE = 44;
+const ICON_SIZE = 50;
 const FOCAL = 500;
 const CAM_Z = 700;
 
@@ -48,39 +47,27 @@ function fibonacciSphere(count: number, radius: number): Vec3[] {
 }
 
 export function IconCluster({ height, onPick }: Props) {
-  const radius = useMemo(() => Math.min(SCREEN_W, height) * 0.38, [height]);
+  // Larger sphere — fills more of the area. Was 0.38, now 0.46.
+  const radius = useMemo(() => Math.min(SCREEN_W, height) * 0.46, [height]);
   const positions = useMemo(() => fibonacciSphere(TOOLS.length, radius), [radius]);
   const centerX = SCREEN_W / 2;
   const centerY = height / 2;
 
-  // Continuous rotation around the Y axis (yaw) — slow + steady.
-  const spin = useSharedValue(0);
-  // Pitch + extra yaw driven by the gyroscope, smoothed with springs.
-  const tiltX = useSharedValue(0);
-  const tiltY = useSharedValue(0);
-  // Pause when the app is in background or the prop changes (e.g. settings).
+  // Accumulated rotation: yaw around Y axis, pitch around X axis.
+  // Both can be advanced by auto-spin (yaw only) and finger drag (both).
+  const yaw = useSharedValue(0);
+  const pitch = useSharedValue(0.15); // small tilt so cluster reads as 3D from frame 1
+  const dragging = useSharedValue(false);
   const paused = useSharedValue(false);
 
-  // ── UI-thread tick: advance the spin angle every frame ──
+  // ── UI-thread tick: advance yaw every frame, unless paused or dragging ──
   useFrameCallback((info) => {
     'worklet';
-    if (paused.value) return;
+    if (paused.value || dragging.value) return;
     const dt = (info.timeSincePreviousFrame ?? 16) / 1000;
     // 30 s per full rotation → 0.2094 rad/s
-    spin.value = spin.value + dt * 0.2094;
+    yaw.value = yaw.value + dt * 0.2094;
   });
-
-  // ── Gyroscope: tilt the whole cluster ──
-  useEffect(() => {
-    Gyroscope.setUpdateInterval(80);
-    const sub = Gyroscope.addListener(({ x, y }) => {
-      const cx = Math.max(-1, Math.min(1, x));
-      const cy = Math.max(-1, Math.min(1, y));
-      tiltX.value = withSpring(cx * 0.45, { damping: 14 });
-      tiltY.value = withSpring(cy * 0.45, { damping: 14 });
-    });
-    return () => sub.remove();
-  }, []);
 
   // ── Pause spin when the app is backgrounded ──
   useEffect(() => {
@@ -90,23 +77,45 @@ export function IconCluster({ height, onPick }: Props) {
     return () => sub.remove();
   }, []);
 
+  // ── Pan gesture: finger drag rotates the cluster manually ──
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .minDistance(4)
+        .onStart(() => {
+          'worklet';
+          dragging.value = true;
+        })
+        .onChange((e) => {
+          'worklet';
+          yaw.value = yaw.value + e.changeX * 0.012;
+          pitch.value = Math.max(-1.2, Math.min(1.2, pitch.value + e.changeY * 0.012));
+        })
+        .onEnd(() => {
+          'worklet';
+          dragging.value = false;
+        }),
+    [],
+  );
+
   return (
-    <View style={[styles.container, { width: SCREEN_W, height }]} pointerEvents="box-none">
-      {TOOLS.map((tool, i) => (
-        <IconBubble
-          key={tool.id}
-          tool={tool}
-          base={positions[i]}
-          radius={radius}
-          centerX={centerX}
-          centerY={centerY}
-          spin={spin}
-          tiltX={tiltX}
-          tiltY={tiltY}
-          onTap={() => onPick(tool)}
-        />
-      ))}
-    </View>
+    <GestureDetector gesture={panGesture}>
+      <View style={[styles.container, { width: SCREEN_W, height }]} pointerEvents="box-none">
+        {TOOLS.map((tool, i) => (
+          <IconBubble
+            key={tool.id}
+            tool={tool}
+            base={positions[i]}
+            radius={radius}
+            centerX={centerX}
+            centerY={centerY}
+            yaw={yaw}
+            pitch={pitch}
+            onTap={() => onPick(tool)}
+          />
+        ))}
+      </View>
+    </GestureDetector>
   );
 }
 
@@ -116,37 +125,39 @@ type BubbleProps = {
   radius: number;
   centerX: number;
   centerY: number;
-  spin: SharedValue<number>;
-  tiltX: SharedValue<number>;
-  tiltY: SharedValue<number>;
+  yaw: SharedValue<number>;
+  pitch: SharedValue<number>;
   onTap: () => void;
 };
 
-function IconBubble({ tool, base, radius, centerX, centerY, spin, tiltX, tiltY, onTap }: BubbleProps) {
+function IconBubble({ tool, base, radius, centerX, centerY, yaw, pitch, onTap }: BubbleProps) {
   const animatedStyle = useAnimatedStyle(() => {
-    const yaw = spin.value + tiltY.value;
-    const pitch = tiltX.value;
+    const y_ = yaw.value;
+    const p_ = pitch.value;
 
     // Rotate (base.x, base.y, base.z) around Y axis by yaw, then X axis by pitch.
-    const cosY = Math.cos(yaw);
-    const sinY = Math.sin(yaw);
+    const cosY = Math.cos(y_);
+    const sinY = Math.sin(y_);
     const x1 = base.x * cosY + base.z * sinY;
     const z1 = -base.x * sinY + base.z * cosY;
 
-    const cosX = Math.cos(pitch);
-    const sinX = Math.sin(pitch);
+    const cosX = Math.cos(p_);
+    const sinX = Math.sin(p_);
     const y2 = base.y * cosX - z1 * sinX;
     const z2 = base.y * sinX + z1 * cosX;
 
-    // Perspective project to 2D.
+    // Perspective projection.
+    // z2 < 0 = closer to viewer (in front), z2 > 0 = further from viewer (behind).
     const z = CAM_Z + z2;
     const projScale = FOCAL / z;
 
-    // Depth fade: front icons sharp + bigger, back icons faded + smaller.
-    const depth01 = (z2 + radius) / (2 * radius); // 0..1, clamped below
-    const safe = depth01 < 0 ? 0 : depth01 > 1 ? 1 : depth01;
-    const opacity = 0.35 + safe * 0.65;
-    const scale = Math.max(0.5, Math.min(1.2, projScale * 0.95));
+    // Depth fade: FRONT icons (z2 < 0) are fully opaque + bigger.
+    //             BACK icons (z2 > 0) are slightly faded + smaller.
+    // depth01: 1.0 when fully in front, 0.0 when fully behind.
+    const raw = (radius - z2) / (2 * radius);
+    const depth01 = raw < 0 ? 0 : raw > 1 ? 1 : raw;
+    const opacity = 0.55 + depth01 * 0.45; // 0.55 .. 1.0 (less harsh than before)
+    const scale = Math.max(0.72, Math.min(1.15, projScale * 0.92));
 
     return {
       transform: [
@@ -166,9 +177,9 @@ function IconBubble({ tool, base, radius, centerX, centerY, spin, tiltX, tiltY, 
         animatedStyle,
       ]}
     >
-      <Pressable onPress={onTap} hitSlop={6} style={styles.iconChip}>
+      <Pressable onPress={onTap} hitSlop={4} style={styles.iconChip}>
         {tool.iconName ? (
-          <Icon name={tool.iconName as IconName} size={22} color={colors.primary} strokeWidth={1.7} />
+          <Icon name={tool.iconName as IconName} size={26} color={colors.primary} strokeWidth={1.8} />
         ) : null}
       </Pressable>
     </Animated.View>
@@ -184,20 +195,22 @@ const styles = StyleSheet.create({
     width: ICON_SIZE,
     height: ICON_SIZE,
   },
+  // Solid navy chip (not glass) so the icons read crisp and the cluster
+  // doesn't look like a cluttered haze.
   iconChip: {
     width: ICON_SIZE,
     height: ICON_SIZE,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 13,
+    backgroundColor: '#152a4d',
     borderWidth: 1,
-    borderColor: 'rgba(212,164,55,0.35)',
+    borderColor: 'rgba(212,164,55,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.45,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 5,
   },
 });
 
@@ -211,7 +224,7 @@ export function IconGrid({ onPick }: { onPick: (tool: Tool) => void }) {
       {TOOLS.map((t) => (
         <Pressable key={t.id} onPress={() => onPick(t)} style={gridStyles.tile}>
           {t.iconName ? (
-            <Icon name={t.iconName as IconName} size={22} color={colors.primary} strokeWidth={1.7} />
+            <Icon name={t.iconName as IconName} size={24} color={colors.primary} strokeWidth={1.8} />
           ) : null}
         </Pressable>
       ))}
@@ -230,9 +243,9 @@ const gridStyles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#152a4d',
     borderWidth: 1,
-    borderColor: 'rgba(212,164,55,0.35)',
+    borderColor: 'rgba(212,164,55,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
   },
