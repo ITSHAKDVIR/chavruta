@@ -251,16 +251,15 @@ export default function SiddurReader() {
     }),
     [allLeavesUnderHere, prefs, inIsrael],
   );
-  // Running text ONLY when the user has drilled into a specific service or
-  // sub-section. At top-level containers like "ימי חול" (slugs.length === 1
-  // and not itself a leaf) — show navigation list so the user picks Shacharit
-  // /Mincha/Maariv first. The previous logic was just a leaf count threshold,
-  // which broke once date filtering shrunk Weekday below the threshold and
-  // dumped ALL three prayers as one running blob.
+  // Render any node with a reasonable leaf count as running text. The earlier
+  // protection (force nav list at slugs.length===1) was for Ashkenazi's
+  // "ימי חול" wrapper which bundled all 3 weekday prayers; we now flatten
+  // that at the index level (getFlatTopItems) so every top-level entry is
+  // ONE prayer. The leaf-count threshold alone is enough — and finally lets
+  // Sephardi/Edot-Mizrach/Chabad render שחרית directly in running text too,
+  // matching the experience the user wants.
   const hereIsLeaf = !!here?.ref;
-  const isAtTopContainer = slugs.length === 1 && !hereIsLeaf;
   const isRunningText =
-    !isAtTopContainer &&
     allLeavesFiltered.length > 0 &&
     allLeavesFiltered.length <= RUNNING_TEXT_MAX_LEAVES;
 
@@ -345,33 +344,39 @@ export default function SiddurReader() {
     // Initialize with loading placeholders — use filtered list
     setLeaves(allLeavesFiltered.map((l) => ({ ...l, loading: true })));
 
-    // Fetch all in parallel
+    // Progressive load: each leaf updates state the moment its text returns,
+    // so the user sees the start of the prayer immediately instead of waiting
+    // for the entire ~100-section fetch to complete.
     let cancelled = false;
-    (async () => {
-      const todayDow = new Date().getDay();
-      const results = await Promise.all(
-        allLeavesFiltered.map(async (leaf) => {
-          try {
-            const t = await fetchSefariaText(leaf.ref);
-            if (t && t.heText.length > 0) {
-              let lines = t.heText;
-              // שיר של יום: filter content to TODAY's day section only.
-              // Sefaria uses markers like "בראשון בשבת:", "בשני בשבת:" etc.
-              // Keep paragraphs from today's marker until the next day marker.
-              if (/Song of the Day|שיר של יום|Daily Psalm|Psalm of the Day/i.test(`${leaf.en} ${leaf.he}`)) {
-                lines = filterDailyPsalmForToday(lines, todayDow);
-              }
-              const parsed = parseParagraphs(lines);
-              return { ...leaf, paragraphs: parsed, loading: false };
+    const todayDow = new Date().getDay();
+    allLeavesFiltered.forEach((leaf, idx) => {
+      (async () => {
+        try {
+          const t = await fetchSefariaText(leaf.ref);
+          if (cancelled) return;
+          if (t && t.heText.length > 0) {
+            let lines = t.heText;
+            // שיר של יום: filter to TODAY's day section only.
+            if (/Song of the Day|שיר של יום|Daily Psalm|Psalm of the Day/i.test(`${leaf.en} ${leaf.he}`)) {
+              lines = filterDailyPsalmForToday(lines, todayDow);
             }
-            return { ...leaf, loading: false, error: true };
-          } catch {
-            return { ...leaf, loading: false, error: true };
+            const parsed = parseParagraphs(lines);
+            setLeaves((prev) =>
+              prev.map((l, i) => (i === idx ? { ...l, paragraphs: parsed, loading: false } : l)),
+            );
+          } else {
+            setLeaves((prev) =>
+              prev.map((l, i) => (i === idx ? { ...l, loading: false, error: true } : l)),
+            );
           }
-        }),
-      );
-      if (!cancelled) setLeaves(results);
-    })();
+        } catch {
+          if (cancelled) return;
+          setLeaves((prev) =>
+            prev.map((l, i) => (i === idx ? { ...l, loading: false, error: true } : l)),
+          );
+        }
+      })();
+    });
     return () => {
       cancelled = true;
     };
