@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { AppState, Dimensions, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { TOOLS, Tool } from '../data/tools';
-import { Icon, IconName } from './Icon';
+import { Icon, ICONS, IconName } from './Icon';
 import { colors } from '../theme/colors';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -20,7 +20,7 @@ type Props = {
   onPick: (tool: Tool) => void;
 };
 
-const ICON_SIZE = 50;
+const ICON_SIZE = 54;
 const FOCAL = 500;
 const CAM_Z = 700;
 
@@ -47,8 +47,9 @@ function fibonacciSphere(count: number, radius: number): Vec3[] {
 }
 
 export function IconCluster({ height, onPick }: Props) {
-  // Larger sphere — fills more of the area. Was 0.38, now 0.46.
-  const radius = useMemo(() => Math.min(SCREEN_W, height) * 0.46, [height]);
+  // Sphere radius scaled to screen width — fills nearly the full width.
+  // Cluster visible diameter ≈ 2 × radius + ICON_SIZE ≈ 96% × SCREEN_W.
+  const radius = useMemo(() => SCREEN_W * 0.48, []);
   const positions = useMemo(() => fibonacciSphere(TOOLS.length, radius), [radius]);
   const centerX = SCREEN_W / 2;
   const centerY = height / 2;
@@ -89,7 +90,9 @@ export function IconCluster({ height, onPick }: Props) {
         .onChange((e) => {
           'worklet';
           yaw.value = yaw.value + e.changeX * 0.012;
-          pitch.value = Math.max(-1.2, Math.min(1.2, pitch.value + e.changeY * 0.012));
+          // Pitch range is tighter than yaw to avoid the "looking at the
+          // back of the sphere" inversion that happens past ~30°.
+          pitch.value = Math.max(-0.5, Math.min(0.5, pitch.value + e.changeY * 0.012));
         })
         .onEnd(() => {
           'worklet';
@@ -178,9 +181,11 @@ function IconBubble({ tool, base, radius, centerX, centerY, yaw, pitch, onTap }:
       ]}
     >
       <Pressable onPress={onTap} hitSlop={4} style={styles.iconChip}>
-        {tool.iconName ? (
-          <Icon name={tool.iconName as IconName} size={26} color={colors.primary} strokeWidth={1.8} />
-        ) : null}
+        {tool.iconName && (ICONS as Record<string, unknown>)[tool.iconName] ? (
+          <Icon name={tool.iconName as IconName} size={28} color={colors.primary} strokeWidth={1.8} />
+        ) : (
+          <Text style={styles.emojiFallback}>{tool.emoji}</Text>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -211,6 +216,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.45,
     shadowRadius: 8,
     elevation: 5,
+  },
+  emojiFallback: {
+    fontSize: 26,
   },
 });
 
