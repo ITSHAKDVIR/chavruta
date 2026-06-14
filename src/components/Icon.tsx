@@ -8,27 +8,18 @@
  * Usage:
  *   <Icon name="clock" size={24} />
  *   <Icon name="book" size={32} color={colors.primary} />
- *
- * Adding a new icon:
- *   1. Find the icon at https://lucide.dev/icons/
- *   2. Add it to ICONS below as: `iconName: LucideIconName`
- *
- * The reason we wrap rather than importing Lucide directly everywhere:
- *   - Single source of truth — easy to swap icon library later
- *   - Default size, stroke-width, and color in one place
- *   - String-based names avoid 200+ imports across the codebase
  */
 import React from 'react';
 import {
   Clock, BookOpen, MapPin, Calendar, Wrench, Home, Settings, Bell,
   Search, Menu, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   X, Plus, Minus, Check, Info, AlertTriangle, AlertCircle,
-  Heart, Star, Flame, Sparkles, Moon, Sun, Sunrise, Sunset,
+  Heart, Star, Flame, Sparkles, Moon, MoonStar, Sun, Sunrise, Sunset,
   Camera, Image as ImageIcon, Mic, Volume2, VolumeX, Play, Pause,
   Trash2, Share2, Copy, Download, Upload, ExternalLink, Link,
   User, Users, MessageCircle, Phone, Mail,
   Compass, Navigation, Map, Globe,
-  Ruler, Scale, Hash, Hash as Pound, Percent,
+  Ruler, Scale, Hash, Percent,
   Coffee, Wheat, Beef, Fish, Apple, Droplet, Wine, Utensils,
   ScrollText, FileText, Notebook, Library, GraduationCap,
   Lock, Unlock, Eye, EyeOff,
@@ -37,151 +28,128 @@ import {
   Filter, ArrowRight, ArrowLeft, ArrowUp, ArrowDown,
   Cog, RotateCw, RefreshCw, Save,
   CalendarDays, CalendarClock, Timer,
-  Building2, Building, Tent, Church,
-  Cpu, Zap, Eye as Search2,
+  Building2, Building, Tent,
+  Cpu, Zap,
+  // ─── New icons for unique-per-tool cluster (chavruta 2.9.0) ───
+  CloudRain, CloudSunRain, CloudMoon,
+  Feather, Bird, Bandage, HeartHandshake, UsersRound,
+  Unlink, Coins, CookingPot, Citrus, Leaf, Palmtree, ShieldHalf, Trees,
+  VenetianMask, Music2, Flashlight, UtensilsCrossed,
+  Waves, ListChecks, CheckCheck, Bug, Brush, LeafyGreen, Calculator,
+  Croissant, Sprout, Flower, Flower2,
+  Layers, BookText, LibraryBig, Puzzle, History, Target, BookMarked,
+  PenLine, MessagesSquare,
+  Baby, CircleDollarSign, HeartPulse, HeartCrack, BookHeart,
+  Car, Droplets, MapPinned,
+  Cake, PiggyBank, MessageSquareOff, PhoneCall,
 } from 'lucide-react-native';
 
-// Map our app-specific icon keys → Lucide components.
-// Keys are written in semantic terms ("zmanim", "learn") so screens don't
-// need to know the underlying Lucide name.
 export const ICONS = {
   // Navigation / system
-  clock: Clock,
-  zmanim: Clock,
-  book: BookOpen,
-  learn: BookOpen,
-  pin: MapPin,
-  location: MapPin,
+  clock: Clock, zmanim: Clock,
+  book: BookOpen, learn: BookOpen,
+  pin: MapPin, location: MapPin,
   calendar: Calendar,
   calendarHebrew: CalendarDays,
   calendarTime: CalendarClock,
-  wrench: Wrench,
-  tools: Wrench,
+  wrench: Wrench, tools: Wrench,
   home: Home,
-  settings: Settings,
-  cog: Cog,
-  bell: Bell,
-  notification: Bell,
+  settings: Settings, cog: Cog,
+  bell: Bell, notification: Bell,
   search: Search,
   menu: Menu,
 
   // Arrows / chevrons
-  chevronLeft: ChevronLeft,
-  chevronRight: ChevronRight,
-  chevronDown: ChevronDown,
-  chevronUp: ChevronUp,
-  arrowRight: ArrowRight,
-  arrowLeft: ArrowLeft,
-  arrowUp: ArrowUp,
-  arrowDown: ArrowDown,
+  chevronLeft: ChevronLeft, chevronRight: ChevronRight,
+  chevronDown: ChevronDown, chevronUp: ChevronUp,
+  arrowRight: ArrowRight, arrowLeft: ArrowLeft,
+  arrowUp: ArrowUp, arrowDown: ArrowDown,
 
   // Basic actions
-  close: X,
-  plus: Plus,
-  minus: Minus,
-  check: Check,
-  info: Info,
-  warning: AlertTriangle,
-  alert: AlertCircle,
-  more: MoreHorizontal,
-  moreVertical: MoreVertical,
+  close: X, plus: Plus, minus: Minus, check: Check,
+  info: Info, warning: AlertTriangle, alert: AlertCircle,
+  more: MoreHorizontal, moreVertical: MoreVertical,
   filter: Filter,
 
   // Status
-  checkCircle: CheckCircle2,
-  xCircle: XCircle,
-  helpCircle: HelpCircle,
+  checkCircle: CheckCircle2, xCircle: XCircle, helpCircle: HelpCircle,
 
-  // Time / nature (zmanim section)
-  moon: Moon,
-  sun: Sun,
-  sunrise: Sunrise,
-  sunset: Sunset,
-  flame: Flame,
-  candle: Flame,
-  sparkles: Sparkles,
-  timer: Timer,
+  // Time / nature
+  moon: Moon, moonStar: MoonStar,
+  sun: Sun, sunrise: Sunrise, sunset: Sunset,
+  flame: Flame, candle: Flame,
+  sparkles: Sparkles, timer: Timer,
+  cloudRain: CloudRain, cloudSunRain: CloudSunRain, cloudMoon: CloudMoon,
 
   // Media
-  camera: Camera,
-  image: ImageIcon,
-  mic: Mic,
-  volume: Volume2,
-  mute: VolumeX,
-  play: Play,
-  pause: Pause,
+  camera: Camera, image: ImageIcon,
+  mic: Mic, volume: Volume2, mute: VolumeX,
+  play: Play, pause: Pause,
+  flashlight: Flashlight,
 
   // File ops
-  trash: Trash2,
-  share: Share2,
-  copy: Copy,
-  download: Download,
-  upload: Upload,
-  externalLink: ExternalLink,
-  link: Link,
-  save: Save,
-  refresh: RefreshCw,
-  rotate: RotateCw,
+  trash: Trash2, share: Share2, copy: Copy,
+  download: Download, upload: Upload,
+  externalLink: ExternalLink, link: Link,
+  save: Save, refresh: RefreshCw, rotate: RotateCw,
+  unlink: Unlink,
 
   // People / contact
-  user: User,
-  users: Users,
-  message: MessageCircle,
-  phone: Phone,
-  mail: Mail,
+  user: User, users: Users, usersRound: UsersRound,
+  message: MessageCircle, phone: Phone, mail: Mail,
+  messagesSquare: MessagesSquare, messageSquareOff: MessageSquareOff,
+  phoneCall: PhoneCall,
+  heartHandshake: HeartHandshake,
 
   // Map / navigation
-  compass: Compass,
-  navigate: Navigation,
-  map: Map,
-  globe: Globe,
+  compass: Compass, navigate: Navigation,
+  map: Map, globe: Globe, mapPinned: MapPinned, car: Car,
 
-  // Measurement
-  ruler: Ruler,
-  scale: Scale,
-  hash: Hash,
-  percent: Percent,
+  // Measurement / calc
+  ruler: Ruler, scale: Scale, hash: Hash, percent: Percent,
+  calculator: Calculator,
 
   // Food / kashrut
-  coffee: Coffee,
-  wheat: Wheat,
-  meat: Beef,
-  fish: Fish,
-  fruit: Apple,
-  water: Droplet,
-  wine: Wine,
-  utensils: Utensils,
+  coffee: Coffee, wheat: Wheat, leafyGreen: LeafyGreen,
+  meat: Beef, beef: Beef,
+  fish: Fish, fruit: Apple, apple: Apple,
+  water: Droplet, droplet: Droplet, droplets: Droplets,
+  wine: Wine, utensils: Utensils, utensilsCrossed: UtensilsCrossed,
+  bread: Croissant, croissant: Croissant,
+  bug: Bug, brush: Brush, cookingPot: CookingPot,
+  cake: Cake,
+
+  // Plants / nature
+  leaf: Leaf, citrus: Citrus, palmtree: Palmtree,
+  trees: Trees, flower: Flower, flower2: Flower2,
+  sprout: Sprout, feather: Feather, bird: Bird,
+  waves: Waves,
 
   // Learning / texts
-  scroll: ScrollText,
-  document: FileText,
-  notebook: Notebook,
-  library: Library,
-  graduation: GraduationCap,
+  scroll: ScrollText, scrollText: ScrollText,
+  document: FileText, notebook: Notebook,
+  library: Library, libraryBig: LibraryBig,
+  graduation: GraduationCap, graduationCap: GraduationCap,
+  bookText: BookText, bookMarked: BookMarked, bookHeart: BookHeart,
+  penLine: PenLine, layers: Layers, puzzle: Puzzle,
+  history: History, target: Target, listChecks: ListChecks,
+  checkCheck: CheckCheck,
 
   // Privacy
-  lock: Lock,
-  unlock: Unlock,
-  eye: Eye,
-  eyeOff: EyeOff,
+  lock: Lock, unlock: Unlock, eye: Eye, eyeOff: EyeOff,
 
   // Achievement
-  award: Award,
-  trophy: Trophy,
-  bookmark: Bookmark,
-  star: Star,
-  heart: Heart,
-
-  // Buildings (synagogue / mikvah / sukkah)
-  building: Building2,
-  smallBuilding: Building,
-  tent: Tent,
-  shul: Church,
+  award: Award, trophy: Trophy, bookmark: Bookmark,
+  star: Star, heart: Heart, heartPulse: HeartPulse, heartCrack: HeartCrack,
 
   // Misc
-  cpu: Cpu,
-  ai: Sparkles,
-  bolt: Zap,
+  building: Building2, building2: Building2, smallBuilding: Building,
+  tent: Tent, venetianMask: VenetianMask, mask: VenetianMask,
+  bandage: Bandage,
+  coins: Coins, circleDollarSign: CircleDollarSign, piggyBank: PiggyBank,
+  music2: Music2,
+  shieldHalf: ShieldHalf,
+  cpu: Cpu, ai: Sparkles, bolt: Zap,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -196,7 +164,6 @@ type IconProps = {
 export function Icon({ name, size = 24, color = '#FFFFFF', strokeWidth = 1.75 }: IconProps) {
   const LucideComponent = ICONS[name];
   if (!LucideComponent) {
-    // Unknown icon — render nothing rather than crash. Caller will see a gap.
     if (__DEV__) {
       console.warn(`[Icon] Unknown icon name: "${name}"`);
     }
