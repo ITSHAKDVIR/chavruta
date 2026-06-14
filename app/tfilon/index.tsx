@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Card } from '../../src/components/Card';
 import { getString, setString, Keys } from '../../src/storage/storage';
-import { getNusachTree, slugify, Nusach, NUSACH_LABEL, NUSACH_KEYS, SiddurNode } from '../../src/data/siddurTree';
+import { getNusachTree, getFlatTopItems, slugify, Nusach, NUSACH_LABEL, NUSACH_KEYS, SiddurNode, FlatTopItem } from '../../src/data/siddurTree';
 import { isSectionRelevantToday } from '../../src/data/siddurRelevance';
 import { useLocation } from '../../src/hooks/useLocation';
 import { colors, radius, spacing } from '../../src/theme/colors';
@@ -54,15 +54,18 @@ export default function SidurIndex() {
     await setString(Keys.nusach, n);
   }
 
-  function openSection(slug: string) {
-    router.push(`/tfilon/read?nusach=${nusach}&path=${encodeURIComponent(slug)}` as any);
+  function openSection(routePath: string) {
+    router.push(`/tfilon/read?nusach=${nusach}&path=${encodeURIComponent(routePath)}` as any);
   }
 
-  const allTop = getNusachTree(nusach);
+  // Flat list of top-level entries — for Ashkenazi this expands
+  // "ימי חול"/"שבת"/… categories to their inner prayers, matching
+  // the prayer-level granularity that Sephardi/Edot-Mizrach already use.
+  const allTop = getFlatTopItems(nusach);
   const now = new Date();
   const top = showAll
     ? allTop
-    : allTop.filter((n: SiddurNode) => isSectionRelevantToday(n.en, now, inIsrael));
+    : allTop.filter((n: FlatTopItem) => isSectionRelevantToday(n.en, now, inIsrael));
   const hiddenCount = allTop.length - top.length;
 
   return (
@@ -132,16 +135,16 @@ export default function SidurIndex() {
                 </Text>
               )}
               {top.map((node, i) => (
-                <Card key={`${node.en}-${i}`} onPress={() => openSection(slugify(node.en))}>
+                <Card key={`${node.en}-${i}`} onPress={() => openSection(node.routePath)}>
                   <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md }}>
                     <Text style={{ fontSize: 28 }}>{emojiFor(node.en)}</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={[typography.h3, { color: colors.textPrimary }]}>
                         {node.he || node.en}
                       </Text>
-                      {node.children && node.children.length > 0 && (
+                      {node.childCount > 0 && (
                         <Text style={[typography.small, { color: colors.textMuted, marginTop: 2 }]}>
-                          {node.children.length} חלקים
+                          {node.childCount} חלקים
                         </Text>
                       )}
                     </View>

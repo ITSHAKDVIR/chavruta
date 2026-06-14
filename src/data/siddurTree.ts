@@ -100,3 +100,65 @@ export function hasOnlyContainers(node: SiddurNode): boolean {
   if (!node.children || node.children.length === 0) return false;
   return node.children.every((c) => !c.ref && c.children && c.children.length > 0);
 }
+
+/**
+ * Top-level item ready for display in the siddur index. The route path is
+ * the full slug chain from the original tree, so navigation still works
+ * regardless of whether the item was promoted from a deeper level.
+ */
+export type FlatTopItem = {
+  he: string;
+  en: string;
+  ref?: string;
+  childCount: number;
+  /** Slash-separated slugs to feed to read.tsx via the `path` query param. */
+  routePath: string;
+};
+
+/**
+ * Sephardi/Edot-Mizrach/Chabad already expose prayer-level entries
+ * (שחרית/מנחה/ערבית/etc.) at the top of the tree. Ashkenazi, in contrast,
+ * wraps everything under day-type categories ("ימי חול", "שבת", "חגים",
+ * "ברכות", "קדיש"). For UX parity — and so the user can tap "תפילת שחרית"
+ * directly without first picking "ימי חול" — we promote the children of
+ * those categories to top-level here. URLs still use the deep slug path so
+ * the reader's tree walker finds them.
+ */
+const ASHKENAZI_FLATTEN_CATEGORIES = new Set(['Weekday', 'Shabbat', 'Festivals', 'Berachot', 'Kaddish']);
+
+export function getFlatTopItems(nusach: Nusach): FlatTopItem[] {
+  const tree = getNusachTree(nusach);
+  const out: FlatTopItem[] = [];
+  const shouldFlatten = nusach === 'ashkenazi';
+
+  for (const top of tree) {
+    const topSlug = slugify(top.en);
+    const isFlattenable =
+      shouldFlatten &&
+      ASHKENAZI_FLATTEN_CATEGORIES.has(top.en) &&
+      top.children &&
+      top.children.length > 0 &&
+      !top.ref;
+
+    if (isFlattenable && top.children) {
+      for (const child of top.children) {
+        out.push({
+          he: child.he,
+          en: child.en,
+          ref: child.ref,
+          childCount: child.children?.length ?? 0,
+          routePath: `${topSlug}/${slugify(child.en)}`,
+        });
+      }
+    } else {
+      out.push({
+        he: top.he,
+        en: top.en,
+        ref: top.ref,
+        childCount: top.children?.length ?? 0,
+        routePath: topSlug,
+      });
+    }
+  }
+  return out;
+}

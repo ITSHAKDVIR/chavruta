@@ -27,6 +27,9 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      // Home is the initial route → pressing back from a pushed screen returns
+      // to home (not "more"/settings, which is just first-declared for RTL layout).
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
