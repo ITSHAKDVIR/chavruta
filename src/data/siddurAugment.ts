@@ -68,6 +68,7 @@ type DayContext = {
   isPurim: boolean;
   isFast: boolean;
   isMonOrThu: boolean;
+  isAseretYemeiTeshuva: boolean;
   chanukahDay: number;        // 1..8 (0 = not chanukah)
 };
 
@@ -93,6 +94,7 @@ function buildCtx(date: Date, inIsrael: boolean): DayContext {
   const d = hd.getDate();
   const isPesach = isCholHamoed && m === months.NISAN;
   const isSukkot = isCholHamoed && m === months.TISHREI && d >= 15 && d <= 21;
+  const isAseretYemeiTeshuva = m === months.TISHREI && d >= 1 && d <= 10;
 
   return {
     date,
@@ -106,8 +108,26 @@ function buildCtx(date: Date, inIsrael: boolean): DayContext {
     isPurim,
     isFast,
     isMonOrThu: date.getDay() === 1 || date.getDay() === 4,
+    isAseretYemeiTeshuva,
     chanukahDay,
   };
+}
+
+/**
+ * Inject Shir HaMaalot mi'maamakim (Tehillim 130) right after Yishtabach
+ * during Aseret Yemei Teshuva. The psalm lives at "Psalms 130" in Sefaria
+ * — we synthesize a leaf for it so the existing fetch pipeline loads it.
+ */
+function injectShirHaMaalot(leaves: FlatLeaf[]): FlatLeaf[] {
+  const yishtabachIdx = findLeafIndex(leaves, /^Yishtabach$|^ישתבח$/);
+  if (yishtabachIdx < 0) return leaves;
+  const shirLeaf: FlatLeaf = {
+    ref: 'Psalms 130',
+    he: 'שיר המעלות ממעמקים',
+    en: 'Psalms 130',
+    trail: leaves[yishtabachIdx].trail,
+  };
+  return injectAfter(leaves, yishtabachIdx, [shirLeaf]);
 }
 
 /* ────────────────────────── inject helpers ────────────────────────── */
@@ -284,13 +304,19 @@ export function augmentLeavesForToday(
   // Only one match wins (you can't have ChH"M overlap with RC except RC Chol
   // Hamoed which exists for Pesach 1+2 and Sukkot 1+2 — those are Yom Tov,
   // not in the app).
-  if (ctx.isRC) return augmentForRoshChodesh(baseLeaves, nusach);
-  if (ctx.isChanukah) return augmentForChanukah(baseLeaves, nusach, ctx);
-  if (ctx.isCholHamoed) return augmentForCholHamoed(baseLeaves, nusach, ctx);
-  if (ctx.isPurim) return augmentForPurim(baseLeaves, nusach);
+  let out = baseLeaves;
+  if (ctx.isRC) out = augmentForRoshChodesh(out, nusach);
+  else if (ctx.isChanukah) out = augmentForChanukah(out, nusach, ctx);
+  else if (ctx.isCholHamoed) out = augmentForCholHamoed(out, nusach, ctx);
+  else if (ctx.isPurim) out = augmentForPurim(out, nusach);
   // Fast days: Selichot + Vayechal Torah Reading live within Shacharit's
   // existing leaf list (Sefaria includes them as date-gated paragraphs).
-  // No structural injection needed.
 
-  return baseLeaves;
+  // Aseret Yemei Teshuva: prepend Shir HaMaalot mi'maamakim after Yishtabach
+  // — applies in ADDITION to whatever day-of-the-month modifier above.
+  if (ctx.isAseretYemeiTeshuva) {
+    out = injectShirHaMaalot(out);
+  }
+
+  return out;
 }

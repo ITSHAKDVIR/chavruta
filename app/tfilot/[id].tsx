@@ -8,7 +8,7 @@ import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Card } from '../../src/components/Card';
 import { ParchmentText } from '../../src/components/ParchmentText';
 import { TFILOT } from '../../src/data/tfilot';
-import { buildBirkatHamazon, buildShevaBrachot, buildBritMilahBirkatHamazon, getActiveInsertLabels } from '../../src/data/birkatHamazon';
+import { buildBirkatHamazon, buildShevaBrachot, buildBritMilahBirkatHamazon, buildChatanMealBirkatHamazon, getActiveInsertLabels } from '../../src/data/birkatHamazon';
 import { useLocation } from '../../src/hooks/useLocation';
 import { colors, radius, spacing } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
@@ -29,6 +29,7 @@ export default function TfilaScreen() {
   // the toggle on. Brit Milah is always opt-in.
   const [britMilahMode, setBritMilahMode] = useState(false);
   const [shevaBrachotMode, setShevaBrachotMode] = useState(isShevaBrachot);
+  const [chatanMealMode, setChatanMealMode] = useState(false);
   // Expanded state for collapsed segments (compensatory brachot for someone
   // who forgot the relevant insert). Most users never open them.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -37,10 +38,11 @@ export default function TfilaScreen() {
     () => {
       if (shevaBrachotMode || isShevaBrachot) return buildShevaBrachot(new Date(), inIsrael);
       if (britMilahMode) return buildBritMilahBirkatHamazon(new Date(), inIsrael);
+      if (chatanMealMode) return buildChatanMealBirkatHamazon(new Date(), inIsrael);
       if (isBirkatHamazon) return buildBirkatHamazon(new Date(), inIsrael);
       return [];
     },
-    [isBirkatHamazon, isShevaBrachot, britMilahMode, shevaBrachotMode, inIsrael],
+    [isBirkatHamazon, isShevaBrachot, britMilahMode, shevaBrachotMode, chatanMealMode, inIsrael],
   );
   const bhActiveLabels = useMemo(
     () => (isBirkatHamazon ? getActiveInsertLabels(new Date(), inIsrael) : []),
@@ -77,7 +79,7 @@ export default function TfilaScreen() {
                       </Text>
                       <View style={{ flexDirection: 'row-reverse', gap: spacing.sm, flexWrap: 'wrap' }}>
                         <Pressable
-                          onPress={() => { setBritMilahMode(!britMilahMode); setShevaBrachotMode(false); }}
+                          onPress={() => { setBritMilahMode(!britMilahMode); setShevaBrachotMode(false); setChatanMealMode(false); }}
                           style={[styles.toggleBtn, britMilahMode && styles.toggleBtnActive]}
                         >
                           <Text style={[typography.bodyBold, { color: britMilahMode ? colors.textInverse : colors.textPrimary }]}>
@@ -85,16 +87,25 @@ export default function TfilaScreen() {
                           </Text>
                         </Pressable>
                         <Pressable
-                          onPress={() => { setShevaBrachotMode(!shevaBrachotMode); setBritMilahMode(false); }}
+                          onPress={() => { setShevaBrachotMode(!shevaBrachotMode); setBritMilahMode(false); setChatanMealMode(false); }}
                           style={[styles.toggleBtn, shevaBrachotMode && styles.toggleBtnActive]}
                         >
                           <Text style={[typography.bodyBold, { color: shevaBrachotMode ? colors.textInverse : colors.textPrimary }]}>
                             {shevaBrachotMode ? '✓ ' : ''}💒 שבע ברכות
                           </Text>
                         </Pressable>
+                        <Pressable
+                          onPress={() => { setChatanMealMode(!chatanMealMode); setBritMilahMode(false); setShevaBrachotMode(false); }}
+                          style={[styles.toggleBtn, chatanMealMode && styles.toggleBtnActive]}
+                        >
+                          <Text style={[typography.bodyBold, { color: chatanMealMode ? colors.textInverse : colors.textPrimary }]}>
+                            {chatanMealMode ? '✓ ' : ''}💍 סעודת חתן
+                          </Text>
+                        </Pressable>
                       </View>
                       <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.sm }]}>
-                        בחר מאורע — הוספות מיוחדות יופיעו בנוסח (הרחמן + פסוקים נוספים).
+                        בחר מאורע — הוספות מיוחדות יופיעו בנוסח (זימון/הרחמן/ברכות נוספות).
+                        סעודת חתן = בלי שבע ברכות (אין מנין/פנים חדשות).
                       </Text>
                     </Card>
                   )}

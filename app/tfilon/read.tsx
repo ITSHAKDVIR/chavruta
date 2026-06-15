@@ -22,6 +22,7 @@ import {
   SiddurNode,
 } from '../../src/data/siddurTree';
 import { augmentLeavesForToday } from '../../src/data/siddurAugment';
+import { GabbaiCard } from '../../src/components/GabbaiCard';
 import { isSectionRelevantToday } from '../../src/data/siddurRelevance';
 import { getActiveMusafLink } from '../../src/data/musafLinks';
 import { getActiveSelichotLink } from '../../src/data/selichotLink';
@@ -984,6 +985,15 @@ export default function SiddurReader() {
                             ))}
                           </View>
                         ) : null}
+                      </View>
+                    ) : null}
+                    {/* Gabbai assistance card — Torah-reading leaves (Mon/Thu,
+                        RC, ChH"M, Chanukah, Purim, fasts). Collapsibles for
+                        aliyah call-up, brachot, mi-sheberach, Hagomel. */}
+                    {(/Torah Reading|Reading of the Torah|קריאת התורה|קריאת הקודש|הוצאת ספר/i.test(`${leaf.en} ${leaf.he}`) ||
+                      leaf.trail.some((t) => /Torah Reading|קריאת התורה|הוצאת ספר/i.test(`${t.en} ${t.he}`))) ? (
+                      <View style={{ marginTop: spacing.md }}>
+                        <GabbaiCard />
                       </View>
                     ) : null}
                     {/* Inline anchor for קריאת התורה (Mon/Thu) — right after הוצאת ספר תורה. */}

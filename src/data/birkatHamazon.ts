@@ -219,6 +219,14 @@ export function buildBirkatHamazon(date: Date = new Date(), inIsrael = true): Bi
   segments.push({ id: 'harachaman-core', text: HARACHAMAN_CORE, header: 'הרחמן' });
   segments.push({ id: 'harachaman-host', text: HARACHAMAN_HOST });
 
+  // Guest (אורח) Yehi Ratzon — recited by a guest about the host. Hidden in
+  // collapse by default since most users are eating in their own home.
+  segments.push({
+    id: 'orach-yehi-ratzon',
+    text: 'יְהִי רָצוֹן שֶׁלֹּא יֵבוֹשׁ בַּעַל הַבַּיִת בָּעוֹלָם הַזֶּה וְלֹא יִכָּלֵם לְעוֹלָם הַבָּא, וְיַצְלִיחַ בְּכָל נְכָסָיו, וְיִהְיוּ נְכָסָיו מֻצְלָחִים וּקְרוֹבִים לָעִיר, וְאַל יִשְׁלוֹט שָׂטָן לֹא בְּמַעֲשֵׂי יָדָיו וְלֹא בְּמַעֲשֵׂי יָדֵינוּ, וְאַל יִזְדַּקֵּר לֹא לְפָנָיו וְלֹא לְפָנֵינוּ שׁוּם דְּבַר חֵטְא וְהִרְהוּר עָוֹן מֵעַתָּה וְעַד עוֹלָם.',
+    collapsed: { summary: 'יהי רצון של אורח (אם אתה אוכל אצל מארח)' },
+  });
+
   // Day-specific Harachaman additions
   if (isShabbat) {
     segments.push({
@@ -432,5 +440,26 @@ export function buildShevaBrachot(date: Date = new Date(), inIsrael = true): Bir
     });
   });
 
+  return segments;
+}
+
+/**
+ * Build Birkat HaMazon for a wedding-week meal that is NOT a full sheva-brachot
+ * (no minyan / no פנים חדשות). Only "הרחמן הוא יברך את החתן ואת הכלה" is added —
+ * the seven blessings are NOT recited.
+ */
+export function buildChatanMealBirkatHamazon(date: Date = new Date(), inIsrael = true): BirkatSegment[] {
+  const body = buildBirkatHamazon(date, inIsrael);
+  const segments: BirkatSegment[] = [];
+  for (const seg of body) {
+    segments.push(seg);
+    if (seg.id === 'harachaman-host') {
+      segments.push({
+        id: 'harachaman-chatan-kallah',
+        text: HARACHAMAN_CHATAN_KALLAH,
+        conditional: { label: 'הרחמן לחתן ולכלה' },
+      });
+    }
+  }
   return segments;
 }
