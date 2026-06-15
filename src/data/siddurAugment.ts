@@ -167,19 +167,112 @@ function removeMatching(leaves: FlatLeaf[], pattern: RegExp): FlatLeaf[] {
  * RC Musaf brachot from the tree, Barchi Nafshi.
  */
 function augmentForRoshChodesh(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
-  // Strategy (per spec A1 Ashkenazi):
-  //   Shacharit body → Amidah (with YvY conditional) → **Hallel (half)** →
-  //   Kaddish Titkabal → **Hotzaat Sefer Torah** (base subtree) →
-  //   **RC Torah Reading** (4 olim Bamidbar 28:1-15, synthesized) →
-  //   **Hachnasat Sefer Torah** (base subtree) → Ashrei → Uva Letzion →
-  //   Kaddish Titkabal → **Musaf** (cherry-picked from tree) → Kaddish Titkabal →
-  //   Aleinu → Mourner's Kaddish → Shir Shel Yom → Barchi Nafshi (base) → ...
-  //
-  // We DO NOT strip the base "Removing the Torah from Ark" / "Returning Sefer to
-  // Aron" subtrees — those are procedural (Vayehi Binsoa, Berich Shmei,
-  // Yehalelu) and apply on every Torah-reading day. We only inject the actual
-  // RC verses BETWEEN them, in place of the regular Mon/Thu parsha text.
+  if (nusach === 'sephardi') return augmentForRoshChodeshSephardi(leaves);
+  if (nusach === 'edot-mizrach') return augmentForRoshChodeshEdotMizrach(leaves);
+  if (nusach === 'chabad') return augmentForRoshChodeshChabad(leaves);
+  return augmentForRoshChodeshAshkenazi(leaves, nusach);
+}
 
+/**
+ * Sephardi RC Shacharit (Sephardi Chasidi / Nusach Sefard).
+ *
+ * Sephardi base packs entire Shacharit Amidah/Tachanun/Torah Reading into single
+ * leaves. The RC content lives in a dedicated "לראש חודש" subtree (Hallel, Song
+ * of the Day, Barchi Nafshi, Torah Reading, Ashrei Uva L'Tziyon, Returning
+ * Sefer Torah, Mussaf).
+ *
+ * Spec A1 Sephardi order:
+ *   Shacharit base → Amidah (with YvY inline) → **Hallel** → Kaddish Titkabal →
+ *   **Shir Shel Yom + Barchi Nafshi** (here, BEFORE Sefer Torah — Sephardi
+ *   placement) → **Sefer Torah + RC Reading** → Half Kaddish → Ashrei →
+ *   Uva Letzion → **Hachnasat Sefer Torah** (after Uva Letzion in Sephardi) →
+ *   Kaddish Titkabal → **Mussaf** → Kaddish Titkabal → Aleinu → Kaddish Yatom.
+ *
+ * Approach: inject the Sephardi "Rosh Chodesh" subtree leaves right after the
+ * Amidah leaf in the base. Suppress the base Song of Day / Barchi Nafshi
+ * (gated by siddurRelevance) since the RC subtree's versions replace them.
+ */
+function augmentForRoshChodeshSephardi(leaves: FlatLeaf[]): FlatLeaf[] {
+  // Find Sephardi RC subtree leaves in order: Hallel, Song of the Day, Barchi
+  // Nafshi, Torah Reading, Ashrei Uva L'Tziyon, Returning Sefer Torah, Mussaf.
+  const rcNode = findTopNode('sephardi', /^Rosh (Chodesh|Hodesh)$|^לראש ח[דו]ש$/);
+  if (!rcNode) return leaves;
+  const rcLeaves = collectLeaves(rcNode);
+  if (rcLeaves.length === 0) return leaves;
+
+  // Find the base Amidah leaf — Sephardi has en="Amidah" or "Amida"; he="עמידה"
+  // or "תפילת עמידה".
+  let out = leaves;
+  const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (amidahIdx < 0) return leaves;
+
+  // Inject RC subtree after Amidah.
+  out = injectAfter(out, amidahIdx, rcLeaves);
+  return out;
+}
+
+/**
+ * Edot HaMizrach RC Shacharit.
+ *
+ * Edot HaMizrach has its own "סדר ראש חודש" subtree. Spec A1 ordering:
+ * mostly identical to Sephardi (Shir Shel Yom + Barchi Nafshi BEFORE Sefer
+ * Torah), but the order of Returning Sefer / Kaddish differs by minhag.
+ *
+ * The EM tree under "סדר ראש חודש" already encodes the EM-specific order, so
+ * the simplest correct approach is to inject the subtree wholesale after the
+ * Amidah leaf.
+ */
+function augmentForRoshChodeshEdotMizrach(leaves: FlatLeaf[]): FlatLeaf[] {
+  const rcNode = findTopNode('edot-mizrach', /^Rosh (Chodesh|Hodesh)$|^סדר ראש ח[דו]ש$|^לראש ח[דו]ש$/);
+  if (!rcNode) return leaves;
+  const rcLeaves = collectLeaves(rcNode);
+  if (rcLeaves.length === 0) return leaves;
+
+  let out = leaves;
+  const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (amidahIdx < 0) return leaves;
+  out = injectAfter(out, amidahIdx, rcLeaves);
+  return out;
+}
+
+/**
+ * Chabad RC Shacharit.
+ *
+ * Chabad has a single top-level leaf "Rosh Chodesh" (one ref). Inject it as
+ * a single leaf after the Amidah. Order details (Hallel, RC reading, Mussaf)
+ * are all inside this one Sefaria text.
+ */
+function augmentForRoshChodeshChabad(leaves: FlatLeaf[]): FlatLeaf[] {
+  // Chabad has top-level "Hallel" and "Rosh Chodesh" leaves (each is a single
+  // Sefaria ref, the entire RC content in one text).
+  const hallelNode = findTopNode('chabad', /^Hallel$|^הלל$|^סדר הלל$/);
+  const rcNode = findTopNode('chabad', /^Rosh (Chodesh|Hodesh)$|^לראש ח[דו]ש$|^ראש ח[דו]ש$/);
+  const inject: FlatLeaf[] = [];
+  if (hallelNode) inject.push(...collectLeaves(hallelNode));
+  if (rcNode) inject.push(...collectLeaves(rcNode));
+  if (inject.length === 0) return leaves;
+
+  let out = leaves;
+  const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (amidahIdx < 0) return leaves;
+  out = injectAfter(out, amidahIdx, inject);
+  return out;
+}
+
+/**
+ * Ashkenazi RC Shacharit — full per-spec order: Shacharit body → Amidah (with
+ * YvY conditional) → Hallel (half) → Kaddish Titkabal → Hotzaat Sefer Torah
+ * (base subtree) → RC Torah Reading (4 olim Bamidbar 28:1-15, synthesized) →
+ * Hachnasat Sefer Torah (base subtree) → Ashrei → Uva Letzion → Kaddish
+ * Titkabal → Musaf → Kaddish Titkabal → Aleinu → Mourner's Kaddish → Shir
+ * Shel Yom → Barchi Nafshi (base) → ...
+ *
+ * We do NOT strip the base "Removing the Torah from Ark" / "Returning Sefer
+ * to Aron" subtrees — those are procedural (Vayehi Binsoa, Berich Shmei,
+ * Yehalelu) and apply on every Torah-reading day. We only inject the actual
+ * RC verses BETWEEN them, in place of the regular Mon/Thu parsha text.
+ */
+function augmentForRoshChodeshAshkenazi(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
   let out = leaves;
 
   // === Step 1: Build synthesized leaves ===
