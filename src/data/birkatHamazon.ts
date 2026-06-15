@@ -13,6 +13,13 @@ export type BirkatSegment = {
   };
   /** Optional section header (e.g. "ברכה ראשונה - הזן"). Rendered above the segment. */
   header?: string;
+  /** When true, the segment is hidden by default and only shown if the user
+   *  opens its collapsible (e.g. compensatory bracha for forgotten Yaaleh
+   *  v'Yavo — most people don't need it). */
+  collapsed?: {
+    /** Header for the collapsible button, e.g. "אם שכחת יעלה ויבא". */
+    summary: string;
+  };
 };
 
 // ============================ Static text blocks ============================
@@ -180,6 +187,33 @@ export function buildBirkatHamazon(date: Date = new Date(), inIsrael = true): Bi
 
   segments.push({ id: 'b3-rachem-close', text: BRACHA_3_RACHEM_CLOSING });
 
+  // Compensatory brachot for someone who FORGOT the relevant insert.
+  // These live RIGHT AFTER "ובנה ברחמיו ירושלים" — that's the halachic
+  // location where they're recited (between bracha 3 and bracha 4, as a
+  // standalone "Asher natan..." bracha without shem u'malchut at chatima).
+  // Hidden by default behind a collapsible.
+  if (isShabbat) {
+    segments.push({
+      id: 'compensate-shabbat',
+      text: 'בָּרוּךְ אַתָּה ה\' אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, שֶׁנָּתַן שַׁבָּתוֹת לִמְנוּחָה לְעַמּוֹ יִשְׂרָאֵל בְּאַהֲבָה לְאוֹת וְלִבְרִית. בָּרוּךְ אַתָּה ה\', מְקַדֵּשׁ הַשַּׁבָּת.',
+      collapsed: { summary: 'אם שכחת רצה' },
+    });
+  }
+  if (isRC && !yaaleh) {
+    segments.push({
+      id: 'compensate-rc',
+      text: 'בָּרוּךְ אַתָּה ה\' אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר נָתַן רָאשֵׁי חֳדָשִׁים לְעַמּוֹ יִשְׂרָאֵל לְזִכָּרוֹן. (אומרים בלי שם ומלכות בחתימה.)',
+      collapsed: { summary: 'אם שכחת יעלה ויבא לראש חודש' },
+    });
+  }
+  if (yaaleh && (yaaleh.id === 'sukkot' || yaaleh.id === 'pesach' || yaaleh.id === 'shavuot' || yaaleh.id === 'shmini')) {
+    segments.push({
+      id: 'compensate-yt',
+      text: 'בָּרוּךְ אַתָּה ה\' אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, שֶׁנָּתַן יָמִים טוֹבִים לְעַמּוֹ יִשְׂרָאֵל לְשָׂשׂוֹן וּלְשִׂמְחָה אֶת יוֹם ' + yaaleh.name + '. בָּרוּךְ אַתָּה ה\', מְקַדֵּשׁ יִשְׂרָאֵל וְהַזְּמַנִּים. (אם שכח ביו"ט עצמו — חייב לחזור על כל ברכת המזון. בחוה"מ — אומר ברכה זו ללא שם ומלכות.)',
+      collapsed: { summary: 'אם שכחת יעלה ויבא ביום טוב / חוה"מ' },
+    });
+  }
+
   segments.push({ id: 'b4-hatov', text: BRACHA_4_HATOV, header: 'ברכה רביעית - הטוב והמטיב' });
 
   segments.push({ id: 'harachaman-core', text: HARACHAMAN_CORE, header: 'הרחמן' });
@@ -220,6 +254,24 @@ export function buildBirkatHamazon(date: Date = new Date(), inIsrael = true): Bi
       id: 'harachaman-sukkah',
       text: 'הָרַחֲמָן הוּא יָקִים לָנוּ אֶת סֻכַּת דָּוִד הַנּוֹפֶלֶת.',
       conditional: { label: 'הרחמן לסוכות' },
+    });
+  }
+
+  // Compensatory Harachaman for someone who FORGOT Al haNisim in bracha 2.
+  // No "Asher Natan" bracha is recited (אל הניסים is not chova in BH); instead
+  // a Harachaman about נסים replaces it. Hidden by default in a collapsible.
+  if (isChanukah) {
+    segments.push({
+      id: 'harachaman-compensate-chanukah',
+      text: 'הָרַחֲמָן הוּא יַעֲשֶׂה לָנוּ נִסִּים וְנִפְלָאוֹת כְּשֵׁם שֶׁעָשָׂה לַאֲבוֹתֵינוּ בַּיָּמִים הָהֵם בַּזְּמַן הַזֶּה. בִּימֵי מַתִּתְיָהוּ...',
+      collapsed: { summary: 'אם שכחת על הניסים (חנוכה)' },
+    });
+  }
+  if (isPurim) {
+    segments.push({
+      id: 'harachaman-compensate-purim',
+      text: 'הָרַחֲמָן הוּא יַעֲשֶׂה לָנוּ נִסִּים וְנִפְלָאוֹת כְּשֵׁם שֶׁעָשָׂה לַאֲבוֹתֵינוּ בַּיָּמִים הָהֵם בַּזְּמַן הַזֶּה. בִּימֵי מָרְדֳּכַי וְאֶסְתֵּר...',
+      collapsed: { summary: 'אם שכחת על הניסים (פורים)' },
     });
   }
 

@@ -29,6 +29,9 @@ export default function TfilaScreen() {
   // the toggle on. Brit Milah is always opt-in.
   const [britMilahMode, setBritMilahMode] = useState(false);
   const [shevaBrachotMode, setShevaBrachotMode] = useState(isShevaBrachot);
+  // Expanded state for collapsed segments (compensatory brachot for someone
+  // who forgot the relevant insert). Most users never open them.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const bhSegments = useMemo(
     () => {
@@ -110,7 +113,31 @@ export default function TfilaScreen() {
                   )}
                   {bhSegments.map((seg) => (
                     <View key={seg.id}>
-                      {seg.conditional ? (
+                      {seg.collapsed ? (
+                        <Card>
+                          <Pressable
+                            onPress={() => {
+                              setExpanded((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(seg.id)) next.delete(seg.id);
+                                else next.add(seg.id);
+                                return next;
+                              });
+                            }}
+                            style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm }}
+                          >
+                            <Icon name={expanded.has(seg.id) ? 'chevronDown' : 'chevronLeft'} size={18} color={colors.primary} />
+                            <Text style={[typography.bodyBold, { color: colors.textPrimary, flex: 1 }]}>
+                              {seg.collapsed.summary}
+                            </Text>
+                          </Pressable>
+                          {expanded.has(seg.id) && (
+                            <View style={{ marginTop: spacing.md }}>
+                              <ParchmentText textSize={18}>{seg.text}</ParchmentText>
+                            </View>
+                          )}
+                        </Card>
+                      ) : seg.conditional ? (
                         <ParchmentText
                           sectionName={seg.header || undefined}
                           instruction={`✨ ${seg.conditional.label}`}
