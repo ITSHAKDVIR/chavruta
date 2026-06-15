@@ -21,8 +21,10 @@ import {
   FlatLeaf,
   SiddurNode,
 } from '../../src/data/siddurTree';
+import { augmentLeavesForToday } from '../../src/data/siddurAugment';
 import { isSectionRelevantToday } from '../../src/data/siddurRelevance';
 import { getActiveMusafLink } from '../../src/data/musafLinks';
+import { getActiveSelichotLink } from '../../src/data/selichotLink';
 import { fetchSefariaText } from '../../src/services/sefaria';
 import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, ParsedParagraph } from '../../src/services/siddurParser';
 import { CholimReminder } from '../../src/components/CholimReminder';
@@ -211,7 +213,7 @@ export default function SiddurReader() {
   const allLeavesUnderHere = useMemo(() => {
     if (here?.ref) return [{ ref: here.ref, he: here.he, en: here.en, trail: [] }] as FlatLeaf[];
     if (here?.children) {
-      const own = collectLeaves(here);
+      let own = collectLeaves(here);
       // Sephardi / Edot HaMizrach: "Upon Arising" / "Preparatory Prayers" is
       // a separate top-level container in the data. When the user opens
       // Weekday Shacharit, prepend those wake-up leaves so the prayer reads
@@ -222,14 +224,18 @@ export default function SiddurReader() {
       if (isWeekdayShacharit) {
         const hashkamat = getHashkamatHaBokerNode(nusach);
         if (hashkamat) {
-          return [...collectLeaves(hashkamat), ...own];
+          own = [...collectLeaves(hashkamat), ...own];
         }
       }
-      return own;
+      // Today-specific augmentation: on Rosh Chodesh / Chol HaMoed / Chanukah /
+      // Purim, inject the day's special leaves (Hallel, special Torah reading,
+      // Mussaf, etc.) into the Shacharit flow so the user doesn't have to
+      // navigate to a separate page for Musaf etc.
+      return augmentLeavesForToday(own, here, nusach, new Date(), inIsrael);
     }
     if (slugs.length === 0) return collectLeavesFromList(getNusachTree(nusach));
     return [];
-  }, [here?.ref, here?.children, here?.en, nusach, slugs.length]);
+  }, [here?.ref, here?.children, here?.en, nusach, slugs.length, inIsrael]);
 
   // Siddur prefs (minyan/yachid, optional sections, quiet mode). Loaded
   // before allLeavesFiltered so the filter has the latest value.
@@ -534,6 +540,29 @@ export default function SiddurReader() {
           {/* Musaf shortcut — surfaced on Rosh Chodesh / Chol HaMoed weekdays
               when the user is viewing Shacharit. Tapping navigates to the
               appropriate Musaf section for the current nusach. */}
+          {/* Selichot button at top of Shacharit on Elul / AYT / fast days. */}
+          {isRunningText && /Shacharit|שחרית/i.test(`${here?.en || ''} ${here?.he || ''}`) && (() => {
+            const sel = getActiveSelichotLink(new Date(), inIsrael, nusach);
+            if (!sel) return null;
+            return (
+              <Card
+                variant="accent"
+                onPress={() => router.push(sel.path as any)}
+              >
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md }}>
+                  <Text style={{ fontSize: 26 }}>📜</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>{sel.label}</Text>
+                    <Text style={[typography.small, { color: colors.textPrimary, marginTop: 2 }]}>
+                      היום נהוג לומר סליחות לפני שחרית. לחץ למעבר.
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.primaryDark, fontSize: 18 }}>‹</Text>
+                </View>
+              </Card>
+            );
+          })()}
+
           {isRunningText && /Shacharit|שחרית/i.test(`${here?.en || ''} ${here?.he || ''}`) && (() => {
             const musaf = getActiveMusafLink(new Date(), inIsrael, nusach);
             if (!musaf) return null;
