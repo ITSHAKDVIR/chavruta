@@ -322,7 +322,23 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
   if (/^ו?על ה?נסים|^ו?על הניסים/.test(bare)) {
     return { body, kind: 'conditional', marker: 'בחנוכה ופורים', tags: ['chanukah', 'purim'] };
   }
-  if (/^אלהינו ואלהי אבותינו יעלה ויבא/.test(bare) || /^יעלה ויבא/.test(bare)) {
+  // Chanukah-specific Al haNisim body — Sefaria's RC Musaf returns this
+  // without a <small>בחנוכה:</small> marker (marker is plain text "לחנוכה:").
+  if (/^בימי מתתיהו|^ובימי מתתיהו/.test(bare)) {
+    return { body, kind: 'conditional', marker: 'בחנוכה', tags: ['chanukah'] };
+  }
+  // Purim-specific Al haNisim body.
+  if (/^בימי מרדכי|^ובימי מרדכי/.test(bare)) {
+    return { body, kind: 'conditional', marker: 'בפורים', tags: ['purim'] };
+  }
+  // Continuation paragraphs of the Chanukah Al haNisim story (Sefaria splits
+  // the long Chanukah text across 3 paragraphs). Tag them as chanukah so they
+  // hide together with the opening line.
+  if (/^ואתה ברחמיך הרבים עמדת להם|^ואחר כן באו בניך|^ואחר כך באו בניך/.test(bare)) {
+    return { body, kind: 'conditional', marker: 'בחנוכה (המשך)', tags: ['chanukah'] };
+  }
+  // Accept both ה and ק spellings (Sefaria uses אלקינו/אלקי in Israeli editions).
+  if (/^אל[הק]ינו ו?אל[הק]י אבותינו יעלה ויבא/.test(bare) || /^יעלה ויבא/.test(bare)) {
     return { body, kind: 'conditional', marker: 'בר״ח, חוה״מ ויו״ט',
              tags: ['rosh-chodesh', 'chol-hamoed', 'yom-tov'] };
   }
@@ -616,60 +632,66 @@ export function shouldRender(
 /** Some markers can be enhanced with today's specific name, e.g., יעלה ויבוא gets the holiday. */
 export function enhanceConditionalText(p: ParsedParagraph, date: Date = new Date(), inIsrael = true): string {
   if (!p.body) return p.body;
-  // Yaaleh VeYavo — Sefaria packs all festival names inline in one paragraph,
-  // separated by `<small>marker:</small>` tags like:
-  //   ... בְּיוֹם <small>לר"ח:</small> רֹאשׁ הַחֹדֶשׁ הַזֶּה: <small>לפסח:</small> חַג הַמַּצּוֹת הַזֶּה: <small>לסכות:</small> חַג הַסֻּכּוֹת הַזֶּה: זָכְרֵנוּ...
-  // We must strip everything EXCEPT today's option so the reader sees just one
-  // festival name in the right place. Strategy: find the "בְּיוֹם <small>...</small> NAME הַזֶּה:" pattern
-  // for each festival and keep only the one matching today.
+  // Yaaleh VeYavo — Sefaria packs all festival names inline. After stripFormatting
+  // strips <small> tags, the body looks like:
+  //   ... בְּיוֹם לר"ח: רֹאשׁ הַחֹדֶשׁ הַזֶּה: לפסח: חַג הַמַּצּוֹת הַזֶּה: לסכות: חַג הַסֻּכּוֹת הַזֶּה: זָכְרֵנוּ...
+  // Each festival unit is "MARKER: NAME הַזֶּה:" where MARKER is a short Hebrew
+  // tag without nikud (לר"ח / לפסח / לסכות / לשבועות / לרה"ש). We keep only the
+  // unit matching today and drop the markers + other festival options.
   if (/יַעֲלֶה וְיָבֹא|יעלה ויבא|יעלה ויבוא/.test(p.body)) {
     const name = yaalehDayName(date, inIsrael);
     if (!name) return p.body;
-    // Each option in the chain has shape:
-    //   <small>MARKER:</small> NAME הזה :
-    // where MARKER ∈ {לר"ח, לפסח, לסכות, לשבועות, לעצרת, לרה"ש}
-    // We strip out the markers and ALL festival names except today's.
-    // Pattern matches one "<small>...</small> ... הַזֶּה:" unit.
-    const unitRx = /<small>[^<]*?<\/small>\s*[^:]+?\s+הַזֶּ?ה:/g;
-    const units: string[] = p.body.match(unitRx) || [];
-    if (units.length === 0) {
-      // No inline-marker pattern — fall back to old single-replace heuristic.
-      return p.body.replace(/בְּיוֹם\s+[^\s]+\s+הַזֶּה/g, `בְּיוֹם ${name}`)
-                   .replace(/בְּיוֹם\s+(רֹאשׁ הַחֹדֶשׁ|חַג[^\s]*\s*[^\s]*)\s+הַזֶּה/g, `בְּיוֹם ${name}`);
+    // MARKER: short Hebrew (no nikud) — letters + optional quote + optional letters,
+    //         length ≤ 15, no colon inside.
+    // NAME: phrase including "הַזֶּה" (nikud may or may not be present).
+    // Each unit ends with ":".
+    // Match the FULL chain starting at "בְּיוֹם" through the last "הַזֶּה:".
+    // Sefaria emits nikud in different orderings across editions (e.g. dagesh
+    // before sheva vs sheva before dagesh). Match letters with arbitrary nikud
+    // (U+0591..U+05C7) between them, so we don't depend on a single ordering.
+    const N = '[\\u0591-\\u05C7]*';
+    const chainRx = new RegExp(
+      `(ב${N}י${N}ו${N}ם${N}\\s+)((?:\\s*[\\u05D0-\\u05EA"״]{1,15}:\\s*[^:]+?ה${N}ז${N}ה${N}:\\s*){2,})`,
+    );
+    const m1 = chainRx.exec(p.body);
+    if (m1) {
+      const prefix = m1[1]; // "בְּיוֹם "
+      const chain = m1[2];
+      // Split chain into units: each unit is "MARKER: NAME הַזֶּה:"
+      const unitRx = /([֐-ת"״]{1,15}):\s*([^:]+?ה[ְ-ּֿׁׂ]?ז[ְ-ּ]?ֶּ?ה):\s*/g;
+      const units: { marker: string; nameWithZeh: string; full: string }[] = [];
+      let mm: RegExpExecArray | null;
+      while ((mm = unitRx.exec(chain)) !== null) {
+        units.push({ marker: mm[1].trim(), nameWithZeh: mm[2].trim(), full: mm[0] });
+      }
+      if (units.length >= 2) {
+        const todayMarkerRx = todayMarkerRegex(date, inIsrael);
+        const todayUnit = units.find((u) => todayMarkerRx.test(u.marker));
+        const chosenName = todayUnit ? `${todayUnit.nameWithZeh}: ` : `${name} הַזֶּה: `;
+        const replaced = p.body.replace(chainRx, `${prefix}${chosenName}`);
+        return replaced.replace(/\s+/g, ' ').replace(/\s+([:.])/g, '$1').trim();
+      }
     }
-    // Choose the unit whose marker matches today.
-    const todayMarkerRx = today_marker_regex(date, inIsrael);
-    const todayUnit = units.find((u) => todayMarkerRx.test(u));
-    const replacement = todayUnit
-      // Drop the inline marker, keep just the name + colon
-      ? todayUnit.replace(/<small>[^<]*?<\/small>\s*/g, '').trim()
-      : `${name} הַזֶּה:`;
-    // Replace the FIRST unit with our chosen replacement, drop all remaining units.
-    let result = p.body;
-    let first = true;
-    result = result.replace(unitRx, () => {
-      if (first) { first = false; return replacement; }
-      return '';
-    });
-    return result.replace(/\s+/g, ' ').replace(/\s+([:.])/g, '$1').trim();
+    // No inline chain detected — fall back to single-replace heuristic.
+    return p.body.replace(/בְּיוֹם\s+[^\s]+\s+הַזֶּה/g, `בְּיוֹם ${name}`)
+                 .replace(/בְּיוֹם\s+(רֹאשׁ הַחֹדֶשׁ|חַג[^\s]*\s*[^\s]*)\s+הַזֶּה/g, `בְּיוֹם ${name}`);
   }
   return p.body;
 }
 
-/** Regex that matches the inline `<small>marker:</small>` of TODAY's festival. */
-function today_marker_regex(date: Date, inIsrael: boolean): RegExp {
+/** Regex matching the bare-text marker label of TODAY's festival (e.g. "לר\"ח" on RC). */
+function todayMarkerRegex(date: Date, inIsrael: boolean): RegExp {
   const hd = new HDate(date);
   const m = hd.getMonth();
   const d = hd.getDate();
   const events = HebrewCalendar.calendar({ start: hd, end: hd, il: inIsrael, sedrot: false });
   const isRC = events.some((e) => e.getFlags() & flags.ROSH_CHODESH);
-  if (m === months.TISHREI && d >= 15 && d <= 21) return /לס[וו]?כ[וו]?ת|לסכ['"]ת|בסכות|לחג הסכות|לחג הסוכות/;
-  if (m === months.TISHREI && d === 22) return /שמיני|עצרת/;
-  if (m === months.NISAN && d >= 15 && d <= 21) return /לפסח|למצות|לחג המצות|חג המצות/;
-  if (m === months.SIVAN && (d === 6 || (!inIsrael && d === 7))) return /לשבועות|חג השבועות/;
-  if (m === months.TISHREI && (d === 1 || d === 2)) return /לרה"ש|לראש השנה/;
-  if (isRC) return /לר["״]?ח|לראש חודש|לראש חדש/;
-  // Default: match nothing (caller will use fallback name).
+  if (m === months.TISHREI && d >= 15 && d <= 21) return /^לס[וו]?כ|^לחג הס[וכ]/;
+  if (m === months.TISHREI && d === 22) return /^שמיני|^לעצרת/;
+  if (m === months.NISAN && d >= 15 && d <= 21) return /^לפסח|^למצות|^לחג המצות/;
+  if (m === months.SIVAN && (d === 6 || (!inIsrael && d === 7))) return /^לשבועות|^לחג השבועות/;
+  if (m === months.TISHREI && (d === 1 || d === 2)) return /^לרה|^לראש השנה/;
+  if (isRC) return /^לר["״]?ח|^לראש ח[דו]ש/;
   return /__no_match_xyz__/;
 }
 
