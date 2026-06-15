@@ -8,6 +8,7 @@ import { Button } from '../../src/components/Button';
 import { getString, Keys } from '../../src/storage/storage';
 import { useSiddurPrefs, shouldHideForPrefs } from '../../src/storage/siddurPrefs';
 import { useLocation } from '../../src/hooks/useLocation';
+import { useEffectiveDate } from '../../src/hooks/useEffectiveDate';
 import {
   getNodesAtPath,
   slugify,
@@ -194,6 +195,7 @@ export default function SiddurReader() {
   const { nusach: rawNusach, path: rawPath } = useLocalSearchParams<{ nusach?: string; path?: string }>();
   const { location } = useLocation();
   const inIsrael = location.countryCode === 'IL';
+  const today = useEffectiveDate();
 
   const [storedNusach, setStoredNusach] = useState<Nusach>('ashkenazi');
 
@@ -235,7 +237,7 @@ export default function SiddurReader() {
       // Purim, inject the day's special leaves (Hallel, special Torah reading,
       // Mussaf, etc.) into the Shacharit flow so the user doesn't have to
       // navigate to a separate page for Musaf etc.
-      return augmentLeavesForToday(own, here, nusach, new Date(), inIsrael);
+      return augmentLeavesForToday(own, here, nusach, today, inIsrael);
     }
     if (slugs.length === 0) return collectLeavesFromList(getNusachTree(nusach));
     return [];
@@ -250,13 +252,32 @@ export default function SiddurReader() {
   //   2. Date relevance (ברכי נפשי only on ר"ח, לדוד only באלול-הוש"ר, etc.)
   //   3. SILENT AMIDAH ONLY — קדושה is hidden because the silent (תפילה ראשונה)
   //      doesn't include it. קדושה is rendered separately in the chazara collapse.
-  // Match the EXACT "Amidah" trail node — not "Post Amidah" (which contains
-  // וידוי and shouldn't appear in chazara) and not "Long Tachanun" etc.
+  // Match any trail node that names an Amidah variant — includes:
+  //   "Amidah", "Amida", "עמידה", "שמונה עשרה"
+  //   "Musaf Amidah for Rosh Chodesh", "מוסף עמידה לראש חודש"
+  //   "Musaf Amidah", "Musaf LeShabbat → Amidah" subtrees, etc.
+  // Importantly NOT "Post Amidah" (Tachanun/Vidui zone — those should not
+  // appear in chazara collapse).
   const isAmidahLeaf = (l: { en: string; trail: { en: string; he: string }[] }) =>
-    l.trail.some((t) => /^Amid(ah|a)$|^עמידה$|^שמונה עשרה$/i.test(t.en.trim()) ||
-                        /^עמידה$|^שמונה עשרה$/.test((t.he || '').trim()));
-  const isKedushahLeaf = (l: { en: string; he: string }) =>
-    /^(Kedushah|Kedusha|Keduasha)$/i.test(l.en) || /^קדושה$/i.test(l.he);
+    l.trail.some((t) => {
+      const en = t.en.trim();
+      const he = (t.he || '').trim();
+      if (/^Post[\s-]?Amid/i.test(en)) return false; // exclude "Post Amidah"
+      if (/^שלאחר[\s-]?עמידה/.test(he)) return false;
+      return /\bAmid(ah|a)\b/i.test(en) || /עמידה|שמונה עשרה/.test(he);
+    });
+  // Distinguish a Musaf-Amidah leaf from a regular-Amidah leaf — used to render
+  // separate chazara collapses (one per Amidah variant).
+  const isMusafAmidahLeaf = (l: { en: string; trail: { en: string; he: string }[] }) =>
+    l.trail.some((t) => /Musaf|מוסף/i.test(`${t.en} ${t.he}`));
+  // Kedushah may be either a leaf called "Kedushah" or a sub-leaf
+  // ("Kedushat HaShem") whose trail contains "Kedushah" — must hide both in
+  // silent Amidah/Musaf since the public Kedushah is only said in chazara.
+  const isKedushahLeaf = (l: { en: string; he: string; trail: { en: string; he: string }[] }) => {
+    if (/^(Kedushah|Kedusha|Keduasha|Kedushat HaShem)$/i.test(l.en)) return true;
+    if (/^קדושה$|^קדושת השם$/i.test(l.he)) return true;
+    return l.trail.some((t) => /^Kedushah$/i.test(t.en) || /^קדושה$/.test(t.he));
+  };
   // ברכת כהנים is said by the כהנים only during חזרת הש"ץ — never silently.
   const isBirkatKohanimLeaf = (l: { en: string; he: string }) =>
     /Birkat Kohanim|Priestly Blessing|ברכת כהנים/i.test(`${l.en} ${l.he}`);
@@ -270,8 +291,8 @@ export default function SiddurReader() {
       if (l.trail.some((t) => shouldHideForPrefs(t.en, prefs))) return false;
       // Pass Hebrew name so chu"l/EY designations like "(outside of Israel)"
       // can gate by location.
-      if (!isSectionRelevantToday(l.en, new Date(), inIsrael, l.he)) return false;
-      if (l.trail.some((t) => !isSectionRelevantToday(t.en, new Date(), inIsrael, t.he))) return false;
+      if (!isSectionRelevantToday(l.en, today, inIsrael, l.he)) return false;
+      if (l.trail.some((t) => !isSectionRelevantToday(t.en, today, inIsrael, t.he))) return false;
       return true;
     }),
     [allLeavesUnderHere, prefs, inIsrael],
@@ -289,13 +310,13 @@ export default function SiddurReader() {
     allLeavesFiltered.length <= RUNNING_TEXT_MAX_LEAVES;
 
   // Today is Mon/Thu? Used to surface the קריאת התורה link in the right place.
-  const dayOfWeek = new Date().getDay();
+  const dayOfWeek = today.getDay();
   const isMonOrThu = dayOfWeek === 1 || dayOfWeek === 4;
 
   // Inserts for today
-  const inserts = useMemo(() => getInsertsForDate(new Date(), inIsrael), [inIsrael]);
+  const inserts = useMemo(() => getInsertsForDate(today, inIsrael), [inIsrael]);
   // Active condition tags for today (אומר היום בעשי"ת? בר"ח? etc.)
-  const active = useMemo(() => activeTags(new Date(), inIsrael), [inIsrael]);
+  const active = useMemo(() => activeTags(today, inIsrael), [inIsrael]);
 
   // Halachic-window banner: detect if user is reading Shacharit/Mincha/Maariv
   // and warn them if the time is wrong or the end is approaching.
@@ -304,7 +325,7 @@ export default function SiddurReader() {
     [here?.en, trail],
   );
   const zmanim = useMemo(
-    () => (prayerKind ? computeZmanim(new Date(), location) : null),
+    () => (prayerKind ? computeZmanim(today, location) : null),
     [prayerKind, location],
   );
 
@@ -312,11 +333,12 @@ export default function SiddurReader() {
   const [showAll, setShowAll] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
-  // Chazara collapse: shown right after אלוקי נצור. When open, re-renders the
-  // entire Amidah with קדושה + מודים דרבנן included and אלוקי נצור excluded.
-  // Date-aware additions (יעלה ויבוא, ובספר חיים, ותן טל ומטר, וכו') apply
-  // to both renderings because they live in the same paragraph-level tags.
-  const [chazaraOpen, setChazaraOpen] = useState(false);
+  // Chazara collapse — one button per Elokai Netzor position. On a day with
+  // both Shacharit and Musaf (RC / ChH"M), there are TWO Elokai Netzor leaves
+  // (one ending the silent Shacharit, one ending the silent Musaf), so we
+  // track open state per-anchor. Date-aware additions (יעלה ויבוא, ובספר חיים,
+  // ותן טל ומטר, וכו') apply to both because they live in paragraph tags.
+  const [chazaraOpenIdx, setChazaraOpenIdx] = useState<Set<number>>(new Set());
 
   // ===== Running text fetch =====
   const [leaves, setLeaves] = useState<LoadedLeaf[]>([]);
@@ -333,7 +355,7 @@ export default function SiddurReader() {
     // so the user sees the start of the prayer immediately instead of waiting
     // for the entire ~100-section fetch to complete.
     let cancelled = false;
-    const todayDow = new Date().getDay();
+    const todayDow = today.getDay();
     allLeavesFiltered.forEach((leaf, idx) => {
       (async () => {
         try {
@@ -546,7 +568,7 @@ export default function SiddurReader() {
               appropriate Musaf section for the current nusach. */}
           {/* Selichot button at top of Shacharit on Elul / AYT / fast days. */}
           {isRunningText && /Shacharit|שחרית/i.test(`${here?.en || ''} ${here?.he || ''}`) && (() => {
-            const sel = getActiveSelichotLink(new Date(), inIsrael, nusach);
+            const sel = getActiveSelichotLink(today, inIsrael, nusach);
             if (!sel) return null;
             return (
               <Card
@@ -568,7 +590,7 @@ export default function SiddurReader() {
           })()}
 
           {isRunningText && /Shacharit|שחרית/i.test(`${here?.en || ''} ${here?.he || ''}`) && (() => {
-            const musaf = getActiveMusafLink(new Date(), inIsrael, nusach);
+            const musaf = getActiveMusafLink(today, inIsrael, nusach);
             if (!musaf) return null;
             return (
               <Card
@@ -619,7 +641,7 @@ export default function SiddurReader() {
 
           {/* Navigation list mode - filtered by today relevance */}
           {!isRunningText && children.length > 0 && (() => {
-            const visible = children.filter((c) => isSectionRelevantToday(c.en, new Date(), inIsrael));
+            const visible = children.filter((c) => isSectionRelevantToday(c.en, today, inIsrael));
             const hidden = children.length - visible.length;
             const list = showAll ? children : visible;
             return (
@@ -632,7 +654,7 @@ export default function SiddurReader() {
                   </Pressable>
                 )}
                 {list.map((c, i) => {
-                  const relevant = isSectionRelevantToday(c.en, new Date(), inIsrael);
+                  const relevant = isSectionRelevantToday(c.en, today, inIsrael);
                   return (
                     <Card key={`${c.en}-${i}`} onPress={() => navigateTo(slugify(c.en))}>
                       <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md, opacity: relevant ? 1 : 0.55 }}>
@@ -784,14 +806,16 @@ export default function SiddurReader() {
 
           {/* Running text mode */}
           {isRunningText && (() => {
-            // אלקי נצור marks the END of the silent עמידה. After it we render
-            // the chazara collapse (silent → public repetition).
+            // אלקי נצור marks the END of each silent עמידה. After EACH one we
+            // render a chazara collapse — one for regular Amidah, one for Musaf
+            // on RC / ChH"M days. Each collapse renders ONLY the leaves of its
+            // own Amidah variant (distinguished by whether trail mentions Musaf).
             const isElohaiNetzor = (l: LoadedLeaf) =>
               /Elohai Netzor|Elokai Netzor|אל[הוו]?הי נצור|אלקי נצור|אלוהי נצור/i.test(`${l.en} ${l.he}`);
-            let lastAmidahIdx = -1;
+            const elokaiNetzorIdxs: number[] = [];
             if (prefs.withMinyan) {
               for (let i = 0; i < leaves.length; i++) {
-                if (isElohaiNetzor(leaves[i])) lastAmidahIdx = i;
+                if (isElohaiNetzor(leaves[i])) elokaiNetzorIdxs.push(i);
               }
             }
 
@@ -867,7 +891,7 @@ export default function SiddurReader() {
                           }
                           if (p.kind === 'conditional' || p.kind === 'alternative') {
                             // Inject day name into Yaaleh VeYavo etc.
-                            const enhancedBody = enhanceConditionalText(p, new Date(), inIsrael);
+                            const enhancedBody = enhanceConditionalText(p, today, inIsrael);
                             // Is this currently in season?
                             // 'unknown' tag = we don't know when, treat as in-season
                             // so it doesn't show a false "לא היום" badge.
@@ -915,32 +939,42 @@ export default function SiddurReader() {
                         })}
                     </View>
                     {/* Inline COLLAPSE AFTER אלוקי נצור: חזרת הש"ץ.
-                        Closed: button "🕊 חזרת הש"ץ ▼"
-                        Open: re-renders the entire Amidah with קדושה shown +
-                              אלוקי נצור excluded. Same paragraph-level tags
-                              apply so seasonal additions stay accurate. */}
-                    {idx === lastAmidahIdx ? (
+                        Renders at EACH אלוקי נצור position (silent Shacharit
+                        + silent Musaf on RC). Each collapse pulls the leaves of
+                        its OWN Amidah variant. */}
+                    {elokaiNetzorIdxs.includes(idx) ? (() => {
+                      const isMyMusafChazara = isMusafAmidahLeaf(leaf);
+                      const open = chazaraOpenIdx.has(idx);
+                      const label = isMyMusafChazara ? 'חזרת הש״ץ של מוסף' : 'חזרת הש״ץ';
+                      return (
                       <View style={{ marginTop: spacing.lg, marginBottom: spacing.md }}>
                         <Pressable
-                          onPress={() => setChazaraOpen((v) => !v)}
+                          onPress={() => setChazaraOpenIdx((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(idx)) next.delete(idx); else next.add(idx);
+                            return next;
+                          })}
                           style={styles.inlineNextLink}
                           hitSlop={6}
                         >
                           <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>
-                            🕊  חזרת הש״ץ {chazaraOpen ? '▾' : '▸'}
+                            🕊  {label} {open ? '▾' : '▸'}
                           </Text>
                           <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
-                            {chazaraOpen
+                            {open
                               ? 'סגור חזרת הש״ץ'
                               : 'לחץ להציג — כולל קדושה ומודים דרבנן'}
                           </Text>
                         </Pressable>
-                        {chazaraOpen ? (
+                        {open ? (
                           <View style={styles.chazaraBlock}>
                             <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginBottom: spacing.md }]}>
-                              ⟦ חזרת הש״ץ — כל הברכות עם קדושה ומודים דרבנן ⟧
+                              ⟦ {label} — כל הברכות עם קדושה ומודים דרבנן ⟧
                             </Text>
-                            {leaves.filter((l) => isAmidahLeaf(l) && !isConcludingPassage(l)).map((cleaf, j) => (
+                            {leaves
+                              .filter((l) => isAmidahLeaf(l) && !isConcludingPassage(l)
+                                && (isMusafAmidahLeaf(l) === isMyMusafChazara))
+                              .map((cleaf, j) => (
                               <View key={`chazara-${cleaf.ref}-${j}`} style={{ marginBottom: spacing.sm }}>
                                 <Text style={[typography.h3, styles.sectionTitle]}>{cleaf.he || cleaf.en}</Text>
                                 {cleaf.loading ? (
@@ -958,7 +992,7 @@ export default function SiddurReader() {
                                       ) : null;
                                     }
                                     if (p.kind === 'conditional' || p.kind === 'alternative') {
-                                      const body = enhanceConditionalText(p, new Date(), inIsrael);
+                                      const body = enhanceConditionalText(p, today, inIsrael);
                                       const inSeason = !p.tags || p.tags.length === 0 ||
                                         p.tags.includes('unknown') ||
                                         p.tags.some((t) => active.has(t));
@@ -989,7 +1023,8 @@ export default function SiddurReader() {
                           </View>
                         ) : null}
                       </View>
-                    ) : null}
+                      );
+                    })() : null}
                     {/* Gabbai assistance card — render ONCE at the actual aliyah-
                         blessing leaf ("Birkat HaTorah" / "ברכת התורה" / "Reading
                         from Sefer"). Previously we also matched any leaf whose
@@ -1001,8 +1036,12 @@ export default function SiddurReader() {
                         <GabbaiCard />
                       </View>
                     ) : null}
-                    {/* Inline anchor for קריאת התורה (Mon/Thu) — right after הוצאת ספר תורה. */}
-                    {idx === torahAnchorIdx && prefs.includeMondayThursdayLeyning ? (
+                    {/* Inline anchor for קריאת התורה (Mon/Thu) — right after הוצאת ספר תורה.
+                        SKIP on RC/Chag/Chol HaMoed/fasts — those days have their own
+                        Torah reading, so a "Mon/Thu" leyning link would be misleading. */}
+                    {idx === torahAnchorIdx && prefs.includeMondayThursdayLeyning &&
+                     !active.has('rosh-chodesh') && !active.has('chol-hamoed') &&
+                     !active.has('fast') && !active.has('chanukah') && !active.has('purim') ? (
                       <Pressable
                         onPress={() => router.push('/tfilon/leyning' as any)}
                         style={styles.inlineNextLink}

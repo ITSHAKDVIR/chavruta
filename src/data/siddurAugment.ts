@@ -167,57 +167,95 @@ function removeMatching(leaves: FlatLeaf[], pattern: RegExp): FlatLeaf[] {
  * RC Musaf brachot from the tree, Barchi Nafshi.
  */
 function augmentForRoshChodesh(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
-  // === Step 1: Filter base leaves — remove what doesn't belong on RC ===
-  // Drop the entire base Torah Reading subtree (Mon/Thu reading). On RC we
-  // inject the RC Torah Reading at the right anchor instead. Match by trail
-  // containing "Torah Reading" so all aliyot/hagbaha/hachnasa leaves go.
-  let out = leaves.filter((l) => {
-    const trailJoin = l.trail.map((t) => `${t.en} ${t.he}`).join(' | ');
-    if (/Torah Reading|קריאת התורה|הוצאת ספר|Removing the Torah|Reading from Sefer|Returning Sefer|Returning the Torah/i
-        .test(trailJoin + ` ${l.en} ${l.he}`)) {
-      // BUT: if the trail already mentions Rosh Chodesh (rare — only happens
-      // when a future builder pre-injected RC reading), keep it.
-      const inRcTrail = l.trail.some((t) => /Rosh Chodesh|לראש חדש|לראש חודש/.test(`${t.en} ${t.he}`));
-      return inRcTrail;
-    }
-    return true;
-  });
+  // Strategy (per spec A1 Ashkenazi):
+  //   Shacharit body → Amidah (with YvY conditional) → **Hallel (half)** →
+  //   Kaddish Titkabal → **Hotzaat Sefer Torah** (base subtree) →
+  //   **RC Torah Reading** (4 olim Bamidbar 28:1-15, synthesized) →
+  //   **Hachnasat Sefer Torah** (base subtree) → Ashrei → Uva Letzion →
+  //   Kaddish Titkabal → **Musaf** (cherry-picked from tree) → Kaddish Titkabal →
+  //   Aleinu → Mourner's Kaddish → Shir Shel Yom → Barchi Nafshi (base) → ...
+  //
+  // We DO NOT strip the base "Removing the Torah from Ark" / "Returning Sefer to
+  // Aron" subtrees — those are procedural (Vayehi Binsoa, Berich Shmei,
+  // Yehalelu) and apply on every Torah-reading day. We only inject the actual
+  // RC verses BETWEEN them, in place of the regular Mon/Thu parsha text.
 
-  // === Step 2: Build the synthesized leaves ===
+  let out = leaves;
+
+  // === Step 1: Build synthesized leaves ===
   const hallel = buildHalfHallelLeaves(nusach);
   const torahReading = buildRoshChodeshTorahReadingLeaves();
   const musaf = collectRoshChodeshMusafLeaves(nusach);
-  const barchiNafshi = buildBarchiNafshiLeaf(nusach);
+  const musafClosingKaddish = buildMusafClosingKaddish();
 
-  // === Step 3: Find anchors ===
-  // Anchor A: after the last Amidah-trail leaf (i.e., after Concluding Passage
-  // / Elokai Netzor). Earlier code looked for a leaf NAMED "Amidah" which
-  // doesn't exist — Amidah is only in the TRAIL. Hallel must go AFTER
-  // the silent + chazaras Amidah, not after Yishtabach.
-  const amidahAnchor = findLastLeafByTrail(out, /^Amid(ah|a)$|^עמידה$|^שמונה עשרה$/i);
-  // Anchor B: after Ashrei + Uva Letzion (before Aleinu) for Musaf injection.
-  const uvaLetzionAnchor = findLastLeafIndex(out, /Uva Letzion|U[vV]a L'Tziyon|ובא לציון|Aleinu|עלינו/i);
-  // Anchor C: at end (after Aleinu) for Barchi Nafshi + Shir Shel Yom — these
-  // belong at the very end on RC, just before Mourner's Kaddish.
-  const endAnchor = out.length - 1;
+  // === Step 2: Find anchors ===
+  // The end of the silent + chazaras Amidah — last leaf whose trail contains
+  // an Amidah node (but not Post Amidah).
+  const amidahAnchor = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  // Where the Torah Reading ceremony starts — first leaf whose trail says
+  // "Removing the Torah from Ark" (Hotzaat). Hallel goes just before this.
+  const hotzaatStart = findFirstLeafByTrail(out, /Removing the Torah|הוצאת ספר/i);
+  // Where the actual parsha reading happens — base "Reading from Sefer" has
+  // Birkat HaTorah → (verses) → Half Kaddish → Raising → Mi Sheberach. We
+  // inject our 4 RC verses AFTER "Birkat HaTorah" and BEFORE "Half Kaddish".
+  const birkatHaTorahIdx = findFirstLeafByName(out, /^Birkat HaTorah$|^ברכת התורה$/i);
+  // Where Aleinu sits — Musaf goes just BEFORE Aleinu (per spec).
+  const aleinuIdx = findFirstLeafByName(out, /^Al?einu$|^Alenu$|^עלינו$/i);
 
-  // === Step 4: Inject in REVERSE order so earlier indices stay valid ===
-  // Inject Barchi Nafshi at end (only if not already in base).
-  if (barchiNafshi && !out.some((l) => /Barchi Nafshi|ברכי נפשי/i.test(`${l.en} ${l.he}`))) {
-    out = injectAfter(out, endAnchor, [barchiNafshi]);
+  // === Step 3: Inject in REVERSE order so earlier indices stay valid ===
+
+  // 3a) Musaf + closing Kaddish — inject right BEFORE Aleinu so Musaf flows
+  // out of "Uva Letzion → Kaddish Shalem → Musaf → Aleinu → Shir Shel Yom".
+  if (musaf.length > 0 && aleinuIdx > 0) {
+    const musafBlock = [...musaf, musafClosingKaddish];
+    out = injectAfter(out, aleinuIdx - 1, musafBlock);
   }
-  // Inject Musaf before Aleinu (so it appears as a major section in the flow).
-  if (musaf.length > 0 && uvaLetzionAnchor >= 0) {
-    out = injectAfter(out, uvaLetzionAnchor, musaf);
+
+  // 3b) RC Torah Reading verses — inject after Birkat HaTorah (the aliyah
+  // blessing) and before Half Kaddish, so the reader sees brachot → verses →
+  // closing kaddish in the natural order.
+  if (torahReading.length > 0 && birkatHaTorahIdx >= 0) {
+    out = injectAfter(out, birkatHaTorahIdx, torahReading);
   }
-  // Inject RC Torah Reading immediately after Hallel — i.e., after the Amidah
-  // anchor + Hallel length.
-  if (amidahAnchor >= 0 && (hallel.length > 0 || torahReading.length > 0)) {
-    const combined = [...hallel, ...torahReading];
-    out = injectAfter(out, amidahAnchor, combined);
+
+  // 3c) Hallel + Kaddish Titkabal — inject after the Amidah (Elokai Netzor),
+  // BEFORE the Torah Reading ceremony. If Hotzaat starts later in the flow,
+  // anchor on the Amidah; otherwise fall back to amidahAnchor.
+  if (hallel.length > 0 && amidahAnchor >= 0) {
+    out = injectAfter(out, amidahAnchor, hallel);
   }
 
   return out;
+}
+
+/** Build a closing Kaddish Titkabal leaf that follows Musaf chazaras. */
+function buildMusafClosingKaddish(): FlatLeaf {
+  return {
+    ref: 'Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Kaddish Shalem',
+    he: 'קדיש תתקבל (לאחר חזרת מוסף)',
+    en: "Kaddish Titkabal (after Musaf chazaras)",
+    trail: [{ he: 'מוסף לראש חודש', en: 'Musaf for Rosh Chodesh' }],
+  };
+}
+
+/** Find the FIRST leaf whose trail contains a node matching pattern (with
+ *  optional exclude pattern). */
+function findFirstLeafByTrail(leaves: FlatLeaf[], pattern: RegExp, exclude?: RegExp): number {
+  for (let i = 0; i < leaves.length; i++) {
+    const trail = leaves[i].trail;
+    if (exclude && trail.some((t) => exclude.test(t.en) || exclude.test(t.he))) continue;
+    if (trail.some((t) => pattern.test(t.en) || pattern.test(t.he))) return i;
+  }
+  return -1;
+}
+
+/** Find FIRST leaf by exact name pattern. */
+function findFirstLeafByName(leaves: FlatLeaf[], pattern: RegExp): number {
+  for (let i = 0; i < leaves.length; i++) {
+    if (pattern.test(leaves[i].en) || pattern.test(leaves[i].he)) return i;
+  }
+  return -1;
 }
 
 /** Build the 8 leaves of HALF Hallel — bracha + psalms 113, 114, 115:12-18,
@@ -265,29 +303,17 @@ function collectRoshChodeshMusafLeaves(nusach: Nusach): FlatLeaf[] {
   return collectLeaves(musafNode);
 }
 
-/** Build a Barchi Nafshi leaf (Tehillim 104) — said at the END of RC Shacharit
- *  after Shir Shel Yom. */
-function buildBarchiNafshiLeaf(_nusach: Nusach): FlatLeaf {
-  return {
-    ref: 'Psalms 104',
-    he: 'ברכי נפשי (תהילים ק״ד)',
-    en: 'Barchi Nafshi (Psalm 104)',
-    trail: [{ he: 'תוספות לראש חודש', en: 'Rosh Chodesh additions' }],
-  };
-}
+// Barchi Nafshi: Ashkenazi base index already includes a "Barchi Nafshi" leaf
+// in Concluding Prayers (gated by siddurRelevance for RC only), so we do not
+// synthesize a duplicate.
 
-/** Find the LAST leaf whose trail contains a node matching pattern. */
-function findLastLeafByTrail(leaves: FlatLeaf[], pattern: RegExp): number {
+/** Find the LAST leaf whose trail contains a node matching pattern (with
+ *  optional exclude pattern). */
+function findLastLeafByTrail(leaves: FlatLeaf[], pattern: RegExp, exclude?: RegExp): number {
   for (let i = leaves.length - 1; i >= 0; i--) {
-    if (leaves[i].trail.some((t) => pattern.test(t.en) || pattern.test(t.he))) return i;
-  }
-  return -1;
-}
-
-/** Last index of a leaf whose en (or he) matches pattern. */
-function findLastLeafIndex(leaves: FlatLeaf[], pattern: RegExp): number {
-  for (let i = leaves.length - 1; i >= 0; i--) {
-    if (pattern.test(leaves[i].en) || pattern.test(leaves[i].he)) return i;
+    const trail = leaves[i].trail;
+    if (exclude && trail.some((t) => exclude.test(t.en) || exclude.test(t.he))) continue;
+    if (trail.some((t) => pattern.test(t.en) || pattern.test(t.he))) return i;
   }
   return -1;
 }

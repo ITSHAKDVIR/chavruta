@@ -342,6 +342,25 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
     return { body, kind: 'conditional', marker: 'בר״ח, חוה״מ ויו״ט',
              tags: ['rosh-chodesh', 'chol-hamoed', 'yom-tov'] };
   }
+  // Plain-text seasonal markers used in some Sefaria sources (RC Musaf, etc.)
+  // — formatted as "בקיץ - <text>" / "בחורף - <text>" without <small> wrapping.
+  if (/^בקיץ\s*[-–:]/.test(bare)) {
+    const sliced = body.replace(/^בקיץ\s*[-–:]\s*/, '');
+    return { body: sliced, kind: 'conditional', marker: 'בקיץ', tags: ['summer-tal'] };
+  }
+  if (/^בחורף\s*[-–:]/.test(bare)) {
+    const sliced = body.replace(/^בחורף\s*[-–:]\s*/, '');
+    return { body: sliced, kind: 'conditional', marker: 'בחורף', tags: ['winter-geshem'] };
+  }
+  // "Mashiv haRuach" line WITHOUT a season prefix — appears in some Musaf
+  // sources. Tag as winter-geshem so it hides in summer.
+  if (/^משיב הרוח ומוריד הגשם/.test(bare)) {
+    return { body, kind: 'conditional', marker: 'בחורף', tags: ['winter-geshem'] };
+  }
+  // "Morid haTal" standalone — tag as summer-tal.
+  if (/^מוריד הטל[:.,\s]/.test(bare) && !/מוריד הגשם/.test(bare)) {
+    return { body, kind: 'conditional', marker: 'בקיץ', tags: ['summer-tal'] };
+  }
   return { body, kind: 'normal' };
 }
 

@@ -277,8 +277,11 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
   // alt spelling "Tachnun" (missing 'a'). Also catches "Vidui" / "Vidui and 13
   // Middot" (Ashkenazi puts it in a separate node from Tachanun) and "Post
   // Amidah" container (which on RC has nothing left to show anyway).
-  if (/^tac?hanun$|^tachnun$|tachanun$|tachnun$|^vidui|vidui and 13|^post amidah$|וידוי/.test(name) ||
-      /וידוי/.test(he || '')) {
+  // "El Erech Appayim" is said before opening the Ark — but ONLY on days where
+  // Tachanun is said (skipped on RC + Shabbat + festivals + Mondays-Thursdays
+  // that are exempt).
+  if (/^tac?hanun$|^tachnun$|tachanun$|tachnun$|^vidui|vidui and 13|^post amidah$|וידוי|^el erech app?ayim$|אל ארך אפים/.test(name) ||
+      /וידוי|^אל ארך אפים$/.test(he || '')) {
     if (isShabbat(ctx)) return false;
     const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
     return !events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.ROSH_CHODESH) || (e.getFlags() & flags.MINOR_HOLIDAY));
