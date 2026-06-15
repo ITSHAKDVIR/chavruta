@@ -117,8 +117,12 @@ export const typography = {
     textAlign: 'right',
   } as TextStyle,
 
+  // Vocalized prayer text. Originally used the system serif font, but on
+  // Android that's Noto Serif which renders some nikud combinations wrong
+  // (segol can appear as kamatz). Rubik-Regular handles the full Hebrew
+  // nikud range correctly.
   sacred: {
-    fontFamily: serifFontFamily,
+    fontFamily: hebrewFontFamily,
     fontSize: 19,
     fontWeight: '500',
     lineHeight: 32,

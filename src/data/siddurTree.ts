@@ -126,12 +126,31 @@ export type FlatTopItem = {
  */
 const ASHKENAZI_FLATTEN_CATEGORIES = new Set(['Weekday', 'Shabbat', 'Festivals', 'Berachot', 'Kaddish']);
 
+/**
+ * Top-level entries that should NOT appear in the index — their content gets
+ * merged into the Shacharit flow at read time so the user doesn't see two
+ * separate menu items ("Upon Arising" then "Weekday Shacharit").
+ */
+const HIDE_AT_TOP_LEVEL_EN = new Set([
+  'Upon Arising',          // Sephardi
+  'Preparatory Prayers',   // Edot HaMizrach
+]);
+
+/** True if this node is a "wake-up" container we want absorbed into Shacharit. */
+export function isHashkamatHaBokerNode(node: SiddurNode): boolean {
+  return HIDE_AT_TOP_LEVEL_EN.has(node.en);
+}
+
 export function getFlatTopItems(nusach: Nusach): FlatTopItem[] {
   const tree = getNusachTree(nusach);
   const out: FlatTopItem[] = [];
   const shouldFlatten = nusach === 'ashkenazi';
 
   for (const top of tree) {
+    // Hide pre-Shacharit prep sections — they're prepended to Shacharit's
+    // leaf collection at read time (see read.tsx `allLeavesUnderHere`).
+    if (HIDE_AT_TOP_LEVEL_EN.has(top.en)) continue;
+
     const topSlug = slugify(top.en);
     const isFlattenable =
       shouldFlatten &&
@@ -161,4 +180,12 @@ export function getFlatTopItems(nusach: Nusach): FlatTopItem[] {
     }
   }
   return out;
+}
+
+/**
+ * Return the top-level "Hashkamat haBoker" container for this nusach, if it
+ * exists. Used by the reader to prepend wake-up prayers into Shacharit.
+ */
+export function getHashkamatHaBokerNode(nusach: Nusach): SiddurNode | undefined {
+  return getNusachTree(nusach).find((n) => HIDE_AT_TOP_LEVEL_EN.has(n.en));
 }
