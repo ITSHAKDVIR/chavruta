@@ -274,8 +274,11 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
     return isHallelDay;
   }
   // Tachanun - not on Shabbat, RC, or holidays. Catches "Tachanun" + Chabad's
-  // alt spelling "Tachnun" (missing 'a').
-  if (/^tac?hanun$|^tachnun$|tachanun$|tachnun$/.test(name)) {
+  // alt spelling "Tachnun" (missing 'a'). Also catches "Vidui" / "Vidui and 13
+  // Middot" (Ashkenazi puts it in a separate node from Tachanun) and "Post
+  // Amidah" container (which on RC has nothing left to show anyway).
+  if (/^tac?hanun$|^tachnun$|tachanun$|tachnun$|^vidui|vidui and 13|^post amidah$|וידוי/.test(name) ||
+      /וידוי/.test(he || '')) {
     if (isShabbat(ctx)) return false;
     const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
     return !events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.ROSH_CHODESH) || (e.getFlags() & flags.MINOR_HOLIDAY));

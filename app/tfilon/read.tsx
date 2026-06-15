@@ -113,10 +113,13 @@ const CURATED_TOC_BY_PRAYER: Record<string, CuratedSection[]> = {
     { label: 'ברכות קריאת שמע', match: ['Blessings of the Shema', 'Shema'] },
     { label: 'שמונה עשרה',      match: ['Amidah', 'Amida', 'שמונה עשרה', 'עמידה'] },
     { label: 'חזרת הש״ץ',       match: ['Repetition', 'Chazarat', 'חזרת'] },
+    { label: 'הלל',             match: ['Half Hallel', 'Hallel for Rosh Chodesh', 'הלל לראש חודש', 'Berakhah before the Hallel'] },
     { label: 'תחנון',           match: ['Tachanun', 'תחנון'] },
     { label: 'קריאת התורה',     match: ['Torah Reading', 'קריאת התורה'] },
     { label: 'אשרי',            match: ['Ashrei', 'אשרי'] },
+    { label: 'מוסף',            match: ['Musaf Amidah for Rosh Chodesh', 'Musaf', 'מוסף לראש חודש', 'מוסף עמידה לראש חודש'] },
     { label: 'שיר של יום',      match: ['Song of the Day', 'שיר של יום', 'Daily Psalm'] },
+    { label: 'ברכי נפשי',       match: ['Barchi Nafshi', 'ברכי נפשי', 'Psalm 104'] },
     { label: 'עלינו לשבח',      match: ['Aleinu', 'Alenu', 'עלינו'] },
   ],
   Minchah: [
@@ -987,11 +990,13 @@ export default function SiddurReader() {
                         ) : null}
                       </View>
                     ) : null}
-                    {/* Gabbai assistance card — Torah-reading leaves (Mon/Thu,
-                        RC, ChH"M, Chanukah, Purim, fasts). Collapsibles for
-                        aliyah call-up, brachot, mi-sheberach, Hagomel. */}
-                    {(/Torah Reading|Reading of the Torah|קריאת התורה|קריאת הקודש|הוצאת ספר/i.test(`${leaf.en} ${leaf.he}`) ||
-                      leaf.trail.some((t) => /Torah Reading|קריאת התורה|הוצאת ספר/i.test(`${t.en} ${t.he}`))) ? (
+                    {/* Gabbai assistance card — render ONCE at the actual aliyah-
+                        blessing leaf ("Birkat HaTorah" / "ברכת התורה" / "Reading
+                        from Sefer"). Previously we also matched any leaf whose
+                        trail contained "Torah Reading", which produced ~10
+                        duplicate cards (one per olim/aliyah leaf). */}
+                    {(/^Birkat HaTorah$|^Reading from Sefer$|^ברכת התורה$|^קריאת הקודש$/i.test(leaf.en) ||
+                      /^ברכת התורה$|^קריאת הקודש$/i.test(leaf.he)) ? (
                       <View style={{ marginTop: spacing.md }}>
                         <GabbaiCard />
                       </View>

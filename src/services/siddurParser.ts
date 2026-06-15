@@ -616,16 +616,61 @@ export function shouldRender(
 /** Some markers can be enhanced with today's specific name, e.g., יעלה ויבוא gets the holiday. */
 export function enhanceConditionalText(p: ParsedParagraph, date: Date = new Date(), inIsrael = true): string {
   if (!p.body) return p.body;
-  // Yaaleh VeYavo - inject the day name
+  // Yaaleh VeYavo — Sefaria packs all festival names inline in one paragraph,
+  // separated by `<small>marker:</small>` tags like:
+  //   ... בְּיוֹם <small>לר"ח:</small> רֹאשׁ הַחֹדֶשׁ הַזֶּה: <small>לפסח:</small> חַג הַמַּצּוֹת הַזֶּה: <small>לסכות:</small> חַג הַסֻּכּוֹת הַזֶּה: זָכְרֵנוּ...
+  // We must strip everything EXCEPT today's option so the reader sees just one
+  // festival name in the right place. Strategy: find the "בְּיוֹם <small>...</small> NAME הַזֶּה:" pattern
+  // for each festival and keep only the one matching today.
   if (/יַעֲלֶה וְיָבֹא|יעלה ויבא|יעלה ויבוא/.test(p.body)) {
     const name = yaalehDayName(date, inIsrael);
-    if (name) {
-      // Replace generic phrasings with the right name
+    if (!name) return p.body;
+    // Each option in the chain has shape:
+    //   <small>MARKER:</small> NAME הזה :
+    // where MARKER ∈ {לר"ח, לפסח, לסכות, לשבועות, לעצרת, לרה"ש}
+    // We strip out the markers and ALL festival names except today's.
+    // Pattern matches one "<small>...</small> ... הַזֶּה:" unit.
+    const unitRx = /<small>[^<]*?<\/small>\s*[^:]+?\s+הַזֶּ?ה:/g;
+    const units: string[] = p.body.match(unitRx) || [];
+    if (units.length === 0) {
+      // No inline-marker pattern — fall back to old single-replace heuristic.
       return p.body.replace(/בְּיוֹם\s+[^\s]+\s+הַזֶּה/g, `בְּיוֹם ${name}`)
                    .replace(/בְּיוֹם\s+(רֹאשׁ הַחֹדֶשׁ|חַג[^\s]*\s*[^\s]*)\s+הַזֶּה/g, `בְּיוֹם ${name}`);
     }
+    // Choose the unit whose marker matches today.
+    const todayMarkerRx = today_marker_regex(date, inIsrael);
+    const todayUnit = units.find((u) => todayMarkerRx.test(u));
+    const replacement = todayUnit
+      // Drop the inline marker, keep just the name + colon
+      ? todayUnit.replace(/<small>[^<]*?<\/small>\s*/g, '').trim()
+      : `${name} הַזֶּה:`;
+    // Replace the FIRST unit with our chosen replacement, drop all remaining units.
+    let result = p.body;
+    let first = true;
+    result = result.replace(unitRx, () => {
+      if (first) { first = false; return replacement; }
+      return '';
+    });
+    return result.replace(/\s+/g, ' ').replace(/\s+([:.])/g, '$1').trim();
   }
   return p.body;
+}
+
+/** Regex that matches the inline `<small>marker:</small>` of TODAY's festival. */
+function today_marker_regex(date: Date, inIsrael: boolean): RegExp {
+  const hd = new HDate(date);
+  const m = hd.getMonth();
+  const d = hd.getDate();
+  const events = HebrewCalendar.calendar({ start: hd, end: hd, il: inIsrael, sedrot: false });
+  const isRC = events.some((e) => e.getFlags() & flags.ROSH_CHODESH);
+  if (m === months.TISHREI && d >= 15 && d <= 21) return /לס[וו]?כ[וו]?ת|לסכ['"]ת|בסכות|לחג הסכות|לחג הסוכות/;
+  if (m === months.TISHREI && d === 22) return /שמיני|עצרת/;
+  if (m === months.NISAN && d >= 15 && d <= 21) return /לפסח|למצות|לחג המצות|חג המצות/;
+  if (m === months.SIVAN && (d === 6 || (!inIsrael && d === 7))) return /לשבועות|חג השבועות/;
+  if (m === months.TISHREI && (d === 1 || d === 2)) return /לרה"ש|לראש השנה/;
+  if (isRC) return /לר["״]?ח|לראש חודש|לראש חדש/;
+  // Default: match nothing (caller will use fallback name).
+  return /__no_match_xyz__/;
 }
 
 /**

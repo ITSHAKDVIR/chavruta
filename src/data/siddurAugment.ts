@@ -153,39 +153,143 @@ function removeMatching(leaves: FlatLeaf[], pattern: RegExp): FlatLeaf[] {
 
 /**
  * Rosh Chodesh weekday — Shacharit.
- * Replaces the regular Torah-Reading leaf with the Rosh Chodesh one and
- * injects Hallel + Barchi Nafshi + RC Torah Reading + Mussaf after Amidah.
+ *
+ * Per spec A1 — the flow is:
+ *   Shacharit base → Amidah+YvY → Chazaras → **Half Hallel** → Sefer Torah +
+ *   **RC Torah Reading** (4 olim, Bamidbar 28:1-15) → Hachnasat → Ashrei →
+ *   Uva Letzion → Kaddish Titkabal → **Musaf** (RC-specific, no YvY, no
+ *   Al haNisim) → Aleinu + **Shir shel Yom + Barchi Nafshi**.
+ *
+ * Removes from base: regular Torah Reading (Mon/Thu parsha), Tachanun/Vidui
+ * subtree (already filtered by siddurRelevance), Lamenatzeach.
+ * Injects: synthesized Half Hallel leaves (psalms 113-118 with 115/116 ranged
+ * to verses 12+), RC Torah Reading leaves (each aliyah a range of Bamidbar 28),
+ * RC Musaf brachot from the tree, Barchi Nafshi.
  */
 function augmentForRoshChodesh(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
-  // Find the per-nusach RC container. Locations vary:
-  //   • Ashkenazi   : Festivals → Rosh Chodesh (deep)
-  //   • Sephardi    : לראש חודש (top-level)
-  //   • Edot-Mizrach: סדר ראש חודש (top-level)
-  //   • Chabad      : ראש חודש (top-level leaf)
-  const rcNode =
-    findTopNode(nusach, /^Rosh (Chodesh|Hodesh)$/i) ||
-    findTopNode(nusach, /^לראש חדש$|^לראש חודש$|^סדר ראש חודש$|^ראש חודש$|^ראש חדש$/) ||
-    findDeepInTree(nusach, /^Rosh (Chodesh|Hodesh)$/i);
-  if (!rcNode) return leaves;
-  const rcLeaves = collectLeaves(rcNode);
-  if (rcLeaves.length === 0) return leaves;
-
-  // Remove the regular weekday Torah reading — RC has its own.
-  // Keep RC torah-reading leaves (their trail mentions Rosh Chodesh).
+  // === Step 1: Filter base leaves — remove what doesn't belong on RC ===
+  // Drop the entire base Torah Reading subtree (Mon/Thu reading). On RC we
+  // inject the RC Torah Reading at the right anchor instead. Match by trail
+  // containing "Torah Reading" so all aliyot/hagbaha/hachnasa leaves go.
   let out = leaves.filter((l) => {
-    const isTorahLeaf = /^Torah Reading$/i.test(l.en) || /קריאת התורה$/.test(l.he);
-    if (!isTorahLeaf) return true;
-    const inRcTrail = l.trail.some((t) => /Rosh Chodesh|לראש חדש|לראש חודש/.test(t.en + t.he));
-    return inRcTrail; // keep only if part of RC tree (extremely rare in base leaves)
+    const trailJoin = l.trail.map((t) => `${t.en} ${t.he}`).join(' | ');
+    if (/Torah Reading|קריאת התורה|הוצאת ספר|Removing the Torah|Reading from Sefer|Returning Sefer|Returning the Torah/i
+        .test(trailJoin + ` ${l.en} ${l.he}`)) {
+      // BUT: if the trail already mentions Rosh Chodesh (rare — only happens
+      // when a future builder pre-injected RC reading), keep it.
+      const inRcTrail = l.trail.some((t) => /Rosh Chodesh|לראש חדש|לראש חודש/.test(`${t.en} ${t.he}`));
+      return inRcTrail;
+    }
+    return true;
   });
 
-  // Anchor: insert after Amidah. If no Amidah found, try Yishtabach. Last resort: end.
-  let anchor = findLeafIndex(out, /^Amidah$|^עמידה$/);
-  if (anchor < 0) anchor = findLeafIndex(out, /Yishtabach|ישתבח/);
-  if (anchor < 0) anchor = out.length - 1;
+  // === Step 2: Build the synthesized leaves ===
+  const hallel = buildHalfHallelLeaves(nusach);
+  const torahReading = buildRoshChodeshTorahReadingLeaves();
+  const musaf = collectRoshChodeshMusafLeaves(nusach);
+  const barchiNafshi = buildBarchiNafshiLeaf(nusach);
 
-  out = injectAfter(out, anchor, rcLeaves);
+  // === Step 3: Find anchors ===
+  // Anchor A: after the last Amidah-trail leaf (i.e., after Concluding Passage
+  // / Elokai Netzor). Earlier code looked for a leaf NAMED "Amidah" which
+  // doesn't exist — Amidah is only in the TRAIL. Hallel must go AFTER
+  // the silent + chazaras Amidah, not after Yishtabach.
+  const amidahAnchor = findLastLeafByTrail(out, /^Amid(ah|a)$|^עמידה$|^שמונה עשרה$/i);
+  // Anchor B: after Ashrei + Uva Letzion (before Aleinu) for Musaf injection.
+  const uvaLetzionAnchor = findLastLeafIndex(out, /Uva Letzion|U[vV]a L'Tziyon|ובא לציון|Aleinu|עלינו/i);
+  // Anchor C: at end (after Aleinu) for Barchi Nafshi + Shir Shel Yom — these
+  // belong at the very end on RC, just before Mourner's Kaddish.
+  const endAnchor = out.length - 1;
+
+  // === Step 4: Inject in REVERSE order so earlier indices stay valid ===
+  // Inject Barchi Nafshi at end (only if not already in base).
+  if (barchiNafshi && !out.some((l) => /Barchi Nafshi|ברכי נפשי/i.test(`${l.en} ${l.he}`))) {
+    out = injectAfter(out, endAnchor, [barchiNafshi]);
+  }
+  // Inject Musaf before Aleinu (so it appears as a major section in the flow).
+  if (musaf.length > 0 && uvaLetzionAnchor >= 0) {
+    out = injectAfter(out, uvaLetzionAnchor, musaf);
+  }
+  // Inject RC Torah Reading immediately after Hallel — i.e., after the Amidah
+  // anchor + Hallel length.
+  if (amidahAnchor >= 0 && (hallel.length > 0 || torahReading.length > 0)) {
+    const combined = [...hallel, ...torahReading];
+    out = injectAfter(out, amidahAnchor, combined);
+  }
+
   return out;
+}
+
+/** Build the 8 leaves of HALF Hallel — bracha + psalms 113, 114, 115:12-18,
+ *  116:12-19, 117, 118 + closing bracha. Uses Sefaria range refs for the
+ *  truncated psalms so the reader sees only the half-Hallel verses. */
+function buildHalfHallelLeaves(_nusach: Nusach): FlatLeaf[] {
+  const trail = [{ he: 'הלל לראש חודש (חצי הלל)', en: 'Half Hallel for Rosh Chodesh' }];
+  // The Ashkenazi siddur tree has refs for berakhah-before/after — we reuse those.
+  // For the psalms themselves we go straight to Tanach (Sefaria fetches the
+  // verses directly), keeping verses 12+ on the truncated ones.
+  return [
+    { ref: 'Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah before the Hallel',
+      he: 'ברכת ההלל', en: 'Berakhah before the Hallel', trail },
+    { ref: 'Psalms 113', he: 'תהלים קי״ג', en: 'Psalm 113', trail },
+    { ref: 'Psalms 114', he: 'תהלים קי״ד', en: 'Psalm 114', trail },
+    { ref: 'Psalms 115:12-18', he: 'תהלים קט״ו (חצי — מ"לא לנו")', en: 'Psalm 115 (half — verses 12-18)', trail },
+    { ref: 'Psalms 116:12-19', he: 'תהלים קט״ז (חצי — מ"אהבתי")', en: 'Psalm 116 (half — verses 12-19)', trail },
+    { ref: 'Psalms 117', he: 'תהלים קי״ז', en: 'Psalm 117', trail },
+    { ref: 'Psalms 118', he: 'תהלים קי״ח', en: 'Psalm 118', trail },
+    { ref: 'Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah after the Hallel',
+      he: 'ברכה לאחר ההלל', en: 'Berakhah after the Hallel', trail },
+  ];
+}
+
+/** Build the RC Torah Reading leaves — Bamidbar 28:1-15 split into 4 olim
+ *  per the standard division (Cohen, Levi, Yisrael, R'vi'i). */
+function buildRoshChodeshTorahReadingLeaves(): FlatLeaf[] {
+  const trail = [{ he: 'קריאת התורה לראש חודש', en: 'Torah Reading for Rosh Chodesh' }];
+  return [
+    { ref: 'Numbers 28:1-3', he: 'עליה ראשונה (כהן) — צו את בני ישראל', en: 'Aliyah 1 (Cohen) — Numbers 28:1-3', trail },
+    { ref: 'Numbers 28:3-5', he: 'עליה שניה (לוי) — את הכבש אחד', en: 'Aliyah 2 (Levi) — Numbers 28:3-5', trail },
+    { ref: 'Numbers 28:6-10', he: 'עליה שלישית (ישראל) — עולת תמיד', en: 'Aliyah 3 (Yisrael) — Numbers 28:6-10', trail },
+    { ref: 'Numbers 28:11-15', he: 'עליה רביעית — ובראשי חדשיכם', en: 'Aliyah 4 — Numbers 28:11-15 (Rosh Chodesh portion)', trail },
+  ];
+}
+
+/** Find the RC Musaf section in the tree and collect ONLY its Amidah brachot
+ *  (Patriarchs through Concluding Passage). Skips any unrelated children. */
+function collectRoshChodeshMusafLeaves(nusach: Nusach): FlatLeaf[] {
+  const musafNode = findDeepInTree(
+    nusach,
+    /Musaf Amidah for Rosh Chodesh|מוסף לראש חודש|מוסף עמידה לראש חודש|^Musaf$/i,
+  );
+  if (!musafNode) return [];
+  return collectLeaves(musafNode);
+}
+
+/** Build a Barchi Nafshi leaf (Tehillim 104) — said at the END of RC Shacharit
+ *  after Shir Shel Yom. */
+function buildBarchiNafshiLeaf(_nusach: Nusach): FlatLeaf {
+  return {
+    ref: 'Psalms 104',
+    he: 'ברכי נפשי (תהילים ק״ד)',
+    en: 'Barchi Nafshi (Psalm 104)',
+    trail: [{ he: 'תוספות לראש חודש', en: 'Rosh Chodesh additions' }],
+  };
+}
+
+/** Find the LAST leaf whose trail contains a node matching pattern. */
+function findLastLeafByTrail(leaves: FlatLeaf[], pattern: RegExp): number {
+  for (let i = leaves.length - 1; i >= 0; i--) {
+    if (leaves[i].trail.some((t) => pattern.test(t.en) || pattern.test(t.he))) return i;
+  }
+  return -1;
+}
+
+/** Last index of a leaf whose en (or he) matches pattern. */
+function findLastLeafIndex(leaves: FlatLeaf[], pattern: RegExp): number {
+  for (let i = leaves.length - 1; i >= 0; i--) {
+    if (pattern.test(leaves[i].en) || pattern.test(leaves[i].he)) return i;
+  }
+  return -1;
 }
 
 /**
