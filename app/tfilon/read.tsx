@@ -288,12 +288,20 @@ export default function SiddurReader() {
   // separate chazara collapses (one per Amidah variant).
   const isMusafAmidahLeaf = (l: { en: string; trail: { en: string; he: string }[] }) =>
     l.trail.some((t) => /Musaf|מוסף/i.test(`${t.en} ${t.he}`));
-  // Kedushah may be either a leaf called "Kedushah" or a sub-leaf
-  // ("Kedushat HaShem") whose trail contains "Kedushah" — must hide both in
-  // silent Amidah/Musaf since the public Kedushah is only said in chazara.
+  // The PUBLIC Kedushah (נקדש / קדוש קדוש קדוש) is said only in the chazara,
+  // so it must be hidden from the silent Amidah. BUT the 3rd blessing itself —
+  // "Holiness of God" / קדושת השם ("אתה קדוש ושמך קדוש... האל הקדוש") — is the
+  // silent bracha and MUST be shown. Sefaria names the public sanctification
+  // "Kedushah"/"Keduasha"/קדושה (hide it), and in RC Musaf nests a
+  // "Kedushat HaShem" sub-leaf UNDER a "Kedushah" parent (hide via trail).
+  // We must NOT match the standalone weekday "Holiness of God" leaf whose
+  // Hebrew name is also קדושת השם — that one is the silent bracha.
   const isKedushahLeaf = (l: { en: string; he: string; trail: { en: string; he: string }[] }) => {
-    if (/^(Kedushah|Kedusha|Keduasha|Kedushat HaShem)$/i.test(l.en)) return true;
-    if (/^קדושה$|^קדושת השם$/i.test(l.he)) return true;
+    if (/^(Kedushah|Kedusha|Keduasha)$/i.test(l.en)) return true;
+    if (/^קדושה$/i.test(l.he)) return true;
+    // "Kedushat HaShem" sub-leaf is chazara-only only when nested under Kedushah.
+    if (/^Kedushat HaShem$/i.test(l.en) &&
+        l.trail.some((t) => /^Kedushah$/i.test(t.en) || /^קדושה$/.test(t.he))) return true;
     return l.trail.some((t) => /^Kedushah$/i.test(t.en) || /^קדושה$/.test(t.he));
   };
   // ברכת כהנים is said by the כהנים only during חזרת הש"ץ — never silently.
