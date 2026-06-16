@@ -695,6 +695,43 @@ export function enhanceConditionalText(p: ParsedParagraph, date: Date = new Date
     return p.body.replace(/בְּיוֹם\s+[^\s]+\s+הַזֶּה/g, `בְּיוֹם ${name}`)
                  .replace(/בְּיוֹם\s+(רֹאשׁ הַחֹדֶשׁ|חַג[^\s]*\s*[^\s]*)\s+הַזֶּה/g, `בְּיוֹם ${name}`);
   }
+  // Ve'titen Lanu (Festival Musaf Kedushat HaYom) — same inline-marker
+  // pattern as YvY but listing each Festival with its zman:
+  //   ... מועדים לשמחה חגים וזמנים לששון את יום
+  //       לפסח: חַג הַמַּצּוֹת הַזֶּה זְמַן חֵרוּתֵנוּ
+  //       לשבועות: חַג הַשָּׁבוּעוֹת הַזֶּה זְמַן מַתַּן תּוֹרָתֵנוּ
+  //       לסכות: חַג הַסֻּכּוֹת הַזֶּה זְמַן שִׂמְחָתֵנוּ
+  //       לשמיני עצרת: שְׁמִינִי עֲצֶרֶת הַחַג הַזֶּה זְמַן שִׂמְחָתֵנוּ ...
+  // Filter to today's festival only.
+  if (/ותתן לנו|ותתן־לנו|מועדים לשמחה/.test(p.body.replace(/[֑-ׇ]/g, ''))) {
+    const N2 = '[\\u0591-\\u05C7]*';
+    // Each festival block: "MARKER: <NAME> <NIKUD-HAZE> זמן <DESC>"
+    // Marker: short Hebrew (לפסח/לשבועות/לסכות/לשמיני עצרת), no colon inside.
+    // We capture each block and choose today's.
+    const chainRx2 = new RegExp(
+      `((?:\\s*[\\u05D0-\\u05EA"״\\s]{1,20}:\\s*[^:]+?ה${N2}ז${N2}ה[\\s\\S]+?זמ${N2}ן[^:]+?:\\s*){2,})`,
+      'g',
+    );
+    const m2 = chainRx2.exec(p.body);
+    if (m2) {
+      const chain = m2[0];
+      const unitRx2 = /([א-ת"״\s]{1,20}):\s*([^:]+?ה[֑-ׇ]*ז[֑-ׇ]*ה[\s\S]+?זמ[֑-ׇ]*ן[^:]+?):\s*/g;
+      const units2: { marker: string; festWithZman: string }[] = [];
+      let mm2: RegExpExecArray | null;
+      while ((mm2 = unitRx2.exec(chain)) !== null) {
+        units2.push({ marker: mm2[1].trim(), festWithZman: mm2[2].trim() });
+      }
+      if (units2.length >= 2) {
+        const todayMarkerRx = todayMarkerRegex(date, inIsrael);
+        const todayUnit = units2.find((u) => todayMarkerRx.test(u.marker));
+        const chosen = todayUnit ? `${todayUnit.festWithZman}: ` : '';
+        if (chosen) {
+          const replaced = p.body.replace(chainRx2, chosen);
+          return replaced.replace(/\s+/g, ' ').replace(/\s+([:.])/g, '$1').trim();
+        }
+      }
+    }
+  }
   return p.body;
 }
 
