@@ -27,6 +27,12 @@ import { GabbaiCard } from '../../src/components/GabbaiCard';
 import { isSectionRelevantToday } from '../../src/data/siddurRelevance';
 import { getActiveMusafLink } from '../../src/data/musafLinks';
 import { getActiveSelichotLink } from '../../src/data/selichotLink';
+import {
+  getActiveMegillahLink,
+  getActiveHoshanotLink,
+  getActiveKinnotLink,
+  getTishaBAvTallitWarning,
+} from '../../src/data/specialDayLinks';
 import { fetchSefariaText } from '../../src/services/sefaria';
 import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, ParsedParagraph } from '../../src/services/siddurParser';
 import { CholimReminder } from '../../src/components/CholimReminder';
@@ -609,6 +615,40 @@ export default function SiddurReader() {
                 </View>
               </Card>
             );
+          })()}
+
+          {/* Day-specific link banners — Megillah on Purim, Hoshanot on
+              Sukkot ChH"M, Kinnot on T"B, Tallit warning on T"B. */}
+          {isRunningText && (() => {
+            const isShacharit = /Shacharit|שחרית/i.test(`${here?.en || ''} ${here?.he || ''}`);
+            const isMaariv = /Maariv|Arvit|ערבית|מעריב/i.test(`${here?.en || ''} ${here?.he || ''}`);
+            const cards: { label: string; description: string; path: string; icon: string; key: string }[] = [];
+            if (isShacharit || isMaariv) {
+              const meg = getActiveMegillahLink(today, inIsrael);
+              if (meg) cards.push({ ...meg, key: 'meg' });
+            }
+            if (isShacharit) {
+              const hosh = getActiveHoshanotLink(today, inIsrael);
+              if (hosh) cards.push({ ...hosh, key: 'hosh' });
+              const kin = getActiveKinnotLink(today, inIsrael);
+              if (kin) cards.push({ ...kin, key: 'kin' });
+              const tall = getTishaBAvTallitWarning(today, nusach);
+              if (tall) cards.push({ ...tall, key: 'tall' });
+            }
+            return cards.map((c) => (
+              <Card key={c.key} variant="accent" onPress={() => router.push(c.path as any)}>
+                <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md }}>
+                  <Text style={{ fontSize: 26 }}>{c.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>{c.label}</Text>
+                    <Text style={[typography.small, { color: colors.textPrimary, marginTop: 2 }]}>
+                      {c.description}
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.primaryDark, fontSize: 18 }}>‹</Text>
+                </View>
+              </Card>
+            ));
           })()}
 
           {/* Cholim reminder — shown on any Shemoneh-Esreh / Amidah view so
