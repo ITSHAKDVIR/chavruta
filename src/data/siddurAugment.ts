@@ -532,7 +532,13 @@ function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, ctx: Day
   const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahIdx < 0) return leaves;
   // Inject Hallel right after Amidah (half for Pesach, full for Sukkot).
-  const hallel = ctx.isPesach ? buildHalfHallelLeaves(nusach) : buildFullHallelLeaves(nusach);
+  // Re-trail the leaves with a ChH"M-appropriate label so the relevance
+  // filter doesn't hide them via the "Rosh Chodesh" check on the original
+  // builder's trail.
+  const hallelRaw = ctx.isPesach ? buildHalfHallelLeaves(nusach) : buildFullHallelLeaves(nusach);
+  const chMtrail = [{ he: ctx.isPesach ? 'הלל לחול המועד פסח (חצי)' : 'הלל לחול המועד סוכות (שלם)',
+                     en: ctx.isPesach ? 'Half Hallel for Chol HaMoed Pesach' : 'Full Hallel for Chol HaMoed Sukkot' }];
+  const hallel = hallelRaw.map((l) => ({ ...l, trail: chMtrail }));
   // Mussaf goes AFTER Hallel.
   out = injectAfter(out, amidahIdx, [...hallel, ...musafLeaves]);
   return out;
