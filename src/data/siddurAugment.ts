@@ -583,28 +583,42 @@ function collectShaloshRegalimMusafLeaves(nusach: Nusach): FlatLeaf[] {
 
 /**
  * Purim weekday — Shacharit.
- * Replace regular Torah reading with Vayavo Amalek. Megillah is linked from
- * an existing standalone tool; we don't inline its text in the siddur.
+ * Per spec A7: Amidah (+ Al haNisim) → Half Kaddish → Sefer Torah ceremony
+ * (Hotzaat → Vayavo Amalek, 3 olim → Hagbah → Hachnasat) → Megillah (banner)
+ * → Shoshanat Yaakov → Ashrei → Uva Letzion → Aleinu. NO Hallel.
+ *
+ * Ashkenazi: the base tree has the full Torah-service ceremony (now shown on
+ * Purim via siddurRelevance). Inject Vayavo Amalek AFTER "Birkat HaTorah"
+ * (the aliyah blessing) so it reads brachot → verses → Half Kaddish → Hagbah
+ * → Hachnasat — exactly like the Rosh Chodesh handler. Shoshanat Yaakov goes
+ * just before Aleinu.
+ *
+ * Sephardi/EM/Chabad: monolithic Amidah leaf with no ceremony sub-leaves —
+ * fall back to injecting Vayavo Amalek + Shoshanat after the Amidah leaf.
  */
 function augmentForPurim(leaves: FlatLeaf[], _nusach: Nusach): FlatLeaf[] {
-  // Inject synthesized Vayavo Amalek (Exodus 17:8-16, 3 olim) after Amidah.
-  // The Megillah link is rendered as a banner at top of the page by read.tsx.
-  // After Megillah → Shoshanat Yaakov.
-  //
-  // Anchor strategy works for both styles:
-  //   - Ashkenazi: Amidah is a subtree; leaves under it have trail "Amidah".
-  //   - Sephardi/EM/Chabad: Amidah is ONE leaf whose en/he matches "Amidah".
-  let anchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
-    /Post[\s-]?Amid|שלאחר.עמידה/i);
-  if (anchor < 0) {
-    anchor = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  let out = leaves;
+  const vayavo = buildVayavoAmalekLeaves();
+  const shoshanat = buildShoshanatYaakovLeaf();
+
+  // Ashkenazi path: inject into the Torah-service ceremony.
+  const birkatHaTorahIdx = findFirstLeafByName(out, /^Birkat HaTorah$|^ברכת התורה$/i);
+  if (birkatHaTorahIdx >= 0) {
+    // Spec A7: Shoshanat comes after the Megillah/Torah service, BEFORE Ashrei.
+    // Anchor it after the last "Returning Sefer to Aron" leaf (Hachnasat).
+    // Inject in reverse order (later anchor first) so earlier indexes stay valid.
+    const hachnasatLast = findLastLeafByTrail(out, /Returning Sefer|Returning the Torah|הכנסת ספר/i);
+    if (hachnasatLast >= 0) out = injectAfter(out, hachnasatLast, [shoshanat]);
+    out = injectAfter(out, birkatHaTorahIdx, vayavo);
+    return out;
   }
-  if (anchor < 0) return leaves;
-  const inject = [
-    ...buildVayavoAmalekLeaves(),
-    buildShoshanatYaakovLeaf(),
-  ];
-  return injectAfter(leaves, anchor, inject);
+
+  // Fallback (Sephardi/EM/Chabad monolithic Amidah): after the Amidah leaf.
+  let anchor = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  if (anchor < 0) anchor = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (anchor < 0) return out;
+  return injectAfter(out, anchor, [...vayavo, shoshanat]);
 }
 
 /* ────────────────────────── entry point ───────────────────────────── */

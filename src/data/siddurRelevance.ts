@@ -359,6 +359,7 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
     /^torah reading$|^reading from sefer$|removing the torah|returning sefer|returning the torah|raising the torah|hagbah|hagba|^birkat hatorah$/.test(name)
   ) {
     if (isMonOrThurs(ctx) || isShabbat(ctx) || isRoshChodesh(ctx) || isFastDay(ctx)) return true;
+    if (isChanukah(ctx) || isPurimDay(ctx)) return true; // Torah read on Chanukah + Purim
     const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
     return events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.CHOL_HAMOED));
   }
