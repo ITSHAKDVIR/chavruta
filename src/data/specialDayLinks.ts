@@ -30,7 +30,7 @@ export function getActiveMegillahLink(date: Date = new Date(), inIsrael = true):
   if (!events.some((e) => /Purim|Shushan/i.test(e.getDesc()))) return null;
   return {
     label: 'קריאת מגילת אסתר',
-    description: 'הערב ניתן לקרוא את המגילה — לחץ למעבר לטקסט עם ניקוד וטעמים.',
+    description: 'קריאת המגילה (לילה ויום) — לחץ למעבר לטקסט עם ניקוד וטעמים.',
     path: '/tools/megillah',
     icon: '📜',
   };
