@@ -429,16 +429,15 @@ function findLastLeafByTrail(leaves: FlatLeaf[], pattern: RegExp, exclude?: RegE
  * conditional paragraph parsed by siddurParser).
  */
 function augmentForChanukah(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext): FlatLeaf[] {
-  // Find Hallel leaf
-  const hallelNode = findDeepInTree(nusach, /^Hallel$|^הלל$|סדר הלל|הלל לראש חודש|הלל לראש חדש/);
   // Find Chanukah Torah reading (Naso) — keep this best-effort.
   const chanukahTorahNode = findDeepInTree(
     nusach,
     new RegExp(`חנוכה|Chanukah|Day ${ctx.chanukahDay}|Nasi`),
   );
 
-  const inject: FlatLeaf[] = [];
-  if (hallelNode) inject.push(...collectLeaves(hallelNode));
+  // Always use FULL Hallel for Chanukah. Don't search the nusach tree for a
+  // "Hallel" node — the first hit might be RC's HALF Hallel.
+  const inject: FlatLeaf[] = [...buildFullHallelLeaves(nusach)];
   if (chanukahTorahNode) {
     const t = collectLeaves(chanukahTorahNode);
     if (t.length > 0) inject.push(...t);
@@ -510,7 +509,7 @@ function augmentForCholHamoed(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContex
  *  weekday Amidah. The user uses the regular weekday Amidah (with YvY
  *  conditional) for the silent Shacharit, not the Festival Amidah — so we
  *  must NOT inject the Festival Amidah leaf, only the Mussaf. */
-function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, _ctx: DayContext): FlatLeaf[] {
+function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext): FlatLeaf[] {
   // Sephardi: "Holidays" subtree with "Yom Tov Musaf Amidah" leaf.
   // EM: "Prayers for Three Festivals" subtree with "Mussaf" leaf.
   // Chabad: "Musaf for Festivals" leaf at top level.
@@ -532,7 +531,10 @@ function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, _ctx: Da
   let out = leaves;
   const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahIdx < 0) return leaves;
-  out = injectAfter(out, amidahIdx, musafLeaves);
+  // Inject Hallel right after Amidah (half for Pesach, full for Sukkot).
+  const hallel = ctx.isPesach ? buildHalfHallelLeaves(nusach) : buildFullHallelLeaves(nusach);
+  // Mussaf goes AFTER Hallel.
+  out = injectAfter(out, amidahIdx, [...hallel, ...musafLeaves]);
   return out;
 }
 
@@ -614,8 +616,8 @@ export function augmentLeavesForToday(
     /^Shacharit$/i.test(here.en) || // Chabad
     /^Morning Service$/i.test(here.en);
   const isWeekdayMincha =
-    /^Weekday Min[ch]ah?$/i.test(here.en) ||
-    /^Min[ch]ah?$/i.test(here.en);
+    /^Weekday Min(c?h)ah?$/i.test(here.en) ||
+    /^Min(c?h)ah?$/i.test(here.en);
   const isWeekdayMaariv =
     /^Weekday Maariv$/i.test(here.en) ||
     /^Weekday Arvit$/i.test(here.en) ||
@@ -682,10 +684,12 @@ function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
   if (isTishaBAv) postAmidah.push(buildNachemLeaf());
 
   let out = leaves;
-  const amidahFirst = findFirstLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i);
-  const amidahLast = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+  let amidahFirst = findFirstLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i);
+  let amidahLast = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
-  // Inject AFTER first (post-Amidah additions) in reverse order to keep indexes valid.
+  // Sephardi/EM/Chabad fallback: Amidah is a single leaf (no parent trail).
+  if (amidahFirst < 0) amidahFirst = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (amidahLast < 0)  amidahLast  = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahLast >= 0) out = injectAfter(out, amidahLast, postAmidah);
   if (amidahFirst > 0) out = injectAfter(out, amidahFirst - 1, preAmidah);
   return out;

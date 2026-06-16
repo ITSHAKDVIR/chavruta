@@ -194,7 +194,7 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
   }
 
   // Sukkot-specific
-  if (/sukkot|sukkah|lulav|hosha'?an?ot?|hoshana/.test(name)) {
+  if (/\b(sukkot|sukkah|lulav|hosha'?an?ot?|hoshana)\b/.test(name)) {
     return isSukkotOrHaaretz(ctx);
   }
   // Simchat Torah
@@ -284,6 +284,7 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
       /וידוי|^אל ארך אפים$/.test(he || '')) {
     if (isShabbat(ctx)) return false;
     const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
+    if (events.some((e) => e.getFlags() & flags.MAJOR_FAST)) return false; // Tisha B'Av / YK — no Tachanun
     return !events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.ROSH_CHODESH) || (e.getFlags() & flags.MINOR_HOLIDAY));
   }
   // Lamenatze'ach (Psalm 20) — said on days Tachanun is said

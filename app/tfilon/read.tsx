@@ -295,8 +295,6 @@ export default function SiddurReader() {
     () => allLeavesUnderHere.filter((l) => {
       if (shouldHideForPrefs(l.en, prefs)) return false;
       if (l.trail.some((t) => shouldHideForPrefs(t.en, prefs))) return false;
-      // Pass Hebrew name so chu"l/EY designations like "(outside of Israel)"
-      // can gate by location.
       if (!isSectionRelevantToday(l.en, today, inIsrael, l.he)) return false;
       if (l.trail.some((t) => !isSectionRelevantToday(t.en, today, inIsrael, t.he))) return false;
       return true;
