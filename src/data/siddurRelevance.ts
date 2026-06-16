@@ -284,8 +284,16 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
       /וידוי|^אל ארך אפים$/.test(he || '')) {
     if (isShabbat(ctx)) return false;
     const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
-    if (events.some((e) => e.getFlags() & flags.MAJOR_FAST)) return false; // Tisha B'Av / YK — no Tachanun
-    return !events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.ROSH_CHODESH) || (e.getFlags() & flags.MINOR_HOLIDAY));
+    if (events.some((e) => e.getFlags() & flags.MAJOR_FAST)) return false; // T"B / YK
+    if (ctx.m === months.NISAN) return false; // All of Nisan — no Tachanun
+    if (ctx.m === months.TISHREI && ctx.d >= 1 && ctx.d <= 12) return false; // Tishrei 1-12 (incl YK+Sukkot)
+    if (ctx.m === months.IYYAR && ctx.d === 14) return false; // Pesach Sheni
+    if (ctx.m === months.IYYAR && ctx.d === 18) return false; // Lag BaOmer
+    if (ctx.m === months.SIVAN && ctx.d <= 12) return false; // Sivan 1-12 (incl Shavuot+Isru Chag)
+    if (ctx.m === months.AV && ctx.d === 15) return false; // Tu B'Av
+    if ((ctx.m === months.ADAR_I || ctx.m === months.ADAR_II) && (ctx.d === 14 || ctx.d === 15)) return false; // Purim + Shushan Purim
+    if (ctx.m === months.SHVAT && ctx.d === 15) return false; // Tu BiShvat
+    return !events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.CHOL_HAMOED) || (e.getFlags() & flags.ROSH_CHODESH) || (e.getFlags() & flags.MINOR_HOLIDAY));
   }
   // Lamenatze'ach (Psalm 20) — said on days Tachanun is said
   if (/^lamenatze'?ach$|^lamenatzeach$|למנצח/.test(name)) {
