@@ -75,20 +75,22 @@ export function buildAnenuLeaf(): FlatLeaf {
   return {
     ref: 'Custom:Anenu',
     he: 'ענני (תוספת לעמידה בתענית ציבור)',
-    en: 'Anenu (fast day Amidah insert)',
-    trail: [{ he: 'תוספות לתענית', en: 'Fast day additions' }],
+    en: 'Anenu paragraph',
+    trail: [{ he: 'תוספת לתפילה', en: 'Amidah insert' }],
   };
 }
 
 // ============================ Purim Maariv additions ============================
 
-/** Asher Hani Atzat Goyim — recited after Maariv Amidah + Megillah on Purim night. */
+/** Asher Hani Atzat Goyim — recited after Maariv Amidah on Purim night.
+ *  en intentionally has NO "purim"/"megillah" tokens so the relevance filter
+ *  won't accidentally over-gate it via the generic /purim|megillah/ pattern. */
 export function buildAsherHaniLeaf(): FlatLeaf {
   return {
     ref: 'Custom:AsherHani',
     he: 'אשר הניא עצת גוים',
-    en: 'Asher Hani — recited after Maariv Megillah',
-    trail: [{ he: 'תוספות לפורים', en: 'Purim additions' }],
+    en: 'Asher Hani Atzat Goyim',
+    trail: [{ he: 'תוספות לאחר תפילה', en: 'Post-prayer additions' }],
   };
 }
 
@@ -97,8 +99,8 @@ export function buildShoshanatYaakovLeaf(): FlatLeaf {
   return {
     ref: 'Custom:ShoshanatYaakov',
     he: 'שושנת יעקב',
-    en: 'Shoshanat Yaakov — recited after Megillah',
-    trail: [{ he: 'תוספות לפורים', en: 'Purim additions' }],
+    en: 'Shoshanat Yaakov',
+    trail: [{ he: 'תוספות לאחר תפילה', en: 'Post-prayer additions' }],
   };
 }
 
@@ -120,8 +122,8 @@ export function buildNachemLeaf(): FlatLeaf {
   return {
     ref: 'Custom:Nachem',
     he: 'נחם (תוספת לעמידה בתשעה באב)',
-    en: 'Nachem (Tisha B\'Av Mincha Amidah insert)',
-    trail: [{ he: 'תוספות לתשעה באב', en: 'Tisha B\'Av additions' }],
+    en: 'Nachem paragraph',
+    trail: [{ he: 'תוספת לתפילה', en: 'Amidah insert' }],
   };
 }
 

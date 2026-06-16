@@ -33,8 +33,10 @@ import {
   buildTishaBAvHaftarah,
   buildFastMinchaHaftarah,
   buildNachemLeaf,
+  buildAnenuLeaf,
   buildAsherHaniLeaf,
   buildShoshanatYaakovLeaf,
+  buildVayavoAmalekLeaves,
 } from './specialDayContent';
 
 /* ────────────────────────── tree helpers ──────────────────────────── */
@@ -556,19 +558,19 @@ function collectShaloshRegalimMusafLeaves(nusach: Nusach): FlatLeaf[] {
  * Replace regular Torah reading with Vayavo Amalek. Megillah is linked from
  * an existing standalone tool; we don't inline its text in the siddur.
  */
-function augmentForPurim(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
-  // The Purim parasha Vayavo Amalek (Shemot 17) may live under a festival
-  // node. Best-effort search; otherwise leave the leaves untouched.
-  const purimTorah = findDeepInTree(nusach, /Purim Torah|Vayavo Amalek|ויבא עמלק|פורים/);
-  if (!purimTorah) return leaves;
-  const torahLeaves = collectLeaves(purimTorah);
-  if (torahLeaves.length === 0) return leaves;
-
-  let out = leaves.filter((l) => !(/^Torah Reading$/i.test(l.en) || /קריאת התורה$/.test(l.he)));
-  let anchor = findLeafIndex(out, /^Amidah$|^עמידה$/);
-  if (anchor < 0) anchor = out.length - 1;
-  out = injectAfter(out, anchor, torahLeaves);
-  return out;
+function augmentForPurim(leaves: FlatLeaf[], _nusach: Nusach): FlatLeaf[] {
+  // Inject synthesized Vayavo Amalek (Exodus 17:8-16, 3 olim) after Amidah.
+  // The Megillah link is rendered as a banner at top of the page by read.tsx.
+  // After Megillah → Shoshanat Yaakov (which we inject here for visual flow).
+  const amidahAnchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  if (amidahAnchor < 0) return leaves;
+  // Inject torah reading + post-Megillah text.
+  const inject = [
+    ...buildVayavoAmalekLeaves(),
+    buildShoshanatYaakovLeaf(),
+  ];
+  return injectAfter(leaves, amidahAnchor, inject);
 }
 
 /* ────────────────────────── entry point ───────────────────────────── */
@@ -637,25 +639,38 @@ function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[
     ? [...buildTishaBAvShacharitTorahLeaves(), buildTishaBAvHaftarah()]
     : buildVayechalLeaves();
 
+  // Anenu is shown as a card after the Amidah so the chazan (and individuals
+  // by Sephardi minhag) can find it. It logically belongs in Shema Koleinu
+  // (silent Sephardi) or as a separate bracha in chazaras (Ashkenazi) but the
+  // tree doesn't expose that injection point, so we surface it here.
+  const inject: FlatLeaf[] = [buildAnenuLeaf(), ...torahLeaves];
+
   // Inject after last Amidah-trail leaf (after Elokai Netzor of silent Amidah).
   const amidahAnchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
   if (amidahAnchor < 0) return leaves;
-  return injectAfter(leaves, amidahAnchor, torahLeaves);
+  return injectAfter(leaves, amidahAnchor, inject);
 }
 
 /** Fast day Mincha — inject Vayechal + Haftarah (Dirshu) before/around Amidah.
  *  For T"B Mincha also add Nachem reminder. */
 function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
   const isTishaBAv = ctx.hd.getMonth() === 5 && ctx.hd.getDate() === 9;
-  const inject: FlatLeaf[] = [...buildVayechalLeaves(), buildFastMinchaHaftarah()];
-  if (isTishaBAv) inject.push(buildNachemLeaf());
+  // Vayechal + Dirshu Haftarah are read BEFORE Amidah at Mincha.
+  const preAmidah: FlatLeaf[] = [...buildVayechalLeaves(), buildFastMinchaHaftarah()];
+  // Anenu (individual Sephardi/EM in Shema Koleinu) + Nachem (T"B) shown
+  // AFTER Amidah as cards so they're visible.
+  const postAmidah: FlatLeaf[] = [buildAnenuLeaf()];
+  if (isTishaBAv) postAmidah.push(buildNachemLeaf());
 
-  // Inject between Ashrei/Uva Letzion and Amidah — Vayechal is read BEFORE
-  // the silent Amidah at Mincha. Find Amidah anchor and inject BEFORE it.
-  const amidahFirst = findFirstLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i);
-  const anchor = amidahFirst > 0 ? amidahFirst - 1 : leaves.length - 1;
-  return injectAfter(leaves, anchor, inject);
+  let out = leaves;
+  const amidahFirst = findFirstLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i);
+  const amidahLast = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  // Inject AFTER first (post-Amidah additions) in reverse order to keep indexes valid.
+  if (amidahLast >= 0) out = injectAfter(out, amidahLast, postAmidah);
+  if (amidahFirst > 0) out = injectAfter(out, amidahFirst - 1, preAmidah);
+  return out;
 }
 
 /** Purim Maariv — after Amidah inject Asher Hani + Shoshanat Yaakov. */
