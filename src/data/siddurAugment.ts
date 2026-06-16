@@ -569,16 +569,22 @@ function collectShaloshRegalimMusafLeaves(nusach: Nusach): FlatLeaf[] {
 function augmentForPurim(leaves: FlatLeaf[], _nusach: Nusach): FlatLeaf[] {
   // Inject synthesized Vayavo Amalek (Exodus 17:8-16, 3 olim) after Amidah.
   // The Megillah link is rendered as a banner at top of the page by read.tsx.
-  // After Megillah → Shoshanat Yaakov (which we inject here for visual flow).
-  const amidahAnchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+  // After Megillah → Shoshanat Yaakov.
+  //
+  // Anchor strategy works for both styles:
+  //   - Ashkenazi: Amidah is a subtree; leaves under it have trail "Amidah".
+  //   - Sephardi/EM/Chabad: Amidah is ONE leaf whose en/he matches "Amidah".
+  let anchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
-  if (amidahAnchor < 0) return leaves;
-  // Inject torah reading + post-Megillah text.
+  if (anchor < 0) {
+    anchor = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  }
+  if (anchor < 0) return leaves;
   const inject = [
     ...buildVayavoAmalekLeaves(),
     buildShoshanatYaakovLeaf(),
   ];
-  return injectAfter(leaves, amidahAnchor, inject);
+  return injectAfter(leaves, anchor, inject);
 }
 
 /* ────────────────────────── entry point ───────────────────────────── */
@@ -653,11 +659,15 @@ function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[
   // tree doesn't expose that injection point, so we surface it here.
   const inject: FlatLeaf[] = [buildAnenuLeaf(), ...torahLeaves];
 
-  // Inject after last Amidah-trail leaf (after Elokai Netzor of silent Amidah).
-  const amidahAnchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+  // Inject after last Amidah-trail leaf (Ashkenazi) or after the single
+  // Amidah leaf (Sephardi/EM/Chabad).
+  let anchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
-  if (amidahAnchor < 0) return leaves;
-  return injectAfter(leaves, amidahAnchor, inject);
+  if (anchor < 0) {
+    anchor = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  }
+  if (anchor < 0) return leaves;
+  return injectAfter(leaves, anchor, inject);
 }
 
 /** Fast day Mincha — inject Vayechal + Haftarah (Dirshu) before/around Amidah.
@@ -683,11 +693,12 @@ function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
 
 /** Purim Maariv — after Amidah inject Asher Hani + Shoshanat Yaakov. */
 function augmentForPurimMaariv(leaves: FlatLeaf[], _nusach: Nusach): FlatLeaf[] {
-  const amidahAnchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+  let anchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
-  if (amidahAnchor < 0) return leaves;
-  // Note: Aleinu link to Megillah tool is added by read.tsx via a link banner;
-  // here we just inject the post-Megillah text.
+  if (anchor < 0) {
+    anchor = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  }
+  if (anchor < 0) return leaves;
   const inject = [buildAsherHaniLeaf(), buildShoshanatYaakovLeaf()];
-  return injectAfter(leaves, amidahAnchor, inject);
+  return injectAfter(leaves, anchor, inject);
 }
