@@ -479,6 +479,26 @@ function preExtractInlineConditionals(raw: string): string[] {
   return out;
 }
 
+/**
+ * Some texts (Musaf, Edot-HaMizrach, Chabad) pack BOTH seasonal forms of the
+ * Gevurot insert onto ONE line: "בקיץ: מוריד הטל. בחורף: משיב הרוח ומוריד הגשם."
+ * As a single paragraph it reads as a note and neither form shows. Split it
+ * into two season-marked fragments so the right one renders per the season.
+ * Returns null when the line isn't this combined form.
+ */
+function preExtractCombinedSeason(raw: string): string[] | null {
+  const inner = raw.replace(/<\/?small>/gi, '').replace(/<\/?b>/gi, '').trim();
+  const m = /^בקיץ\s*[:.．׃]?\s*([\s\S]+?)\s*[:.．׃]?\s*בחורף\s*[:.．׃]?\s*([\s\S]+?)\s*[:.．׃]?\s*$/.exec(inner);
+  if (!m) return null;
+  const summer = m[1].trim();
+  const winter = m[2].trim();
+  // Both halves must be short, vocalized prayer phrases (guards against matching
+  // a long halachic note that merely mentions both seasons).
+  if (!summer || !winter || summer.length > 60 || winter.length > 60) return null;
+  if (!hasNikud(summer) || !hasNikud(winter)) return null;
+  return [`<small>בקיץ:</small> ${summer}`, `<small>בחורף:</small> ${winter}`];
+}
+
 export function parseParagraphs(raw: string[]): ParsedParagraph[] {
   const result: ParsedParagraph[] = [];
   let pendingMarker: { marker: string; tags: ConditionTag[]; alternative: boolean } | null = null;
@@ -496,9 +516,14 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
   for (const r of raw) {
     if (/<small><small>/i.test(r)) {
       expanded.push(...preExtractInlineConditionals(r));
-    } else {
-      expanded.push(r);
+      continue;
     }
+    const season = preExtractCombinedSeason(r);
+    if (season) {
+      expanded.push(...season);
+      continue;
+    }
+    expanded.push(r);
   }
 
   // Some markers open a MULTI-PARAGRAPH conditional block that doesn't end
