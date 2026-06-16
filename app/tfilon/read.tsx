@@ -448,8 +448,12 @@ export default function SiddurReader() {
                 // עננו — on a public fast the (Sephardi) individual says it within
                 // the Amidah, in שומע תפילה. Inject it as a sub-section right after
                 // "Response to Prayer" so it reads in its proper place rather than
-                // as a floating card. Self-gates via the 'fast' tag.
-                if (active.has('fast')) {
+                // as a floating card. Self-gates via the 'fast' tag. Skip if the
+                // text already carries a full Anenu (the Mincha Amidah does, in
+                // Geulah) — only Shacharit needs it injected.
+                const hasNativeAnenu = sections.some((s) =>
+                  s.lines.some((l) => /עננו\s+(יהוה|אבינו)\s+עננו/.test(l.replace(/[֑-ׇ]/g, ''))));
+                if (active.has('fast') && !hasNativeAnenu) {
                   const rtpIdx = subLeaves.findIndex((l) => /^Response to Prayer$/i.test(l.en));
                   if (rtpIdx >= 0) {
                     subLeaves.splice(rtpIdx + 1, 0, {
