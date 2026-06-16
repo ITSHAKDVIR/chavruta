@@ -639,6 +639,21 @@ export function augmentLeavesForToday(
     if (ctx.isAseretYemeiTeshuva) out = injectShirHaMaalot(out);
   } else if (isWeekdayMincha) {
     if (ctx.isFast) out = augmentForFastMincha(out, ctx);
+    // Erev Shabbat (Friday) Mincha — no Tachanun/Vidui per spec A4.
+    // Same for Erev YT (afternoon before any חג in Israel).
+    const dow = date.getDay();
+    const isErevShabbat = dow === 5;
+    const tomorrowHd = ctx.hd.add(1, 'd');
+    const tomorrowEvents = HebrewCalendar.calendar({ start: tomorrowHd, end: tomorrowHd, il: inIsrael, sedrot: false });
+    const isErevYT = tomorrowEvents.some((e) => e.getFlags() & flags.CHAG);
+    if (isErevShabbat || isErevYT) {
+      out = out.filter((l) => {
+        const blob = `${l.en} ${l.he} ${l.trail.map((t) => `${t.en} ${t.he}`).join(' ')}`;
+        if (/\bTachanun\b|\bTachnun\b|^Vidui|תחנון|וידוי/i.test(blob)) return false;
+        if (/^Avinu Malkenu$|^Avinu Malkeinu$|^אבינו מלכנו$/i.test(`${l.en} ${l.he}`)) return false;
+        return true;
+      });
+    }
   } else if (isWeekdayMaariv) {
     // Strip leaves that belong to standalone bedtime/lunar prayers — they
     // sit inside Sefaria's Weekday/Maariv subtree but don't belong in the
