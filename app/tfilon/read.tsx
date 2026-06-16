@@ -110,7 +110,7 @@ type LoadedLeaf = FlatLeaf & {
  * When the user taps a chip we look up the first leaf whose trail OR section
  * name matches, and scroll to its ref. Anything not found is skipped.
  */
-type CuratedSection = { label: string; match: string[] };
+type CuratedSection = { label: string; match: string[]; exclude?: string[] };
 
 const CURATED_TOC_BY_PRAYER: Record<string, CuratedSection[]> = {
   Shacharit: [
@@ -123,7 +123,9 @@ const CURATED_TOC_BY_PRAYER: Record<string, CuratedSection[]> = {
     { label: 'הלל',             match: ['Half Hallel', 'Hallel for Rosh Chodesh', 'הלל לראש חודש', 'Berakhah before the Hallel'] },
     { label: 'תחנון',           match: ['Tachanun', 'תחנון'] },
     { label: 'קריאת התורה',     match: ['Torah Reading', 'קריאת התורה'] },
-    { label: 'אשרי',            match: ['Ashrei', 'אשרי'] },
+    // The standalone Ashrei (before Uva Letzion) — NOT the Ashrei buried
+    // inside Pesukei Dezimra earlier in Shacharit.
+    { label: 'אשרי',            match: ['Ashrei', 'אשרי'], exclude: ['Pesukei Dezimra', 'Pesukei DeZimra', 'פסוקי דזמרה'] },
     { label: 'מוסף',            match: ['Musaf Amidah for Rosh Chodesh', 'Musaf', 'מוסף לראש חודש', 'מוסף עמידה לראש חודש'] },
     { label: 'שיר של יום',      match: ['Song of the Day', 'שיר של יום', 'Daily Psalm'] },
     { label: 'ברכי נפשי',       match: ['Barchi Nafshi', 'ברכי נפשי', 'Psalm 104'] },
@@ -186,9 +188,12 @@ function buildCuratedTOC(hereEn: string, leaves: LoadedLeaf[]): { label: string;
   if (!list) return [];
   const out: { label: string; ref: string }[] = [];
   for (const section of list) {
-    // Find the first leaf whose trail OR section name matches any of the keys
+    // Find the first leaf whose trail OR section name matches any of the keys,
+    // skipping any leaf whose haystack contains an `exclude` token (used to
+    // disambiguate the standalone Ashrei from the Pesukei-Dezimra Ashrei).
     const match = leaves.find((l) => {
       const hay = [l.en, l.he, ...l.trail.flatMap((t) => [t.en, t.he])].join(' | ').toLowerCase();
+      if (section.exclude?.some((x) => hay.includes(x.toLowerCase()))) return false;
       return section.match.some((m) => hay.includes(m.toLowerCase()));
     });
     if (match) out.push({ label: section.label, ref: match.ref });
