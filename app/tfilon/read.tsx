@@ -810,12 +810,19 @@ export default function SiddurReader() {
             // render a chazara collapse — one for regular Amidah, one for Musaf
             // on RC / ChH"M days. Each collapse renders ONLY the leaves of its
             // own Amidah variant (distinguished by whether trail mentions Musaf).
+            //
+            // Maariv has NO chazaras hashatz (chazara only in Shacharit/Mincha) —
+            // suppress the collapse for any Elokai Netzor whose trail names Maariv.
             const isElohaiNetzor = (l: LoadedLeaf) =>
               /Elohai Netzor|Elokai Netzor|אל[הוו]?הי נצור|אלקי נצור|אלוהי נצור/i.test(`${l.en} ${l.he}`);
+            const isMaarivLeaf = (l: LoadedLeaf) =>
+              l.trail.some((t) => /Maariv|Arvit|ערבית|מעריב/i.test(`${t.en} ${t.he}`));
             const elokaiNetzorIdxs: number[] = [];
             if (prefs.withMinyan) {
               for (let i = 0; i < leaves.length; i++) {
-                if (isElohaiNetzor(leaves[i])) elokaiNetzorIdxs.push(i);
+                if (isElohaiNetzor(leaves[i]) && !isMaarivLeaf(leaves[i])) {
+                  elokaiNetzorIdxs.push(i);
+                }
               }
             }
 
