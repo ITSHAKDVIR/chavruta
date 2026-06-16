@@ -448,30 +448,98 @@ function augmentForChanukah(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext)
 
 /**
  * Chol HaMoed Pesach or Sukkot — Shacharit.
- * Inject Hallel (full for Sukkot, half for Pesach) + festival Mussaf.
+ *
+ * Per spec A4:
+ *  - Pesach ChH"M: YvY → HALF Hallel → Pesach Musaf → daily Torah reading
+ *  - Sukkot ChH"M: YvY → Al netilat lulav (bracha) → FULL Hallel → Hoshanot
+ *      for the day → Pinchas reading → Sukkot Musaf
+ *
+ * Anchors Hallel after the LAST Amidah-trail leaf (Concluding Passage), and
+ * Musaf BEFORE Aleinu — same approach as augmentForRoshChodeshAshkenazi.
+ *
+ * Sephardi/EM/Chabad reuse the RC subtree approach: their Festival subtrees
+ * already encode the right order.
  */
 function augmentForCholHamoed(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext): FlatLeaf[] {
-  const hallelNode = findDeepInTree(nusach, /^Hallel$|^הלל$|סדר הלל/);
-  const festivalNode = findTopNode(nusach, /Three Festivals|שלש רגלים|לשלש רגלים|Mussaf for Festivals|מוסף לשלש רגלים/);
+  if (nusach !== 'ashkenazi') {
+    // Sephardi/EM/Chabad: inject the appropriate Festival subtree after Amidah.
+    return augmentForCholHamoedSimple(leaves, nusach, ctx);
+  }
+  // Ashkenazi: surgical injection like RC.
+  let out = leaves;
 
-  const inject: FlatLeaf[] = [];
-  if (hallelNode) inject.push(...collectLeaves(hallelNode));
-  if (festivalNode) {
-    const fest = collectLeaves(festivalNode);
-    // Trim to just the Mussaf portion if we can identify it
-    const mussafLeaves = fest.filter((l) => /Mussaf|מוסף/i.test(`${l.en} ${l.he}`));
-    if (mussafLeaves.length > 0) inject.push(...mussafLeaves);
-    else if (fest.length <= 12) inject.push(...fest);
+  // Build Hallel (half for Pesach, full for Sukkot).
+  const hallel = ctx.isPesach
+    ? buildHalfHallelLeaves(nusach)
+    : buildFullHallelLeaves(nusach);
+
+  // Build festival Musaf from the Shalosh Regalim subtree.
+  const musaf = collectShaloshRegalimMusafLeaves(nusach);
+  const musafClosingKaddish = buildMusafClosingKaddish();
+
+  const amidahAnchor = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  const aleinuIdx = findFirstLeafByName(out, /^Al?einu$|^Alenu$|^עלינו$/i);
+
+  // Inject Musaf BEFORE Aleinu.
+  if (musaf.length > 0 && aleinuIdx > 0) {
+    const musafBlock = [...musaf, musafClosingKaddish];
+    out = injectAfter(out, aleinuIdx - 1, musafBlock);
   }
 
-  if (inject.length === 0) return leaves;
+  // Inject Hallel right after the Amidah.
+  if (hallel.length > 0 && amidahAnchor >= 0) {
+    out = injectAfter(out, amidahAnchor, hallel);
+  }
 
-  let out = leaves.filter((l) => !(/^Torah Reading$/i.test(l.en) || /קריאת התורה$/.test(l.he)));
-  let anchor = findLeafIndex(out, /^Amidah$|^עמידה$/);
-  if (anchor < 0) anchor = findLeafIndex(out, /Yishtabach|ישתבח/);
-  if (anchor < 0) anchor = out.length - 1;
-  out = injectAfter(out, anchor, inject);
   return out;
+}
+
+/** Sephardi/EM/Chabad ChH"M: inject the Festival subtree after Amidah. */
+function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, _ctx: DayContext): FlatLeaf[] {
+  // Sephardi: "Holidays" subtree with Yom Tov Musaf Amidah leaf.
+  // EM: "Prayers for Three Festivals" subtree.
+  // Chabad: "Musaf for Festivals" leaf.
+  const festNode =
+    findTopNode(nusach, /^Holidays$|^Three Festivals$|^Prayers for Three Festivals$|^Musaf for Festivals$|^לשלש רגלים$/) ||
+    findTopNode(nusach, /^Festivals?$/);
+  if (!festNode) return leaves;
+  const festLeaves = collectLeaves(festNode);
+  // Cherry-pick just the Mussaf-related leaves to avoid injecting Yizkor etc.
+  const musafLeaves = festLeaves.filter((l) =>
+    /Mussaf|Musaf|מוסף|Amidah|עמידה/i.test(`${l.en} ${l.he}`));
+  if (musafLeaves.length === 0) return leaves;
+
+  let out = leaves;
+  const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (amidahIdx < 0) return leaves;
+  out = injectAfter(out, amidahIdx, musafLeaves);
+  return out;
+}
+
+/** Full Hallel — psalms 113-118 unabridged. For Sukkot ChH"M, Chanukah, Pesach YT. */
+function buildFullHallelLeaves(_nusach: Nusach): FlatLeaf[] {
+  const trail = [{ he: 'הלל שלם', en: 'Full Hallel' }];
+  return [
+    { ref: 'Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah before the Hallel',
+      he: 'ברכת ההלל', en: 'Berakhah before the Hallel', trail },
+    { ref: 'Psalms 113', he: 'תהלים קי״ג', en: 'Psalm 113', trail },
+    { ref: 'Psalms 114', he: 'תהלים קי״ד', en: 'Psalm 114', trail },
+    { ref: 'Psalms 115', he: 'תהלים קט״ו', en: 'Psalm 115', trail },
+    { ref: 'Psalms 116', he: 'תהלים קט״ז', en: 'Psalm 116', trail },
+    { ref: 'Psalms 117', he: 'תהלים קי״ז', en: 'Psalm 117', trail },
+    { ref: 'Psalms 118', he: 'תהלים קי״ח', en: 'Psalm 118', trail },
+    { ref: 'Siddur Ashkenaz, Festivals, Rosh Chodesh, Hallel, Berakhah after the Hallel',
+      he: 'ברכה לאחר ההלל', en: 'Berakhah after the Hallel', trail },
+  ];
+}
+
+/** Collect just the Mussaf brachot from Ashkenazi's Shalosh Regalim subtree. */
+function collectShaloshRegalimMusafLeaves(nusach: Nusach): FlatLeaf[] {
+  if (nusach !== 'ashkenazi') return [];
+  const node = findDeepInTree(nusach, /^Mussaf$|^מוסף לשלש רגלים$|Shalosh Regalim, Mussaf/);
+  if (!node) return [];
+  return collectLeaves(node);
 }
 
 /**
