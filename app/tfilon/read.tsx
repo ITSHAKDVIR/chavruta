@@ -35,6 +35,7 @@ import {
 } from '../../src/data/specialDayLinks';
 import { fetchSefariaText } from '../../src/services/sefaria';
 import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, splitMonolithicAmidah, stripMaarivBaruchHashemLeolam, ParsedParagraph } from '../../src/services/siddurParser';
+import { ANENU_TEXT } from '../../src/data/specialDayContent';
 import { CholimReminder } from '../../src/components/CholimReminder';
 import { getInsertsForDate, TefilaInsert } from '../../src/data/tefilaInserts';
 import { computeZmanim } from '../../src/data/hebcal';
@@ -444,6 +445,24 @@ export default function SiddurReader() {
                   paragraphs: parseParagraphs(s.lines),
                   loading: false,
                 }));
+                // עננו — on a public fast the (Sephardi) individual says it within
+                // the Amidah, in שומע תפילה. Inject it as a sub-section right after
+                // "Response to Prayer" so it reads in its proper place rather than
+                // as a floating card. Self-gates via the 'fast' tag.
+                if (active.has('fast')) {
+                  const rtpIdx = subLeaves.findIndex((l) => /^Response to Prayer$/i.test(l.en));
+                  if (rtpIdx >= 0) {
+                    subLeaves.splice(rtpIdx + 1, 0, {
+                      uid: `${uid}#anenu`,
+                      ref: `${leaf.ref}#Anenu`,
+                      en: 'Anenu',
+                      he: 'עננו (בתענית ציבור)',
+                      trail: amidahTrail,
+                      paragraphs: [{ body: ANENU_TEXT, kind: 'conditional', marker: 'בתענית ציבור — בשומע תפילה', tags: ['fast'] }],
+                      loading: false,
+                    });
+                  }
+                }
                 setLeaves((prev) => prev.flatMap((l) => (l.uid === uid ? subLeaves : [l])));
                 return;
               }

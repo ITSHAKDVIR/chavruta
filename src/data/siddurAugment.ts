@@ -659,11 +659,11 @@ export function augmentLeavesForToday(
     else if (ctx.isChanukah) out = augmentForChanukah(out, nusach, ctx);
     else if (ctx.isCholHamoed) out = augmentForCholHamoed(out, nusach, ctx);
     else if (ctx.isPurim) out = augmentForPurim(out, nusach);
-    else if (ctx.isFast) out = augmentForFastShacharit(out, ctx);
+    else if (ctx.isFast) out = augmentForFastShacharit(out, ctx, nusach);
 
     // (Shir HaMaalot for AYT is native to every nusach's text — not injected.)
   } else if (isWeekdayMincha) {
-    if (ctx.isFast) out = augmentForFastMincha(out, ctx);
+    if (ctx.isFast) out = augmentForFastMincha(out, ctx, nusach);
     // Erev Shabbat (Friday) Mincha — no Tachanun/Vidui per spec A4.
     // Same for Erev YT (afternoon before any חג in Israel).
     const dow = date.getDay();
@@ -698,7 +698,7 @@ export function augmentLeavesForToday(
 /** Fast day Shacharit — inject Vayechal Moshe Torah reading. For T"B replace
  *  with Devarim 4:25-40 + Yirmiyahu Haftarah. Anenu lives inside the Amidah
  *  text (Sefaria gates it as a conditional paragraph). */
-function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
+function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext, nusach: Nusach): FlatLeaf[] {
   const m = ctx.hd.getMonth();
   const d = ctx.hd.getDate();
   // Yom Kippur is a fast, but it has its own machzor — the weekday Shacharit
@@ -736,21 +736,22 @@ function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[
   // Inject high index first so the earlier insert doesn't shift the later one.
   if (ashreiIdx > amidahAnchor) out = injectAfter(out, ashreiIdx - 1, torahLeaves);
   else out = injectAfter(out, amidahAnchor, torahLeaves); // fallback: after Amidah
-  // Anenu — card right after the Amidah (its place is in Shema Koleinu /
-  // chazaras; the tree doesn't expose that injection point).
-  out = injectAfter(out, amidahAnchor, [buildAnenuLeaf()]);
+  // Anenu — for Sephardi the splitter injects it INTO the Amidah (שומע תפילה),
+  // so don't also add the card. EM/Chabad (no split) and Ashkenazi still get
+  // the card right after the Amidah.
+  if (nusach !== 'sephardi') out = injectAfter(out, amidahAnchor, [buildAnenuLeaf()]);
   return out;
 }
 
 /** Fast day Mincha — inject Vayechal + Haftarah (Dirshu) before/around Amidah.
  *  For T"B Mincha also add Nachem reminder. */
-function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
+function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext, nusach: Nusach): FlatLeaf[] {
   const isTishaBAv = ctx.hd.getMonth() === 5 && ctx.hd.getDate() === 9;
   // Vayechal + Dirshu Haftarah are read BEFORE Amidah at Mincha.
   const preAmidah: FlatLeaf[] = [...buildVayechalLeaves(), buildFastMinchaHaftarah()];
-  // Anenu (individual Sephardi/EM in Shema Koleinu) + Nachem (T"B) shown
-  // AFTER Amidah as cards so they're visible.
-  const postAmidah: FlatLeaf[] = [buildAnenuLeaf()];
+  // Sephardi gets עננו injected into the Amidah by the splitter; others get a
+  // card. Nachem (T"B) is always shown as a card.
+  const postAmidah: FlatLeaf[] = nusach === 'sephardi' ? [] : [buildAnenuLeaf()];
   if (isTishaBAv) postAmidah.push(buildNachemLeaf());
 
   let out = leaves;
