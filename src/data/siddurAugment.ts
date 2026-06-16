@@ -645,6 +645,15 @@ export function augmentLeavesForToday(
   } else if (isWeekdayMincha) {
     if (ctx.isFast) out = augmentForFastMincha(out, ctx);
   } else if (isWeekdayMaariv) {
+    // Strip leaves that belong to standalone bedtime/lunar prayers — they
+    // sit inside Sefaria's Weekday/Maariv subtree but don't belong in the
+    // continuous Maariv reading flow. The user has dedicated tools.
+    out = out.filter((l) => {
+      const blob = `${l.en} ${l.he} ${l.trail.map((t) => `${t.en} ${t.he}`).join(' ')}`;
+      if (/Keri'?at Shema al ha[- ]?Mita|Shema al ha[- ]?Mita|קריאת שמע ש?על המ[יט]ה|שמע על המ[יט]ה|המפיל/i.test(blob)) return false;
+      if (/Birkat ha[- ]?Levana|Kiddush Levana|ברכת הלבנה|קידוש לבנה/i.test(blob)) return false;
+      return true;
+    });
     if (ctx.isPurim) out = augmentForPurimMaariv(out, nusach);
   }
 
@@ -701,14 +710,43 @@ function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
   return out;
 }
 
-/** Purim Maariv — after Amidah inject Asher Hani + Shoshanat Yaakov. */
+/** Purim Maariv — inject Asher Hani + Shoshanat Yaakov AFTER the Kaddish
+ *  that closes the Amidah (per spec A7: Amidah → Kaddish → Megillah →
+ *  Asher Hani / Shoshanat → Aleinu). Find Amidah first (works for both
+ *  Ashkenazi subtree style and Sephardi/EM/Chabad single-leaf style),
+ *  then look for the first Kaddish leaf immediately following it. */
 function augmentForPurimMaariv(leaves: FlatLeaf[], _nusach: Nusach): FlatLeaf[] {
-  let anchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+  // Locate the last Amidah leaf — try trail-based first (Ashkenazi), then
+  // single-leaf name match (Sephardi/EM/Chabad).
+  let amidahIdx = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
-  if (anchor < 0) {
-    anchor = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (amidahIdx < 0) {
+    amidahIdx = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   }
-  if (anchor < 0) return leaves;
+  if (amidahIdx < 0) return leaves;
+
+  // Spec A7: Asher Hani + Shoshanat are recited BEFORE Aleinu. So scan
+  // forward from Amidah for either (a) the Aleinu leaf — inject just before
+  // it, or (b) a Kaddish that closes the Amidah — inject just after it.
+  // Whichever comes first.
+  let aleinuIdx = -1;
+  let kaddishIdx = -1;
+  for (let i = amidahIdx + 1; i < leaves.length; i++) {
+    const l = leaves[i];
+    const blob = `${l.en} ${l.he}`;
+    if (aleinuIdx < 0 && /^Al?einu( leshabe?ach)?$|^עלינו( לשבח)?$/i.test(l.en) || /^עלינו לשבח$/.test(l.he)) {
+      aleinuIdx = i;
+    }
+    if (kaddishIdx < 0 && /Kaddish Shalem|Kaddish Titkabal|^Full Kaddish$|^Half Kaddish$|^Hatzi Kaddish$|קדיש שלם|קדיש תתקבל|חצי קדיש|קדיש לעלא/i.test(blob)) {
+      kaddishIdx = i;
+    }
+    if (aleinuIdx >= 0) break; // Aleinu wins — stop searching.
+  }
+
   const inject = [buildAsherHaniLeaf(), buildShoshanatYaakovLeaf()];
-  return injectAfter(leaves, anchor, inject);
+  // Prefer to inject immediately before Aleinu (so order: ...Kaddish, Asher,
+  // Shoshanat, Aleinu). Fall back to after Kaddish, then after Amidah.
+  if (aleinuIdx > 0) return injectAfter(leaves, aleinuIdx - 1, inject);
+  if (kaddishIdx > 0) return injectAfter(leaves, kaddishIdx, inject);
+  return injectAfter(leaves, amidahIdx, inject);
 }

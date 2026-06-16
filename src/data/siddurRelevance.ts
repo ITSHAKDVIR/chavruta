@@ -259,7 +259,7 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
   if (/blossoming fruit tree|blessing of the trees|birkat ha'?ilanot/.test(name)) {
     return isNissan(ctx);
   }
-  // Birkat Levana
+  // Birkat Levana — separate prayer; gated only when accessed standalone.
   if (/kiddush levanah|birkat ha-?levana|blessing of the moon/.test(name)) {
     return isBirkatLevanaSeason(ctx);
   }
