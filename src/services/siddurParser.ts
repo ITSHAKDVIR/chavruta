@@ -47,6 +47,9 @@ export type ConditionTag =
   | 'fell-thu'
   | 'fell-fri'
   | 'fell-sat'
+  // Said only in chazarat hashatz (Modim DeRabbanan) — hidden in the silent
+  // Amidah, shown in the chazara collapse.
+  | 'chazara-only'
   | 'unknown';
 
 export type ParsedParagraph = {
@@ -222,7 +225,7 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
         body,
         kind: 'conditional',
         marker: 'מודים דרבנן (הקהל בחזרת הש״ץ)',
-        tags: ['unknown'],
+        tags: ['chazara-only'],
       };
     }
     // Sub-case: Atta Chonantanu — Motzei Shabbat insert in the 4th Amidah
@@ -248,12 +251,22 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
         tags: ['yom-tov'],
       };
     }
-    // Sub-case: halachic note. Strip ANY remaining HTML tags from inner so
-    // nested <small>directives</small> don't leak as raw "<small>" text.
+    // Strip ANY remaining HTML tags from inner so nested <small>directives</small>
+    // don't leak as raw "<small>" text.
     const cleanInner = inner
       .replace(/<\/?small>/gi, '')
       .replace(/<\/?[a-zA-Z][^>]*>/g, '')
       .trim();
+    // Sub-case: VOCALIZED prayer wrapped wholesale in <small>. Sefaria styles
+    // many prayer insertions this way — the Kaddish opening (יתגדל ויתקדש...),
+    // seasonal additions (זכרנו, בספר חיים), etc. They are prayer, NOT notes:
+    // emit as normal so they render (a pending date-marker, if any, then turns
+    // them into the right conditional in parseParagraphs). A halachic note that
+    // merely quotes a pointed word stays sparse and falls through below.
+    if (isVocalizedDense(cleanInner)) {
+      return { body: cleanInner, kind: 'normal' };
+    }
+    // Sub-case: halachic note (unvocalized instruction).
     return { body: cleanInner, kind: 'halachic-note' };
   }
 
@@ -340,6 +353,14 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
   // Accept both ה and ק spellings (Sefaria uses אלקינו/אלקי in Israeli editions).
   if (/^אל[הק]ינו ו?אל[הק]י אבותינו יעלה ויבא/.test(bare) || /^יעלה ויבא/.test(bare)) {
     return { body, kind: 'conditional', marker: 'בר״ח, חוה״מ ויו״ט',
+             tags: ['rosh-chodesh', 'chol-hamoed', 'yom-tov'] };
+  }
+  // יעלה ויבוא CONTINUATION — "זכרנו ה' אלהינו בו לטובה...". Sefaria emits it
+  // as a plain paragraph (no marker), so without this it would orphan onto a
+  // regular weekday after the conditional opener is hidden. Same condition as
+  // the opener above.
+  if (/^זכרנו (יהוה|יי|ה) ?אל[הק]ינו בו/.test(bare)) {
+    return { body, kind: 'conditional', marker: 'בר״ח, חוה״מ ויו״ט (המשך יעלה ויבא)',
              tags: ['rosh-chodesh', 'chol-hamoed', 'yom-tov'] };
   }
   // Plain-text seasonal markers used in some Sefaria sources (RC Musaf, etc.)
@@ -533,8 +554,16 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
       }
     }
 
-    if (pendingMarker && p.kind === 'normal') {
-      // Convert next normal paragraph into the conditional that the marker was pointing to
+    // Convert the paragraph the marker points to into its conditional. Usually
+    // the next paragraph is 'normal', but Sefard wraps seasonal insertions
+    // (זכרנו, בספר חיים) in their own <small>, so parseParagraphRaw classifies
+    // them as halachic-note. When a DATE marker is pending and that note is
+    // fully vocalized (dense nikud = prayer, not an instruction), it's the
+    // insertion the marker introduced — promote it to the conditional. Plain
+    // unvocalized notes (and standalone tehinot with no pending date marker)
+    // are left untouched.
+    if (pendingMarker &&
+        (p.kind === 'normal' || (p.kind === 'halachic-note' && isVocalizedDense(p.body)))) {
       result.push({
         body: p.body,
         kind: pendingMarker.alternative ? 'alternative' : 'conditional',
@@ -584,7 +613,14 @@ export function activeTags(date: Date = new Date(), inIsrael = true): Set<Condit
   const isCholHamoed = events.some((e) => e.getFlags() & flags.CHOL_HAMOED);
 
   if (isRoshChodesh) out.add('rosh-chodesh');
-  if (isYomTov) out.add('yom-tov');
+  // Rosh Hashana (1-2 Tishrei) and Yom Kippur (10 Tishrei) are CHAG in hebcal,
+  // but liturgically they are NOT the "yom tov" that takes יעלה ויבוא / the
+  // festival ותתן לנו — those days have their own Amidah. Excluding them keeps
+  // weekday-Amidah conditionals (YvY, festival kedushat hayom) from rendering
+  // on RH/YK. The specific rosh-hashana / yom-kippur tags are still set below.
+  const isRoshHashanaDay = m === months.TISHREI && (d === 1 || d === 2);
+  const isYomKippurDay = m === months.TISHREI && d === 10;
+  if (isYomTov && !isRoshHashanaDay && !isYomKippurDay) out.add('yom-tov');
   if (isCholHamoed) out.add('chol-hamoed');
   if (isFastDay) out.add('fast');
 
@@ -656,6 +692,147 @@ export function yaalehDayName(date: Date = new Date(), inIsrael = true): string 
   return null;
 }
 
+/* ───────────────────── monolithic Amidah splitter ─────────────────────
+ *
+ * Ashkenaz Sefaria splits the Amidah into 22 separate refs (Patriarchs,
+ * Divine Might, Holiness of God, Kedushah, ...). Sefard / Edot-HaMizrach /
+ * Chabad pack the WHOLE Amidah into ONE leaf — but the text itself carries
+ * standalone blessing-name HEADERS (`<b>אבות</b>`, `<b>גבורות</b>`, ...) and
+ * `<small>ברכת כהנים</small>`. These headers have NO nikud, while the prayer
+ * body always does — that's the cue we split on.
+ *
+ * Splitting the monolith into virtual sub-sections (with the SAME English
+ * names Ashkenaz uses) lets all the leaf-level logic in read.tsx — hiding
+ * Kedushah / Modim DeRabbanan / Birkat Kohanim in the silent Amidah, the
+ * chazarat-hashatz collapse, the נקדישך-in-silent fix — work for Sefard too.
+ *
+ * Two sections have no standalone header and are detected by content:
+ *   • Modim DeRabbanan — embedded mid-הודאה, said only in chazara (kahal).
+ *   • Concluding Passage (אלהי נצור) — the personal silent meditation that
+ *     marks where the chazara collapse anchors.
+ */
+export type AmidahSection = {
+  /** Canonical Ashkenaz English name — drives isKedushahLeaf etc. in read.tsx. */
+  en: string;
+  /** Hebrew blessing name — shown as the section title. */
+  he: string;
+  /** Raw Sefaria lines belonging to this section (header line excluded). */
+  lines: string[];
+};
+
+/** Hebrew blessing-name headers, in Amidah order, mapped to the canonical
+ *  Ashkenaz English ref names so read.tsx's predicates recognize each one. */
+const AMIDAH_HEADERS: { rx: RegExp; en: string; he: string }[] = [
+  { rx: /^אבות$/,             en: 'Patriarchs',          he: 'אבות' },
+  { rx: /^גבורות$/,           en: 'Divine Might',        he: 'גבורות' },
+  { rx: /^קדושה$/,            en: 'Kedushah',            he: 'קדושה' },
+  { rx: /^קדושת השם$/,        en: 'Holiness of God',     he: 'קדושת השם' },
+  { rx: /^בינה$/,             en: 'Knowledge',           he: 'בינה' },
+  { rx: /^תשובה$/,            en: 'Repentance',          he: 'תשובה' },
+  { rx: /^סליחה$/,            en: 'Forgiveness',         he: 'סליחה' },
+  { rx: /^גאולה$/,            en: 'Redemption',          he: 'גאולה' },
+  { rx: /^רפואה$/,            en: 'Healing',             he: 'רפואה' },
+  { rx: /^ברכת השנים$/,       en: 'Prosperity',          he: 'ברכת השנים' },
+  { rx: /^קי?בוץ גלי?ו?ת$/,   en: 'Gathering the Exiles', he: 'קיבוץ גלויות' },
+  { rx: /^דין$/,              en: 'Justice',             he: 'דין' },
+  { rx: /^ברכת המינים$/,      en: 'Against Enemies',     he: 'ברכת המינים' },
+  { rx: /^צדיקים$/,           en: 'The Righteous',       he: 'צדיקים' },
+  { rx: /^בני?ן ירושלים$/,    en: 'Rebuilding Jerusalem', he: 'בנין ירושלים' },
+  { rx: /^מלכות בית דוד$/,    en: 'Kingdom of David',    he: 'מלכות בית דוד' },
+  { rx: /^קבלת תפל?ה$/,       en: 'Response to Prayer',  he: 'קבלת תפילה' },
+  { rx: /^עבודה$/,            en: 'Temple Service',      he: 'עבודה' },
+  { rx: /^הודאה$/,            en: 'Thanksgiving',        he: 'הודאה' },
+  { rx: /^ברכת כהנים$/,       en: 'Birkat Kohanim',      he: 'ברכת כהנים' },
+  { rx: /^שלום$/,             en: 'Peace',               he: 'שלום' },
+];
+
+/** Strip HTML tags, nikud and trailing punctuation — for header matching. */
+function bareForHeader(s: string): string {
+  return (s || '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/[֑-ׇ]/g, '')
+    .replace(/[׃:]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Split a monolithic Amidah leaf's raw lines into named sub-sections.
+ * Returns [] when the text doesn't look like a headered Amidah (so callers
+ * can fall back to rendering the leaf unsplit).
+ */
+export function splitMonolithicAmidah(lines: string[]): AmidahSection[] {
+  const headerFor = (line: string): { en: string; he: string } | null => {
+    // Body text always carries nikud; the standalone blessing headers never do.
+    if (hasNikud(line)) return null;
+    const bare = bareForHeader(line);
+    if (!bare || bare.length > 18) return null;
+    for (const h of AMIDAH_HEADERS) if (h.rx.test(bare)) return { en: h.en, he: h.he };
+    return null;
+  };
+
+  const sections: AmidahSection[] = [];
+  const lead: string[] = []; // lines before the first header (אדני שפתי תפתח)
+  let cur: AmidahSection | null = null;
+
+  for (const line of lines) {
+    const hdr = headerFor(line);
+    if (hdr) {
+      cur = { en: hdr.en, he: hdr.he, lines: [] };
+      sections.push(cur);
+      continue;
+    }
+    const bare = bareForHeader(line);
+
+    // Concluding Passage — "אלהי נצור". No header in the text; it follows the
+    // chatima of שלום. Break it into its own section so the chazara collapse
+    // (which renders every Amidah section EXCEPT this one) anchors correctly.
+    if (cur && cur.en !== 'Concluding Passage' &&
+        /^אל[הוק]?הי נצור|^אלקי נצור|^אלוקי נצור/.test(bare)) {
+      cur = { en: 'Concluding Passage', he: 'אלהי נצור', lines: [line] };
+      sections.push(cur);
+      continue;
+    }
+
+    // NOTE: Modim DeRabbanan (the kahal's parallel Modim, said only in chazara)
+    // is embedded mid-הודאה with no header. Rather than fracture הודאה into two
+    // titled sections (which leaves a confusing gap in the silent reading once
+    // it's hidden), it stays a paragraph inside Thanksgiving and is tagged
+    // 'chazara-only' by parseParagraphRaw — hidden in the silent Amidah, shown
+    // in the chazara collapse. See shouldRender's `chazara` option.
+
+    if (cur) cur.lines.push(line);
+    else lead.push(line);
+  }
+
+  // Fold the opening verse (אדני שפתי תפתח) into the first blessing so it
+  // isn't orphaned into a titleless section.
+  if (sections.length > 0 && lead.length > 0) {
+    sections[0].lines = [...lead, ...sections[0].lines];
+  }
+  return sections;
+}
+
+/**
+ * Remove the "ברוך ה' לעולם" passage (18 verses) + "יראו עינינו" from weekday
+ * Maariv. It was instituted for late-comers praying in the fields and is NOT
+ * said in the Eretz-Yisrael minhag. Sefaria keeps it (with its explanatory
+ * Tur note) between Hashkiveinu and the Half Kaddish — embedded mid-leaf in
+ * Sefard, a standalone leaf in Ashkenaz. Callers apply this only to Maariv
+ * text, and the patterns are specific enough not to touch Hashkiveinu or the
+ * Kaddish that bracket it.
+ */
+export function stripMaarivBaruchHashemLeolam(lines: string[]): string[] {
+  const bare = (s: string) => (s || '').replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '').trim();
+  return lines.filter((l) => {
+    const b = bare(l);
+    if (/^ברוך (יהוה|ה|יי)['׳]?\s*לעולם אמן ואמן/.test(b)) return false; // the 18 verses
+    if (/^יראו עינינו וישמח לבנו/.test(b)) return false;                  // יראו עינינו
+    if (/מה שנוהגין להפסיק בפסוקים ויראו עינינו/.test(b)) return false;   // Tur note about it
+    return true;
+  });
+}
+
 /** Maps a JS getDay() value (0=Sun..6=Sat) to the corresponding "fell-" tag. */
 export function weekdayTag(day: number): ConditionTag {
   return (['fell-sun', 'fell-mon', 'fell-tue', 'fell-wed', 'fell-thu', 'fell-fri', 'fell-sat'][day] ??
@@ -670,12 +847,26 @@ export function hasNikud(text: string): boolean {
   return /[֑-ׇ]/.test(text || '');
 }
 
+/** True if the text is DENSELY vocalized — at least half its Hebrew letters
+ *  carry nikud. Distinguishes a vocalized prayer insertion (every word
+ *  pointed) from a halachic note that merely quotes a pointed word or two
+ *  ("אם שכח לומר טַל וּמָטָר..."). */
+export function isVocalizedDense(text: string): boolean {
+  const letters = (text.match(/[א-ת]/g) || []).length;
+  const nikud = (text.match(/[֑-ׇ]/g) || []).length;
+  return letters > 0 && nikud >= letters * 0.5;
+}
+
 /** Decide whether to render a parsed paragraph today. */
 export function shouldRender(
   p: ParsedParagraph,
   active: Set<ConditionTag>,
-  opts: { showAll: boolean; showNotes: boolean },
+  opts: { showAll: boolean; showNotes: boolean; chazara?: boolean },
 ): boolean {
+  // Chazara-only text (Modim DeRabbanan): shown ONLY inside the chazarat
+  // hashatz collapse, never in the silent Amidah. Decided before the
+  // unvocalized/showAll checks so it's hidden even when "show all" is on.
+  if (p.tags?.includes('chazara-only')) return !!opts.chazara;
   // User-facing rule: "without halachic notes" means hide every line that
   // isn't vocalized — that catches rubric annotations whether or not the
   // parser tagged them as halachic-note. Vocalized text always shows.

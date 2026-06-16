@@ -34,7 +34,7 @@ import {
   getTishaBAvTallitWarning,
 } from '../../src/data/specialDayLinks';
 import { fetchSefariaText } from '../../src/services/sefaria';
-import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, ParsedParagraph } from '../../src/services/siddurParser';
+import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, splitMonolithicAmidah, stripMaarivBaruchHashemLeolam, ParsedParagraph } from '../../src/services/siddurParser';
 import { CholimReminder } from '../../src/components/CholimReminder';
 import { getInsertsForDate, TefilaInsert } from '../../src/data/tefilaInserts';
 import { computeZmanim } from '../../src/data/hebcal';
@@ -47,6 +47,18 @@ import { typography } from '../../src/theme/typography';
  *  Otherwise, show navigation list (so user can drill down).
  *  Sized for a whole service (Ashkenaz Shacharit = ~106 leaves). */
 const RUNNING_TEXT_MAX_LEAVES = 150;
+
+/** Sefaria refs present in the index tree but with NO text (the API 404s).
+ *  They would render a permanent "לא ניתן לטעון" error, so we drop them.
+ *  - Weekday Minchah "Vidui and 13 Middot": the long Tachanun confession isn't
+ *    said at weekday Mincha (only נפילת אפים), and Sefaria has no text for it. */
+const KNOWN_EMPTY_REFS = new Set<string>([
+  'Siddur Ashkenaz, Weekday, Minchah, Post Amidah, Vidui and 13 Middot',
+  // "Prayers for Welfare of the People" (יהי רצון / אחינו) — Sefaria has no
+  // text; the actual content loads from its sibling leaf. Showed a load error
+  // on every Ashkenazi Torah-reading day (R"Ch, Mon/Thu, fasts).
+  'Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Reading from Sefer, Prayers for Welfare of the People',
+]);
 
 /**
  * Sefaria's "Song of the Day" leaf contains ALL 7 daily psalms with
@@ -61,14 +73,16 @@ const NIKUD_RX = /[֑-ׇ]/g;
 
 /** Headers preceding intro paragraphs. Sefaria uses "בראשון בשבת:" etc.
  *  We match the bare-consonant form (post nikud-strip). */
+// Two Sefaria formats: Ashkenazi "בראשון בשבת:" (anchored) and Sephardi/EM
+// "שיר של יום ראשון:" (each day's block opens with this — the per-day divider).
 const DAY_OF_WEEK_MARKERS = [
-  /^ב?ראשון\s+ב?שבת/,  // Sunday
-  /^ב?שני\s+ב?שבת/,    // Monday
-  /^ב?שלישי\s+ב?שבת/,  // Tuesday
-  /^ב?רביעי\s+ב?שבת/,  // Wednesday
-  /^ב?חמישי\s+ב?שבת/,  // Thursday
-  /^ב?שישי\s+ב?שבת/,   // Friday
-  /^ב?שבת|^יום\s+השבת/, // Shabbat
+  /^ב?ראשון\s+ב?שבת|שיר של יום ראשון/,  // Sunday
+  /^ב?שני\s+ב?שבת|שיר של יום שני/,      // Monday
+  /^ב?שלישי\s+ב?שבת|שיר של יום שלישי/,  // Tuesday
+  /^ב?רביעי\s+ב?שבת|שיר של יום רביעי/,  // Wednesday
+  /^ב?חמישי\s+ב?שבת|שיר של יום חמישי/,  // Thursday
+  /^ב?שישי\s+ב?שבת|שיר של יום שישי/,    // Friday
+  /^ב?שבת|^יום\s+השבת|שיר של יום שבת|שיר של יום שביעי/, // Shabbat
 ];
 
 function filterDailyPsalmForToday(lines: string[], dow: number): string[] {
@@ -100,6 +114,10 @@ type LoadedLeaf = FlatLeaf & {
   paragraphs?: ParsedParagraph[];
   loading?: boolean;
   error?: boolean;
+  /** Stable identity for state updates. One placeholder leaf can fan out into
+   *  several virtual sub-leaves (monolithic Amidah split), so index-based
+   *  updates aren't safe — we update by uid instead. */
+  uid?: string;
 };
 
 /**
@@ -313,6 +331,7 @@ export default function SiddurReader() {
   // but we SKIP it in the main (silent) leaves loop.
   const allLeavesFiltered = useMemo(
     () => allLeavesUnderHere.filter((l) => {
+      if (KNOWN_EMPTY_REFS.has(l.ref)) return false;
       if (shouldHideForPrefs(l.en, prefs)) return false;
       if (l.trail.some((t) => shouldHideForPrefs(t.en, prefs))) return false;
       if (!isSectionRelevantToday(l.en, today, inIsrael, l.he)) return false;
@@ -372,8 +391,17 @@ export default function SiddurReader() {
       setLeaves([]);
       return;
     }
-    // Initialize with loading placeholders — use filtered list
-    setLeaves(allLeavesFiltered.map((l) => ({ ...l, loading: true })));
+    // Initialize with loading placeholders — use filtered list. Each gets a
+    // stable uid so async updates survive the monolithic-Amidah split (which
+    // replaces one placeholder with several virtual sub-leaves).
+    setLeaves(allLeavesFiltered.map((l, idx) => ({ ...l, uid: `${idx}:${l.ref}`, loading: true })));
+
+    // Is this the monolithic Amidah leaf used by Sefard / Edot HaMizrach /
+    // Chabad (the whole Amidah in one Sefaria ref)? Ashkenaz never has a leaf
+    // named exactly "Amidah" — its Amidah is already split into per-bracha
+    // leaves — so this gate targets only the monolithic nuschach.
+    const isMonolithicAmidah = (l: FlatLeaf) =>
+      /^Amid(ah|a)$/i.test(l.en.trim()) || /^(עמידה|תפילת עמידה|שמונה עשרה)$/.test((l.he || '').trim());
 
     // Progressive load: each leaf updates state the moment its text returns,
     // so the user sees the start of the prayer immediately instead of waiting
@@ -381,6 +409,7 @@ export default function SiddurReader() {
     let cancelled = false;
     const todayDow = today.getDay();
     allLeavesFiltered.forEach((leaf, idx) => {
+      const uid = `${idx}:${leaf.ref}`;
       (async () => {
         try {
           const t = await fetchSefariaText(leaf.ref);
@@ -391,19 +420,47 @@ export default function SiddurReader() {
             if (/Song of the Day|שיר של יום|Daily Psalm|Psalm of the Day/i.test(`${leaf.en} ${leaf.he}`)) {
               lines = filterDailyPsalmForToday(lines, todayDow);
             }
+            // Weekday Maariv: drop ברוך ה' לעולם + יראו עינינו (not said per the
+            // Eretz-Yisrael minhag). Gated to Maariv so the verses aren't
+            // stripped if they appear elsewhere.
+            const inMaariv = /Maariv|Arvit|מעריב|ערבית/i.test(
+              `${leaf.en} ${leaf.he} ${leaf.trail.map((tr) => `${tr.en} ${tr.he}`).join(' ')}`,
+            );
+            if (inMaariv) lines = stripMaarivBaruchHashemLeolam(lines);
+            // Monolithic Amidah → split into virtual per-bracha sub-leaves with
+            // canonical Ashkenaz en names, so the silent/chazara/Kedushah logic
+            // (all leaf-based) works for Sefard/EM/Chabad too. Falls back to a
+            // single leaf if the text doesn't look like a headered Amidah.
+            if (isMonolithicAmidah(leaf)) {
+              const sections = splitMonolithicAmidah(lines);
+              if (sections.length >= 6) {
+                const amidahTrail = [...leaf.trail, { en: 'Amidah', he: 'עמידה' }];
+                const subLeaves: LoadedLeaf[] = sections.map((s, k) => ({
+                  uid: `${uid}#${k}`,
+                  ref: `${leaf.ref}#${s.en}`,
+                  en: s.en,
+                  he: s.he,
+                  trail: amidahTrail,
+                  paragraphs: parseParagraphs(s.lines),
+                  loading: false,
+                }));
+                setLeaves((prev) => prev.flatMap((l) => (l.uid === uid ? subLeaves : [l])));
+                return;
+              }
+            }
             const parsed = parseParagraphs(lines);
             setLeaves((prev) =>
-              prev.map((l, i) => (i === idx ? { ...l, paragraphs: parsed, loading: false } : l)),
+              prev.map((l) => (l.uid === uid ? { ...l, paragraphs: parsed, loading: false } : l)),
             );
           } else {
             setLeaves((prev) =>
-              prev.map((l, i) => (i === idx ? { ...l, loading: false, error: true } : l)),
+              prev.map((l) => (l.uid === uid ? { ...l, loading: false, error: true } : l)),
             );
           }
         } catch {
           if (cancelled) return;
           setLeaves((prev) =>
-            prev.map((l, i) => (i === idx ? { ...l, loading: false, error: true } : l)),
+            prev.map((l) => (l.uid === uid ? { ...l, loading: false, error: true } : l)),
           );
         }
       })();
@@ -903,12 +960,15 @@ export default function SiddurReader() {
               {leaves.map((leaf, idx) => {
                 // Skip Kedushah + Birkat Kohanim in silent עמידה (chazara-only)
                 if (isAmidahLeaf(leaf) && (isKedushahLeaf(leaf) || isBirkatKohanimLeaf(leaf))) return null;
+                // Hide a section whose entire text was stripped (e.g. Ashkenaz's
+                // "ברוך ה' לעולם" leaf in weekday Maariv) — no bare title.
+                if (leaf.paragraphs && leaf.paragraphs.length === 0) return null;
                 // Hide section if ALL its paragraphs would be filtered out — avoids
                 // empty headers like "תהילים קל", "ויברך דוד", etc. when seasonal
                 // content was removed.
                 if (leaf.paragraphs && leaf.paragraphs.length > 0) {
                   const visibleCount = leaf.paragraphs.filter((p) =>
-                    shouldRender(p, active, { showAll, showNotes })).length;
+                    shouldRender(p, active, { showAll, showNotes, chazara: false })).length;
                   if (visibleCount === 0) return null;
                 }
                 const subTitle = leaf.he || leaf.en;
@@ -946,7 +1006,7 @@ export default function SiddurReader() {
                       )}
                       {leaf.paragraphs &&
                         leaf.paragraphs.map((p, j) => {
-                          if (!shouldRender(p, active, { showAll, showNotes })) return null;
+                          if (!shouldRender(p, active, { showAll, showNotes, chazara: false })) return null;
                           if (p.kind === 'halachic-note') {
                             return (
                               <Text key={j} style={[typography.small, styles.halachicNote]}>
@@ -961,7 +1021,7 @@ export default function SiddurReader() {
                             // 'unknown' tag = we don't know when, treat as in-season
                             // so it doesn't show a false "לא היום" badge.
                             const inSeason = !p.tags || p.tags.length === 0 ||
-                              p.tags.includes('unknown') ||
+                              p.tags.includes('unknown') || p.tags.includes('chazara-only') ||
                               p.tags.some((t) => active.has(t));
                             return (
                               <View key={j} style={[styles.conditionalBlock, !inSeason && styles.conditionalBlockMuted]}>
@@ -1050,7 +1110,7 @@ export default function SiddurReader() {
                                   </Text>
                                 ) : (
                                   cleaf.paragraphs?.map((p, k) => {
-                                    if (!shouldRender(p, active, { showAll, showNotes })) return null;
+                                    if (!shouldRender(p, active, { showAll, showNotes, chazara: true })) return null;
                                     if (p.kind === 'halachic-note') {
                                       return showNotes ? (
                                         <Text key={k} style={[typography.small, styles.halachicNote]}>{p.body}</Text>
@@ -1059,7 +1119,7 @@ export default function SiddurReader() {
                                     if (p.kind === 'conditional' || p.kind === 'alternative') {
                                       const body = enhanceConditionalText(p, today, inIsrael);
                                       const inSeason = !p.tags || p.tags.length === 0 ||
-                                        p.tags.includes('unknown') ||
+                                        p.tags.includes('unknown') || p.tags.includes('chazara-only') ||
                                         p.tags.some((t) => active.has(t));
                                       return (
                                         <View key={k} style={[styles.conditionalBlock, !inSeason && styles.conditionalBlockMuted]}>

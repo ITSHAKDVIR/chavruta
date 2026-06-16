@@ -126,22 +126,11 @@ function buildCtx(date: Date, inIsrael: boolean): DayContext {
   };
 }
 
-/**
- * Inject Shir HaMaalot mi'maamakim (Tehillim 130) right after Yishtabach
- * during Aseret Yemei Teshuva. The psalm lives at "Psalms 130" in Sefaria
- * — we synthesize a leaf for it so the existing fetch pipeline loads it.
- */
-function injectShirHaMaalot(leaves: FlatLeaf[]): FlatLeaf[] {
-  const yishtabachIdx = findLeafIndex(leaves, /^Yishtabach$|^ישתבח$/);
-  if (yishtabachIdx < 0) return leaves;
-  const shirLeaf: FlatLeaf = {
-    ref: 'Psalms 130',
-    he: 'שיר המעלות ממעמקים',
-    en: 'Psalms 130',
-    trail: leaves[yishtabachIdx].trail,
-  };
-  return injectAfter(leaves, yishtabachIdx, [shirLeaf]);
-}
+// NOTE: We do NOT synthesize a Shir HaMaalot (Tehillim 130) leaf for Aseret
+// Yemei Teshuva. Every nusach already carries it natively, gated by its own
+// "בעשרת ימי תשובה מוסיפין" marker: Sefard inside the Yishtabach leaf,
+// Ashkenaz as a "Psalm 130" leaf in Pesukei Dezimra. Injecting one duplicated
+// it (the user saw שיר המעלות twice in AYT Shacharit).
 
 /* ────────────────────────── inject helpers ────────────────────────── */
 
@@ -226,7 +215,11 @@ function augmentForRoshChodeshSephardi(leaves: FlatLeaf[], ctx: DayContext): Fla
 
   // Find the base Amidah leaf — Sephardi has en="Amidah" or "Amida"; he="עמידה"
   // or "תפילת עמידה".
-  let out = leaves;
+  // The RC subtree already includes Song of the Day + Barchi Nafshi (in their
+  // Sephardi RC position). Drop the BASE weekday copies so they don't render a
+  // second time later in the flow.
+  let out = leaves.filter((l) =>
+    !(/^(Song of the Day|Barchi Nafshi)$/i.test(l.en) && /Weekday Shacharit/i.test(l.ref)));
   const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahIdx < 0) return leaves;
 
@@ -666,8 +659,7 @@ export function augmentLeavesForToday(
     else if (ctx.isPurim) out = augmentForPurim(out, nusach);
     else if (ctx.isFast) out = augmentForFastShacharit(out, ctx);
 
-    // Aseret Yemei Teshuva: prepend Shir HaMaalot mi'maamakim after Yishtabach.
-    if (ctx.isAseretYemeiTeshuva) out = injectShirHaMaalot(out);
+    // (Shir HaMaalot for AYT is native to every nusach's text — not injected.)
   } else if (isWeekdayMincha) {
     if (ctx.isFast) out = augmentForFastMincha(out, ctx);
     // Erev Shabbat (Friday) Mincha — no Tachanun/Vidui per spec A4.
