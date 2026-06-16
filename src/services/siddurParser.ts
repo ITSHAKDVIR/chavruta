@@ -257,16 +257,22 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
       .replace(/<\/?small>/gi, '')
       .replace(/<\/?[a-zA-Z][^>]*>/g, '')
       .trim();
-    // Sub-case: VOCALIZED prayer wrapped wholesale in <small>. Sefaria styles
-    // many prayer insertions this way — the Kaddish opening (יתגדל ויתקדש...),
-    // seasonal additions (זכרנו, בספר חיים), etc. They are prayer, NOT notes:
-    // emit as normal so they render (a pending date-marker, if any, then turns
-    // them into the right conditional in parseParagraphs). A halachic note that
-    // merely quotes a pointed word stays sparse and falls through below.
-    if (isVocalizedDense(cleanInner)) {
+    // Sub-case: KADDISH text wrapped wholesale in <small> (the יתגדל ויתקדש
+    // opening through יתברך). It's liturgy that must render — without this the
+    // kaddish would start mid-way at "תתקבל" (Sefard Hallel, Song of the Day).
+    // NOTE: kept deliberately NARROW. Other whole-<small> vocalized text is
+    // left as a note here, because:
+    //   • seasonal additions (זכרנו, בספר חיים) get promoted to a conditional
+    //     in parseParagraphs when their date-marker is pending, and
+    //   • chazara-only liturgy (קדושה / מודים דרבנן / ברכת כהנים) in the
+    //     monolithic EM/Chabad Amidah MUST stay hidden in the silent Amidah —
+    //     broadening this to all vocalized text leaked them into the silent.
+    const bareInner = cleanInner.replace(/[֑-ׇ]/g, '').trim();
+    if (/^יתגדל ויתקדש|^יתגדל ויתקדש שמ|^יהא שמ?יה רבא מברך/.test(bareInner)) {
       return { body: cleanInner, kind: 'normal' };
     }
-    // Sub-case: halachic note (unvocalized instruction).
+    // Sub-case: halachic note (unvocalized instruction, or chazara-only liturgy
+    // that stays out of the silent Amidah).
     return { body: cleanInner, kind: 'halachic-note' };
   }
 
