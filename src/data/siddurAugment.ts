@@ -506,19 +506,27 @@ function augmentForCholHamoed(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContex
   return out;
 }
 
-/** Sephardi/EM/Chabad ChH"M: inject the Festival subtree after Amidah. */
+/** Sephardi/EM/Chabad ChH"M: inject the Festival Mussaf ONLY after the regular
+ *  weekday Amidah. The user uses the regular weekday Amidah (with YvY
+ *  conditional) for the silent Shacharit, not the Festival Amidah — so we
+ *  must NOT inject the Festival Amidah leaf, only the Mussaf. */
 function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, _ctx: DayContext): FlatLeaf[] {
-  // Sephardi: "Holidays" subtree with Yom Tov Musaf Amidah leaf.
-  // EM: "Prayers for Three Festivals" subtree.
-  // Chabad: "Musaf for Festivals" leaf.
+  // Sephardi: "Holidays" subtree with "Yom Tov Musaf Amidah" leaf.
+  // EM: "Prayers for Three Festivals" subtree with "Mussaf" leaf.
+  // Chabad: "Musaf for Festivals" leaf at top level.
   const festNode =
     findTopNode(nusach, /^Holidays$|^Three Festivals$|^Prayers for Three Festivals$|^Musaf for Festivals$|^לשלש רגלים$/) ||
     findTopNode(nusach, /^Festivals?$/);
   if (!festNode) return leaves;
   const festLeaves = collectLeaves(festNode);
-  // Cherry-pick just the Mussaf-related leaves to avoid injecting Yizkor etc.
-  const musafLeaves = festLeaves.filter((l) =>
-    /Mussaf|Musaf|מוסף|Amidah|עמידה/i.test(`${l.en} ${l.he}`));
+  // Cherry-pick STRICTLY Mussaf leaves — exclude regular Amidah (Shacharit/Mincha
+  // version), Yizkor, Hallel for YT, etc.
+  const musafLeaves = festLeaves.filter((l) => {
+    const txt = `${l.en} ${l.he}`;
+    // Include if it's clearly Mussaf
+    if (/\bMu+ssa+f\b|מוסף/i.test(txt)) return true;
+    return false;
+  });
   if (musafLeaves.length === 0) return leaves;
 
   let out = leaves;
