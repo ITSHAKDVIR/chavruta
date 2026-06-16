@@ -37,6 +37,7 @@ import {
   buildAsherHaniLeaf,
   buildShoshanatYaakovLeaf,
   buildVayavoAmalekLeaves,
+  buildChanukahNasoLeaves,
 } from './specialDayContent';
 
 /* ────────────────────────── tree helpers ──────────────────────────── */
@@ -429,19 +430,13 @@ function findLastLeafByTrail(leaves: FlatLeaf[], pattern: RegExp, exclude?: RegE
  * conditional paragraph parsed by siddurParser).
  */
 function augmentForChanukah(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext): FlatLeaf[] {
-  // Find Chanukah Torah reading (Naso) — keep this best-effort.
-  const chanukahTorahNode = findDeepInTree(
-    nusach,
-    new RegExp(`חנוכה|Chanukah|Day ${ctx.chanukahDay}|Nasi`),
-  );
-
-  // Always use FULL Hallel for Chanukah. Don't search the nusach tree for a
-  // "Hallel" node — the first hit might be RC's HALF Hallel.
-  const inject: FlatLeaf[] = [...buildFullHallelLeaves(nusach)];
-  if (chanukahTorahNode) {
-    const t = collectLeaves(chanukahTorahNode);
-    if (t.length > 0) inject.push(...t);
-  }
+  // Always use FULL Hallel for Chanukah + synthesized day-specific Naso
+  // reading. Sefaria's siddur trees only have generic "Chanukah" candle-
+  // lighting nodes — not the day's Torah reading — so we build it ourselves.
+  const inject: FlatLeaf[] = [
+    ...buildFullHallelLeaves(nusach),
+    ...buildChanukahNasoLeaves(ctx.chanukahDay || 1),
+  ];
 
   if (inject.length === 0) return leaves;
 

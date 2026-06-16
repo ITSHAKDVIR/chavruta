@@ -223,7 +223,14 @@ export default function SiddurReader() {
 
   // Decide: navigation list or running text?
   const allLeavesUnderHere = useMemo(() => {
-    if (here?.ref) return [{ ref: here.ref, he: here.he, en: here.en, trail: [] }] as FlatLeaf[];
+    if (here?.ref) {
+      // Single-leaf top-level (Chabad Maariv, Shacharit, Mincha pack the whole
+      // prayer into one Sefaria ref). Still run the augmenter so Purim Maariv
+      // / fast day / ChH"M etc. additions can be appended even when there are
+      // no sub-leaves to anchor against.
+      const own: FlatLeaf[] = [{ ref: here.ref, he: here.he, en: here.en, trail: [] }];
+      return augmentLeavesForToday(own, here, nusach, today, inIsrael);
+    }
     if (here?.children) {
       let own = collectLeaves(here);
       // Sephardi / Edot HaMizrach: "Upon Arising" / "Preparatory Prayers" is

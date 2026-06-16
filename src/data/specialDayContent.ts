@@ -114,6 +114,48 @@ export function buildVayavoAmalekLeaves(): FlatLeaf[] {
   ];
 }
 
+/** Chanukah daily Torah reading — Naso (Numbers 7), 3 olim per day.
+ *  Day 1: extended (Numbers 7:1-17, includes Nasi of Yehuda).
+ *  Days 2-7: 6 verses each, split 2/2/2.
+ *  Day 8: Menashe (7:54-59) + summary "זאת חנוכת המזבח" + Beha'alotcha 8:1-4.
+ *  Standard divisions per Shulchan Aruch O"C 684. */
+export function buildChanukahNasoLeaves(day: number): FlatLeaf[] {
+  const trail = [{ he: `קריאת התורה לחנוכה — יום ${day}`, en: `Chanukah Day ${day} Torah Reading (Naso)` }];
+  const tribeNames: Record<number, string> = {
+    1: 'נחשון בן עמינדב (יהודה)',
+    2: 'נתנאל בן צוער (יששכר)',
+    3: 'אליאב בן חלון (זבולון)',
+    4: 'אליצור בן שדיאור (ראובן)',
+    5: 'שלמיאל בן צורישדי (שמעון)',
+    6: 'אליסף בן דעואל (גד)',
+    7: 'אלישמע בן עמיהוד (אפרים)',
+    8: 'גמליאל בן פדהצור (מנשה) + סיום',
+  };
+  const dayLabel = `יום ${day} — ${tribeNames[day] ?? ''}`;
+  if (day === 1) {
+    return [
+      { ref: 'Numbers 7:1-11', he: `${dayLabel} · עליה ראשונה (כהן) — ויהי ביום כלות`, en: `Day 1 Cohen — Numbers 7:1-11`, trail },
+      { ref: 'Numbers 7:12-14', he: `עליה שניה (לוי) — קרבן נחשון`, en: `Day 1 Levi — Numbers 7:12-14`, trail },
+      { ref: 'Numbers 7:15-17', he: `עליה שלישית (ישראל)`, en: `Day 1 Yisrael — Numbers 7:15-17`, trail },
+    ];
+  }
+  if (day === 8) {
+    return [
+      { ref: 'Numbers 7:54-56', he: `${dayLabel} · עליה ראשונה (כהן) — קרבן גמליאל`, en: `Day 8 Cohen — Numbers 7:54-56`, trail },
+      { ref: 'Numbers 7:57-59', he: `עליה שניה (לוי)`, en: `Day 8 Levi — Numbers 7:57-59`, trail },
+      { ref: 'Numbers 7:60-8:4', he: `עליה שלישית (ישראל) — זאת חנוכת המזבח + בהעלותך`, en: `Day 8 Yisrael — Numbers 7:60-8:4`, trail },
+    ];
+  }
+  // Days 2-7: each day is 6 verses, 2/2/2 split. Day N covers verses (N-1)*6 + 12 .. N*6 + 11.
+  // E.g. Day 2 = 7:18-23, Day 3 = 7:24-29, etc.
+  const startVerse = 12 + (day - 1) * 6;
+  return [
+    { ref: `Numbers 7:${startVerse}-${startVerse + 1}`, he: `${dayLabel} · עליה ראשונה (כהן)`, en: `Day ${day} Cohen — Numbers 7:${startVerse}-${startVerse + 1}`, trail },
+    { ref: `Numbers 7:${startVerse + 2}-${startVerse + 3}`, he: `עליה שניה (לוי)`, en: `Day ${day} Levi — Numbers 7:${startVerse + 2}-${startVerse + 3}`, trail },
+    { ref: `Numbers 7:${startVerse + 4}-${startVerse + 5}`, he: `עליה שלישית (ישראל)`, en: `Day ${day} Yisrael — Numbers 7:${startVerse + 4}-${startVerse + 5}`, trail },
+  ];
+}
+
 // ============================ Nachem (T"B Mincha Amidah insert) ============================
 
 /** Nachem — recited in Tisha B'Av Mincha Amidah's "v'lirushalayim ircha"
