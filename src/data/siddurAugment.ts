@@ -717,13 +717,18 @@ function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
  *  then look for the first Kaddish leaf immediately following it. */
 function augmentForPurimMaariv(leaves: FlatLeaf[], _nusach: Nusach): FlatLeaf[] {
   // Locate the last Amidah leaf — try trail-based first (Ashkenazi), then
-  // single-leaf name match (Sephardi/EM/Chabad).
+  // single-leaf name match (Sephardi/EM). Chabad bundles the entire Maariv
+  // (including Amidah) into ONE leaf — fall back to appending at the end.
   let amidahIdx = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
   if (amidahIdx < 0) {
     amidahIdx = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   }
-  if (amidahIdx < 0) return leaves;
+  if (amidahIdx < 0) {
+    // Chabad-style: single monolithic leaf. Append the Purim additions at end.
+    const inject = [buildAsherHaniLeaf(), buildShoshanatYaakovLeaf()];
+    return [...leaves, ...inject];
+  }
 
   // Spec A7: Asher Hani + Shoshanat are recited BEFORE Aleinu. So scan
   // forward from Amidah for either (a) the Aleinu leaf — inject just before

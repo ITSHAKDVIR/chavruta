@@ -474,6 +474,21 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
     }
   }
 
+  // Some markers open a MULTI-PARAGRAPH conditional block that doesn't end
+  // until a closing-rubric marker appears (e.g. Birkat Kohanim on a fast day:
+  //   open  → "בתענית ציבור אומר כאן הש"ץ ברכת כהנים:"
+  //   block → "ברכת כהנים" + "אלהינו ואלהי אבותינו..." + 3 priestly verses
+  //   close → "לאחר ברכת כהנים יאמרו הציבור:"
+  // We detect openings by phrases like "אומר ברכת כהנים" / "אומר עננו" / "אומר
+  // כאן" and keep the marker active across all paragraphs (tagging each with
+  // the marker's date condition) until the next marker-only paragraph closes
+  // the block.
+  const isMultiParaOpening = (marker: string): boolean => {
+    return /אומר(ים)?\s+(כאן\s+)?(ברכת כהנים|עננו|נחם|על הניסים|הלל)/.test(marker)
+      || /ברכת כהנים|נחם/.test(marker);
+  };
+  let multiParaActive: { marker: string; tags: ConditionTag[] } | null = null;
+
   for (const rRaw of expanded) {
     // DO NOT stripHtml here — that wipes <small> markers that parseParagraphRaw
     // depends on to identify conditional paragraphs. parseParagraphRaw uses
@@ -482,13 +497,40 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
     if (!p.body && !p._markerOnly) continue;
 
     if (p._markerOnly) {
-      // Date-specific marker (e.g. בעשי"ת) — attach to next normal paragraph.
+      // A new marker arrives — close any active multi-paragraph block first.
+      multiParaActive = null;
+      // If this marker OPENS a multi-paragraph conditional, start it.
+      if (p.tags && p.tags.length > 0 && isMultiParaOpening(p.marker!)) {
+        multiParaActive = { marker: p.marker!, tags: p.tags };
+        continue;
+      }
+      // Otherwise single-paragraph: attach to next normal paragraph.
       pendingMarker = {
         marker: p.marker!,
         tags: p.tags ?? ['unknown'],
         alternative: isAlternativeMarker(p.marker!),
       };
       continue;
+    }
+
+    // If a multi-paragraph block is active, tag every paragraph with its marker
+    // until a closing rubric is hit. The closer is typically a halachic-note
+    // wrapped in <small>...</small> like "לאחר ברכת כהנים יאמרו הציבור" or
+    // similar instructional text — once we see one, end the block and emit
+    // the note normally.
+    if (multiParaActive) {
+      if (p.kind === 'halachic-note') {
+        multiParaActive = null;
+        // fall through to normal handling below
+      } else {
+        result.push({
+          body: p.body,
+          kind: 'conditional',
+          marker: multiParaActive.marker,
+          tags: multiParaActive.tags,
+        });
+        continue;
+      }
     }
 
     if (pendingMarker && p.kind === 'normal') {
@@ -520,6 +562,7 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
 
   // Dangling pending marker — drop it. Don't emit a floating empty badge.
   pendingMarker = null;
+  multiParaActive = null;
 
   return result;
 }
