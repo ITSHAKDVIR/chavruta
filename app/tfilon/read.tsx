@@ -254,7 +254,7 @@ export default function SiddurReader() {
     }
     if (slugs.length === 0) return collectLeavesFromList(getNusachTree(nusach));
     return [];
-  }, [here?.ref, here?.children, here?.en, nusach, slugs.length, inIsrael]);
+  }, [here?.ref, here?.children, here?.en, nusach, slugs.length, inIsrael, today]);
 
   // Siddur prefs (minyan/yachid, optional sections, quiet mode). Loaded
   // before allLeavesFiltered so the filter has the latest value.
@@ -325,9 +325,9 @@ export default function SiddurReader() {
   const isMonOrThu = dayOfWeek === 1 || dayOfWeek === 4;
 
   // Inserts for today
-  const inserts = useMemo(() => getInsertsForDate(today, inIsrael), [inIsrael]);
+  const inserts = useMemo(() => getInsertsForDate(today, inIsrael), [today, inIsrael]);
   // Active condition tags for today (אומר היום בעשי"ת? בר"ח? etc.)
-  const active = useMemo(() => activeTags(today, inIsrael), [inIsrael]);
+  const active = useMemo(() => activeTags(today, inIsrael), [today, inIsrael]);
 
   // Halachic-window banner: detect if user is reading Shacharit/Mincha/Maariv
   // and warn them if the time is wrong or the end is approaching.
