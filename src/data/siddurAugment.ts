@@ -91,7 +91,9 @@ function buildCtx(date: Date, inIsrael: boolean): DayContext {
   const isCholHamoed = events.some((e) => e.getFlags() & flags.CHOL_HAMOED);
   const isFast = events.some((e) => e.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST));
   const isChanukah = events.some((e) => /Chanukah|Hanukkah/i.test(e.getDesc()));
-  const isPurim = events.some((e) => /Purim|Shushan/i.test(e.getDesc()));
+  // NOTE: exclude "Erev Purim" — that's Ta'anit Esther (a FAST), which must get
+  // the fast flow (Anenu + Vayechal), not the Purim flow (Vayavo Amalek).
+  const isPurim = events.some((e) => /Purim|Shushan/i.test(e.getDesc()) && !/Erev/i.test(e.getDesc()));
 
   const m = hd.getMonth();
   const d = hd.getDate();
@@ -697,27 +699,47 @@ export function augmentLeavesForToday(
  *  with Devarim 4:25-40 + Yirmiyahu Haftarah. Anenu lives inside the Amidah
  *  text (Sefaria gates it as a conditional paragraph). */
 function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
+  const m = ctx.hd.getMonth();
+  const d = ctx.hd.getDate();
+  // Yom Kippur is a fast, but it has its own machzor — the weekday Shacharit
+  // flow and the ויחל reading don't apply. Don't inject fast content.
+  if (m === months.TISHREI && d === 10) return leaves;
+
   // Tisha B'Av has its own Torah/Haftarah pair.
-  const isTishaBAv = ctx.hd.getMonth() === 5 && ctx.hd.getDate() === 9; // Av = month 5
+  const isTishaBAv = m === 5 && d === 9; // Av = month 5
   const torahLeaves = isTishaBAv
     ? [...buildTishaBAvShacharitTorahLeaves(), buildTishaBAvHaftarah()]
     : buildVayechalLeaves();
 
-  // Anenu is shown as a card after the Amidah so the chazan (and individuals
-  // by Sephardi minhag) can find it. It logically belongs in Shema Koleinu
-  // (silent Sephardi) or as a separate bracha in chazaras (Ashkenazi) but the
-  // tree doesn't expose that injection point, so we surface it here.
-  const inject: FlatLeaf[] = [buildAnenuLeaf(), ...torahLeaves];
+  let out = leaves;
 
-  // Inject after last Amidah-trail leaf (Ashkenazi) or after the single
-  // Amidah leaf (Sephardi/EM/Chabad).
-  let anchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+  // Anchor on the (silent) Amidah.
+  let amidahAnchor = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
-  if (anchor < 0) {
-    anchor = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (amidahAnchor < 0) {
+    amidahAnchor = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   }
-  if (anchor < 0) return leaves;
-  return injectAfter(leaves, anchor, inject);
+  if (amidahAnchor < 0) return leaves;
+
+  // The Torah reading (ויחל) on a public fast is read only AFTER chazaras +
+  // Tachanun/Selichot + Avinu Malkenu — right before the closing Ashrei / Uva
+  // Letzion, NOT straight after the silent Amidah. Anchor it on that closing
+  // Ashrei (the one after the Amidah, not the Pesukei-Dezimra Ashrei).
+  let ashreiIdx = -1;
+  for (let i = amidahAnchor + 1; i < out.length; i++) {
+    const l = out[i];
+    const isAshrei = /^Ashrei$/i.test(l.en) || /^אשרי$/.test(l.he);
+    const inPesukei = l.trail.some((t) => /Pesukei|דזמרה|דזימרא/i.test(`${t.en} ${t.he}`));
+    if (isAshrei && !inPesukei) { ashreiIdx = i; break; }
+  }
+
+  // Inject high index first so the earlier insert doesn't shift the later one.
+  if (ashreiIdx > amidahAnchor) out = injectAfter(out, ashreiIdx - 1, torahLeaves);
+  else out = injectAfter(out, amidahAnchor, torahLeaves); // fallback: after Amidah
+  // Anenu — card right after the Amidah (its place is in Shema Koleinu /
+  // chazaras; the tree doesn't expose that injection point).
+  out = injectAfter(out, amidahAnchor, [buildAnenuLeaf()]);
+  return out;
 }
 
 /** Fast day Mincha — inject Vayechal + Haftarah (Dirshu) before/around Amidah.
