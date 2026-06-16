@@ -179,11 +179,20 @@ function removeMatching(leaves: FlatLeaf[], pattern: RegExp): FlatLeaf[] {
  * to verses 12+), RC Torah Reading leaves (each aliyah a range of Bamidbar 28),
  * RC Musaf brachot from the tree, Barchi Nafshi.
  */
-function augmentForRoshChodesh(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
-  if (nusach === 'sephardi') return augmentForRoshChodeshSephardi(leaves);
-  if (nusach === 'edot-mizrach') return augmentForRoshChodeshEdotMizrach(leaves);
-  if (nusach === 'chabad') return augmentForRoshChodeshChabad(leaves);
-  return augmentForRoshChodeshAshkenazi(leaves, nusach);
+function augmentForRoshChodesh(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext): FlatLeaf[] {
+  if (nusach === 'sephardi') return augmentForRoshChodeshSephardi(leaves, ctx);
+  if (nusach === 'edot-mizrach') return augmentForRoshChodeshEdotMizrach(leaves, ctx);
+  if (nusach === 'chabad') return augmentForRoshChodeshChabad(leaves, ctx);
+  return augmentForRoshChodeshAshkenazi(leaves, nusach, ctx);
+}
+
+/** Rosh Chodesh Tevet falls during Chanukah. On those days Hallel is FULL
+ *  (Chanukah overrides RC's half-Hallel) and a 4th oleh reads the Chanukah
+ *  Nasi portion of the day after the 3 Rosh Chodesh aliyot. This helper
+ *  returns the day's Chanukah Naso leaves to append, or [] when not Chanukah. */
+function rcChanukahExtraReading(ctx: DayContext): FlatLeaf[] {
+  if (!ctx.isChanukah) return [];
+  return buildChanukahNasoLeaves(ctx.chanukahDay || 1);
 }
 
 /**
@@ -205,12 +214,14 @@ function augmentForRoshChodesh(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
  * Amidah leaf in the base. Suppress the base Song of Day / Barchi Nafshi
  * (gated by siddurRelevance) since the RC subtree's versions replace them.
  */
-function augmentForRoshChodeshSephardi(leaves: FlatLeaf[]): FlatLeaf[] {
+function augmentForRoshChodeshSephardi(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
   // Find Sephardi RC subtree leaves in order: Hallel, Song of the Day, Barchi
   // Nafshi, Torah Reading, Ashrei Uva L'Tziyon, Returning Sefer Torah, Mussaf.
   const rcNode = findTopNode('sephardi', /^Rosh (Chodesh|Hodesh)$|^לראש ח[דו]ש$/);
   if (!rcNode) return leaves;
-  const rcLeaves = collectLeaves(rcNode);
+  // On RC Tevet (Chanukah) append the day's Chanukah Naso reading after the
+  // RC subtree, so the 4th oleh's portion is present.
+  const rcLeaves = [...collectLeaves(rcNode), ...rcChanukahExtraReading(ctx)];
   if (rcLeaves.length === 0) return leaves;
 
   // Find the base Amidah leaf — Sephardi has en="Amidah" or "Amida"; he="עמידה"
@@ -235,10 +246,10 @@ function augmentForRoshChodeshSephardi(leaves: FlatLeaf[]): FlatLeaf[] {
  * the simplest correct approach is to inject the subtree wholesale after the
  * Amidah leaf.
  */
-function augmentForRoshChodeshEdotMizrach(leaves: FlatLeaf[]): FlatLeaf[] {
+function augmentForRoshChodeshEdotMizrach(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
   const rcNode = findTopNode('edot-mizrach', /^Rosh (Chodesh|Hodesh)$|^סדר ראש ח[דו]ש$|^לראש ח[דו]ש$/);
   if (!rcNode) return leaves;
-  const rcLeaves = collectLeaves(rcNode);
+  const rcLeaves = [...collectLeaves(rcNode), ...rcChanukahExtraReading(ctx)];
   if (rcLeaves.length === 0) return leaves;
 
   let out = leaves;
@@ -255,7 +266,7 @@ function augmentForRoshChodeshEdotMizrach(leaves: FlatLeaf[]): FlatLeaf[] {
  * a single leaf after the Amidah. Order details (Hallel, RC reading, Mussaf)
  * are all inside this one Sefaria text.
  */
-function augmentForRoshChodeshChabad(leaves: FlatLeaf[]): FlatLeaf[] {
+function augmentForRoshChodeshChabad(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
   // Chabad has top-level "Hallel" and "Rosh Chodesh" leaves (each is a single
   // Sefaria ref, the entire RC content in one text).
   const hallelNode = findTopNode('chabad', /^Hallel$|^הלל$|^סדר הלל$/);
@@ -263,6 +274,8 @@ function augmentForRoshChodeshChabad(leaves: FlatLeaf[]): FlatLeaf[] {
   const inject: FlatLeaf[] = [];
   if (hallelNode) inject.push(...collectLeaves(hallelNode));
   if (rcNode) inject.push(...collectLeaves(rcNode));
+  // RC Tevet (Chanukah): append the day's Chanukah Naso reading.
+  inject.push(...rcChanukahExtraReading(ctx));
   if (inject.length === 0) return leaves;
 
   let out = leaves;
@@ -285,12 +298,15 @@ function augmentForRoshChodeshChabad(leaves: FlatLeaf[]): FlatLeaf[] {
  * Yehalelu) and apply on every Torah-reading day. We only inject the actual
  * RC verses BETWEEN them, in place of the regular Mon/Thu parsha text.
  */
-function augmentForRoshChodeshAshkenazi(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
+function augmentForRoshChodeshAshkenazi(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext): FlatLeaf[] {
   let out = leaves;
 
   // === Step 1: Build synthesized leaves ===
-  const hallel = buildHalfHallelLeaves(nusach);
-  const torahReading = buildRoshChodeshTorahReadingLeaves();
+  // RC Tevet falls during Chanukah → FULL Hallel (Chanukah overrides RC's
+  // half Hallel), and a 4th oleh reads the day's Chanukah Nasi portion after
+  // the 3 Rosh Chodesh aliyot.
+  const hallel = ctx.isChanukah ? buildFullHallelLeaves(nusach) : buildHalfHallelLeaves(nusach);
+  const torahReading = [...buildRoshChodeshTorahReadingLeaves(), ...rcChanukahExtraReading(ctx)];
   const musaf = collectRoshChodeshMusafLeaves(nusach);
   const musafClosingKaddish = buildMusafClosingKaddish();
 
@@ -630,7 +646,7 @@ export function augmentLeavesForToday(
 
   if (isWeekdayShacharit) {
     // Priority order: RC > Chanukah > ChH"M > Purim > Fast.
-    if (ctx.isRC) out = augmentForRoshChodesh(out, nusach);
+    if (ctx.isRC) out = augmentForRoshChodesh(out, nusach, ctx);
     else if (ctx.isChanukah) out = augmentForChanukah(out, nusach, ctx);
     else if (ctx.isCholHamoed) out = augmentForCholHamoed(out, nusach, ctx);
     else if (ctx.isPurim) out = augmentForPurim(out, nusach);
