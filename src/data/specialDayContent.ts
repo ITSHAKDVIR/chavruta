@@ -1,0 +1,179 @@
+/**
+ * Synthesized leaf builders for content that isn't naturally in the Sefaria
+ * weekday tree but is required by the spec for special days:
+ *   - Vayechal Moshe Torah reading (public fasts, Tisha B'Av)
+ *   - Anenu (fast day Amidah insert)
+ *   - Asher Hani Atzat + Shoshanat Yaakov (Purim Maariv/Shacharit, after Megillah)
+ *   - Nachem (Tisha B'Av Mincha Amidah insert)
+ *   - Halachic warning cards (Tisha B'Av Tallit/Tefillin, Sukkot lulav)
+ *
+ * Each builder returns FlatLeaf[] ready for injection by the augmenter.
+ * Sefaria refs are used where the source is Tanach (Exodus passages),
+ * synthetic refs (prefixed with "Custom:") are used for siddur paragraphs we
+ * embed locally — fetchSefariaText recognizes the prefix and skips the API.
+ */
+import { FlatLeaf } from './siddurTree';
+
+// ============================ Fast day Vayechal Moshe ============================
+
+/** Vayechal Moshe — Torah reading for public fasts (NOT Tisha B'Av).
+ *  3 olim: Exodus 32:11-14 (Kohen), 34:1-3 (Levi), 34:4-10 (Yisrael). */
+export function buildVayechalLeaves(): FlatLeaf[] {
+  const trail = [{ he: 'קריאת התורה לתענית ציבור (ויחל משה)', en: 'Torah Reading for Public Fast' }];
+  return [
+    { ref: 'Exodus 32:11-14', he: 'עליה ראשונה (כהן) — ויחל משה', en: 'Aliyah 1 (Cohen) — Exodus 32:11-14', trail },
+    { ref: 'Exodus 34:1-3', he: 'עליה שניה (לוי) — פסל לך', en: 'Aliyah 2 (Levi) — Exodus 34:1-3', trail },
+    { ref: 'Exodus 34:4-10', he: 'עליה שלישית (ישראל) — ויעבר ה׳ על פניו', en: 'Aliyah 3 (Yisrael) — Exodus 34:4-10', trail },
+  ];
+}
+
+/** Tisha B'Av Shacharit Torah reading — Devarim 4:25-40 (3 olim). */
+export function buildTishaBAvShacharitTorahLeaves(): FlatLeaf[] {
+  const trail = [{ he: 'קריאת התורה לתשעה באב — שחרית', en: 'Tisha B\'Av Shacharit Torah Reading' }];
+  return [
+    { ref: 'Deuteronomy 4:25-29', he: 'עליה ראשונה (כהן)', en: 'Aliyah 1 (Cohen) — Deuteronomy 4:25-29', trail },
+    { ref: 'Deuteronomy 4:30-35', he: 'עליה שניה (לוי)', en: 'Aliyah 2 (Levi) — Deuteronomy 4:30-35', trail },
+    { ref: 'Deuteronomy 4:36-40', he: 'עליה שלישית (ישראל)', en: 'Aliyah 3 (Yisrael) — Deuteronomy 4:36-40', trail },
+  ];
+}
+
+/** Tisha B'Av Shacharit Haftarah — Yirmiyahu 8:13 - 9:23 */
+export function buildTishaBAvHaftarah(): FlatLeaf {
+  return {
+    ref: 'Jeremiah 8:13-9:23',
+    he: 'הפטרה — אסף אסיפם',
+    en: 'Haftarah for Tisha B\'Av Shacharit — Jeremiah 8:13-9:23',
+    trail: [{ he: 'קריאת התורה לתשעה באב — שחרית', en: 'Tisha B\'Av Shacharit' }],
+  };
+}
+
+/** Mincha (all public fasts incl. T"B) Haftarah — Dirshu Hashem b'himatzo */
+export function buildFastMinchaHaftarah(): FlatLeaf {
+  return {
+    ref: 'Isaiah 55:6-56:8',
+    he: 'הפטרה — דרשו ה׳ בהמצאו',
+    en: 'Haftarah for Fast Day Mincha — Isaiah 55:6 - 56:8',
+    trail: [{ he: 'קריאת התורה למנחת תענית', en: 'Fast Day Mincha Torah Reading' }],
+  };
+}
+
+// ============================ Anenu (fast day Amidah insert) ============================
+
+const ANENU_TEXT =
+  'עֲנֵֽנוּ יְהֹוָה עֲנֵֽנוּ בְּיוֹם צוֹם תַּעֲנִיתֵֽנוּ, כִּי בְצָרָה גְדוֹלָה אֲנָֽחְנוּ. ' +
+  'אַל תֵּֽפֶן אֶל רִשְׁעֵֽנוּ, וְאַל תַּסְתֵּר פָּנֶֽיךָ מִמֶּֽנּוּ, וְאַל תִּתְעַלַּם מִתְּחִנָּתֵֽנוּ. ' +
+  'הֱיֵה נָא קָרוֹב לְשַׁוְעָתֵֽנוּ, יְהִי נָא חַסְדְּ֒ךָ לְנַחֲמֵֽנוּ, ' +
+  'טֶֽרֶם נִקְרָא אֵלֶֽיךָ עֲנֵֽנוּ. כַּדָּבָר שֶׁנֶּאֱמַר: וְהָיָה טֶֽרֶם יִקְרָֽאוּ וַאֲנִי אֶעֱנֶה, ' +
+  'עוֹד הֵם מְדַבְּ֒רִים וַאֲנִי אֶשְׁמָע: ' +
+  'כִּי אַתָּה יְהֹוָה הָעוֹנֶה בְּעֵת צָרָה, פּוֹדֶה וּמַצִּיל בְּכָל עֵת צָרָה וְצוּקָה. ' +
+  'בָּרוּךְ אַתָּה יְהֹוָה, הָעוֹנֶה בְּעֵת צָרָה:';
+
+/** Anenu — recited in Amidah on public fasts. By Sephardi/EM: individuals in
+ *  Shema Koleinu (silent). By Ashkenazi: Chazan only, as separate bracha in
+ *  chazaras between Geulah and Refuah. We render it as a labelled paragraph. */
+export function buildAnenuLeaf(): FlatLeaf {
+  return {
+    ref: 'Custom:Anenu',
+    he: 'ענני (תוספת לעמידה בתענית ציבור)',
+    en: 'Anenu (fast day Amidah insert)',
+    trail: [{ he: 'תוספות לתענית', en: 'Fast day additions' }],
+  };
+}
+
+// ============================ Purim Maariv additions ============================
+
+/** Asher Hani Atzat Goyim — recited after Maariv Amidah + Megillah on Purim night. */
+export function buildAsherHaniLeaf(): FlatLeaf {
+  return {
+    ref: 'Custom:AsherHani',
+    he: 'אשר הניא עצת גוים',
+    en: 'Asher Hani — recited after Maariv Megillah',
+    trail: [{ he: 'תוספות לפורים', en: 'Purim additions' }],
+  };
+}
+
+/** Shoshanat Yaakov — recited after Megillah reading. */
+export function buildShoshanatYaakovLeaf(): FlatLeaf {
+  return {
+    ref: 'Custom:ShoshanatYaakov',
+    he: 'שושנת יעקב',
+    en: 'Shoshanat Yaakov — recited after Megillah',
+    trail: [{ he: 'תוספות לפורים', en: 'Purim additions' }],
+  };
+}
+
+/** Purim Shacharit Torah reading — Vayavo Amalek (Exodus 17:8-16), 3 olim. */
+export function buildVayavoAmalekLeaves(): FlatLeaf[] {
+  const trail = [{ he: 'קריאת התורה לפורים — ויבא עמלק', en: 'Purim Torah Reading' }];
+  return [
+    { ref: 'Exodus 17:8-10', he: 'עליה ראשונה (כהן) — ויבא עמלק', en: 'Aliyah 1 (Cohen) — Exodus 17:8-10', trail },
+    { ref: 'Exodus 17:11-13', he: 'עליה שניה (לוי)', en: 'Aliyah 2 (Levi) — Exodus 17:11-13', trail },
+    { ref: 'Exodus 17:14-16', he: 'עליה שלישית (ישראל) — מחה אמחה', en: 'Aliyah 3 (Yisrael) — Exodus 17:14-16', trail },
+  ];
+}
+
+// ============================ Nachem (T"B Mincha Amidah insert) ============================
+
+/** Nachem — recited in Tisha B'Av Mincha Amidah's "v'lirushalayim ircha"
+ *  bracha. By Sephardi minhag, also in Shacharit. */
+export function buildNachemLeaf(): FlatLeaf {
+  return {
+    ref: 'Custom:Nachem',
+    he: 'נחם (תוספת לעמידה בתשעה באב)',
+    en: 'Nachem (Tisha B\'Av Mincha Amidah insert)',
+    trail: [{ he: 'תוספות לתשעה באב', en: 'Tisha B\'Av additions' }],
+  };
+}
+
+// ============================ Static text store ============================
+
+/** Map of synthetic refs → fully-formed Hebrew text with nikud. Used by
+ *  fetchSefariaText to return embedded content for "Custom:*" refs without
+ *  hitting the network. */
+export const CUSTOM_TEXTS: Record<string, string[]> = {
+  'Custom:Anenu': [ANENU_TEXT],
+  'Custom:AsherHani': [
+    'אֲשֶׁר הֵנִיא עֲצַת גּוֹיִם, וַיָּפֶר מַחְשְׁבוֹת עֲרוּמִים. ' +
+    'בְּקוּם עָלֵינוּ אָדָם רָשָׁע, נֵֽצֶר זָדוֹן מִזֶּֽרַע עֲמָלֵק. ' +
+    'גָּאָה בְעָשְׁרוֹ וְכָֽרָה לוֹ בּוֹר, וּגְדֻלָּתוֹ יָֽקְשָׁה לּוֹ לָֽכֶד. ' +
+    'דִּמָּה בְנַפְשׁוֹ לִלְכֹּד וְנִלְכַּד, בִּקֵּשׁ לְהַשְׁמִיד וְנִשְׁמַד מְהֵרָה. ' +
+    'הָמָן הוֹדִֽיעַ אֵיבַת אֲבוֹתָיו, וְעוֹרֵר שִׂנְאַת אַחִים לַבָּנִים. ' +
+    'וְלֹא זָכַר רַחֲמֵי שָׁאוּל, כִּי בְחֶמְלָתוֹ עַל אֲגָג נוֹלַד אוֹיֵב. ' +
+    'זָמַם רָשָׁע לְהַכְרִית צַדִּיק, וְנִלְכַּד טָמֵא בִּידֵי טָהוֹר. ' +
+    'חֶֽסֶד גָּבַר עַל שִׁגְגַת אָב, וְרָשָׁע הוֹסִיף חֵטְא עַל חֲטָאָיו. ' +
+    'טָמַן בְּלִבּוֹ מַחְשְׁבוֹת עַרְמוּמָיו, וַיִּתְמַכֵּר לַעֲשׂוֹת רָעָה. ' +
+    'יָדוֹ שָׁלַח בִּקְדוֹשֵׁי אֵל, כַּסְפּוֹ נָתַן לְהַכְרִית זִכְרָם. ' +
+    'כִּרְאוֹת מָרְדְּכַי כִּי יָצָא קֶֽצֶף, וְדָתֵי הָמָן נִתְּ֒נוּ בְשׁוּשָׁן. ' +
+    'לָבַשׁ שָׂק וְקָשַׁר מִסְפֵּד, וְגָזַר צוֹם וַיֵּשֶׁב עַל הָאֵֽפֶר. ' +
+    'מִי זֶה יַעֲמֹד לְכַפֵּר שְׁגָגָה, וְלִמְחֹל חַטַּאת עֲוֹן אֲבוֹתֵֽינוּ. ' +
+    'נֵץ פָּרַח מִלּוּלָב, הֵן הֲדַסָּה עָמְ֒דָה לְעוֹרֵר יְשֵׁנִים. ' +
+    'סָרִיסֶיהָ הִבְהִֽילוּ לְהָמָן, לְהַשְׁקוֹתוֹ יֵין חֲמַת תַּנִּינִים. ' +
+    'עָמַד בְּעָשְׁרוֹ וְנָפַל בְּרִשְׁעוֹ, עָֽשָׂה לוֹ עֵץ וְנִתְלָה עָלָיו. ' +
+    'פִּיהֶם פָּתְ֒חוּ כָּל יוֹשְׁבֵי תֵבֵל, כִּי פוּר הָמָן נֶהְפַּךְ לְפוּרֵֽנוּ. ' +
+    'צַדִּיק נֶחֱלַץ מִיַּד רָשָׁע, אוֹיֵב נִתַּן תַּֽחַת נַפְשׁוֹ. ' +
+    'קִיְּ֒מוּ עֲלֵיהֶם לַעֲשׂוֹת פּוּרִים, וְלִשְׂמֹֽחַ בְּכָל שָׁנָה וְשָׁנָה. ' +
+    'רָאִֽיתָ אֶת תְּפִלַּת מָרְדְּכַי וְאֶסְתֵּר, הָמָן וּבָנָיו עַל הָעֵץ תָּלִֽיתָ:',
+  ],
+  'Custom:ShoshanatYaakov': [
+    'שׁוֹשַׁנַּת יַעֲקֹב צָהֲלָה וְשָׂמֵֽחָה, בִּרְאוֹתָם יַֽחַד תְּכֵֽלֶת מָרְדְּכָי. ' +
+    'תְּשׁוּעָתָם הָיִֽיתָ לָנֶֽצַח, וְתִקְוָתָם בְּכָל דּוֹר וָדוֹר: ' +
+    'לְהוֹדִֽיעַ שֶׁכָּל קֹוֶֽיךָ לֹא יֵבֽוֹשׁוּ, וְלֹא יִכָּלְ֒מוּ לָנֶֽצַח כָּל הַחוֹסִים בָּךְ. ' +
+    'אָרוּר הָמָן אֲשֶׁר בִּקֵּשׁ לְאַבְּ֒דִי, בָּרוּךְ מָרְדְּכַי הַיְהוּדִי. ' +
+    'אֲרוּרָה זֶֽרֶשׁ אֵֽשֶׁת מַפְחִידִי, בְּרוּכָה אֶסְתֵּר מְגִנָּה בַּעֲדִי. ' +
+    'וְגַם חַרְבוֹנָה זָכוּר לַטּוֹב:',
+  ],
+  'Custom:Nachem': [
+    'נַחֵם יְהֹוָה אֱלֹהֵֽינוּ אֶת אֲבֵלֵי צִיּוֹן, וְאֶת אֲבֵלֵי יְרוּשָׁלָֽיִם, ' +
+    'וְאֶת הָעִיר הָאֲבֵלָה וְהַחֲרֵבָה, וְהַבְּזוּיָה וְהַשּׁוֹמֵמָה. ' +
+    'הָאֲבֵלָה מִבְּלִי בָנֶֽיהָ, וְהַחֲרֵבָה מִמְּעוֹנוֹתֶֽיהָ, וְהַבְּזוּיָה מִכְּבוֹדָהּ, ' +
+    'וְהַשּׁוֹמֵמָה מֵאֵין יוֹשֵׁב. ' +
+    'וְהִיא יוֹשֶֽׁבֶת וְרֹאשָׁהּ חָפוּי כְּאִשָּׁה עֲקָרָה שֶׁלֹּא יָלָֽדָה. ' +
+    'וַיְבַלְּ֒עֽוּהָ לִגְיוֹנוֹת, וַיִּירָשֽׁוּהָ עוֹבְ֒דֵי זָרִים, ' +
+    'וַיָּטִֽילוּ אֶת עַמְּ֒ךָ יִשְׂרָאֵל לֶחָֽרֶב, וַיַּהַרְגוּ בְזָדוֹן חֲסִידֵי עֶלְיוֹן. ' +
+    'עַל כֵּן צִיּוֹן בְּמַר תִּבְכֶּה, וִירוּשָׁלַֽיִם תִּתֵּן קוֹלָהּ. ' +
+    'לִבִּי לִבִּי עַל חַלְלֵיהֶם, מֵעַי מֵעַי עַל הֲרוּגֵיהֶם. ' +
+    'כִּי אַתָּה יְהֹוָה בָּאֵשׁ הִצַּתָּהּ, וּבָאֵשׁ אַתָּה עָתִיד לִבְנוֹתָהּ, ' +
+    'כָּאָמוּר: וַאֲנִי אֶהְיֶה לָּהּ נְאֻם יְהֹוָה חוֹמַת אֵשׁ סָבִיב, וּלְכָבוֹד אֶהְיֶה בְתוֹכָהּ. ' +
+    'בָּרוּךְ אַתָּה יְהֹוָה, מְנַחֵם צִיּוֹן וּבוֹנֵה יְרוּשָׁלָֽיִם:',
+  ],
+};

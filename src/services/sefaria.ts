@@ -35,6 +35,17 @@ async function saveCache(c: Cache): Promise<void> {
 }
 
 export async function fetchSefariaText(ref: string): Promise<SefariaText | null> {
+  // "Custom:Foo" refs are synthesized locally — embedded siddur content
+  // (Anenu, Asher Hani, Shoshanat Yaakov, Nachem) we add ourselves. Resolve
+  // these without hitting the network.
+  if (ref.startsWith('Custom:')) {
+    const { CUSTOM_TEXTS } = await import('../data/specialDayContent');
+    const text = CUSTOM_TEXTS[ref];
+    if (text) {
+      return { ref, heRef: ref, heText: text, url: '' };
+    }
+    return null;
+  }
   const cache = await loadCache();
   const cached = cache[ref];
   if (cached && Date.now() - cached.ts < 30 * 86_400_000) {

@@ -27,6 +27,15 @@ import {
   collectLeaves,
   getNusachTree,
 } from './siddurTree';
+import {
+  buildVayechalLeaves,
+  buildTishaBAvShacharitTorahLeaves,
+  buildTishaBAvHaftarah,
+  buildFastMinchaHaftarah,
+  buildNachemLeaf,
+  buildAsherHaniLeaf,
+  buildShoshanatYaakovLeaf,
+} from './specialDayContent';
 
 /* ────────────────────────── tree helpers ──────────────────────────── */
 
@@ -581,33 +590,81 @@ export function augmentLeavesForToday(
 ): FlatLeaf[] {
   if (!here?.en) return baseLeaves;
 
-  // Only act on Shacharit. Mincha/Maariv inserts (Yaaleh v'Yavo / Al haNisim
-  // / Anenu) live in the Amidah text — siddurParser handles them.
+  const ctx = buildCtx(date, inIsrael);
+
+  // Detect prayer kind so each augmenter applies only where relevant.
   const isWeekdayShacharit =
     /^Weekday Shacharit$/i.test(here.en) ||
     /^Shacharit$/i.test(here.en) || // Chabad
     /^Morning Service$/i.test(here.en);
-  if (!isWeekdayShacharit) return baseLeaves;
+  const isWeekdayMincha =
+    /^Weekday Min[ch]ah?$/i.test(here.en) ||
+    /^Min[ch]ah?$/i.test(here.en);
+  const isWeekdayMaariv =
+    /^Weekday Maariv$/i.test(here.en) ||
+    /^Weekday Arvit$/i.test(here.en) ||
+    /^Maariv$/i.test(here.en) ||
+    /^Arvit$/i.test(here.en);
 
-  const ctx = buildCtx(date, inIsrael);
-
-  // Priority order: RC > Chanukah > ChH"M > Purim > Fast.
-  // Only one match wins (you can't have ChH"M overlap with RC except RC Chol
-  // Hamoed which exists for Pesach 1+2 and Sukkot 1+2 — those are Yom Tov,
-  // not in the app).
   let out = baseLeaves;
-  if (ctx.isRC) out = augmentForRoshChodesh(out, nusach);
-  else if (ctx.isChanukah) out = augmentForChanukah(out, nusach, ctx);
-  else if (ctx.isCholHamoed) out = augmentForCholHamoed(out, nusach, ctx);
-  else if (ctx.isPurim) out = augmentForPurim(out, nusach);
-  // Fast days: Selichot + Vayechal Torah Reading live within Shacharit's
-  // existing leaf list (Sefaria includes them as date-gated paragraphs).
 
-  // Aseret Yemei Teshuva: prepend Shir HaMaalot mi'maamakim after Yishtabach
-  // — applies in ADDITION to whatever day-of-the-month modifier above.
-  if (ctx.isAseretYemeiTeshuva) {
-    out = injectShirHaMaalot(out);
+  if (isWeekdayShacharit) {
+    // Priority order: RC > Chanukah > ChH"M > Purim > Fast.
+    if (ctx.isRC) out = augmentForRoshChodesh(out, nusach);
+    else if (ctx.isChanukah) out = augmentForChanukah(out, nusach, ctx);
+    else if (ctx.isCholHamoed) out = augmentForCholHamoed(out, nusach, ctx);
+    else if (ctx.isPurim) out = augmentForPurim(out, nusach);
+    else if (ctx.isFast) out = augmentForFastShacharit(out, ctx);
+
+    // Aseret Yemei Teshuva: prepend Shir HaMaalot mi'maamakim after Yishtabach.
+    if (ctx.isAseretYemeiTeshuva) out = injectShirHaMaalot(out);
+  } else if (isWeekdayMincha) {
+    if (ctx.isFast) out = augmentForFastMincha(out, ctx);
+  } else if (isWeekdayMaariv) {
+    if (ctx.isPurim) out = augmentForPurimMaariv(out, nusach);
   }
 
   return out;
+}
+
+/** Fast day Shacharit — inject Vayechal Moshe Torah reading. For T"B replace
+ *  with Devarim 4:25-40 + Yirmiyahu Haftarah. Anenu lives inside the Amidah
+ *  text (Sefaria gates it as a conditional paragraph). */
+function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
+  // Tisha B'Av has its own Torah/Haftarah pair.
+  const isTishaBAv = ctx.hd.getMonth() === 5 && ctx.hd.getDate() === 9; // Av = month 5
+  const torahLeaves = isTishaBAv
+    ? [...buildTishaBAvShacharitTorahLeaves(), buildTishaBAvHaftarah()]
+    : buildVayechalLeaves();
+
+  // Inject after last Amidah-trail leaf (after Elokai Netzor of silent Amidah).
+  const amidahAnchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  if (amidahAnchor < 0) return leaves;
+  return injectAfter(leaves, amidahAnchor, torahLeaves);
+}
+
+/** Fast day Mincha — inject Vayechal + Haftarah (Dirshu) before/around Amidah.
+ *  For T"B Mincha also add Nachem reminder. */
+function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
+  const isTishaBAv = ctx.hd.getMonth() === 5 && ctx.hd.getDate() === 9;
+  const inject: FlatLeaf[] = [...buildVayechalLeaves(), buildFastMinchaHaftarah()];
+  if (isTishaBAv) inject.push(buildNachemLeaf());
+
+  // Inject between Ashrei/Uva Letzion and Amidah — Vayechal is read BEFORE
+  // the silent Amidah at Mincha. Find Amidah anchor and inject BEFORE it.
+  const amidahFirst = findFirstLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i);
+  const anchor = amidahFirst > 0 ? amidahFirst - 1 : leaves.length - 1;
+  return injectAfter(leaves, anchor, inject);
+}
+
+/** Purim Maariv — after Amidah inject Asher Hani + Shoshanat Yaakov. */
+function augmentForPurimMaariv(leaves: FlatLeaf[], _nusach: Nusach): FlatLeaf[] {
+  const amidahAnchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  if (amidahAnchor < 0) return leaves;
+  // Note: Aleinu link to Megillah tool is added by read.tsx via a link banner;
+  // here we just inject the post-Megillah text.
+  const inject = [buildAsherHaniLeaf(), buildShoshanatYaakovLeaf()];
+  return injectAfter(leaves, amidahAnchor, inject);
 }
