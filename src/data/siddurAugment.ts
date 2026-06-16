@@ -93,17 +93,18 @@ function buildCtx(date: Date, inIsrael: boolean): DayContext {
   const isChanukah = events.some((e) => /Chanukah|Hanukkah/i.test(e.getDesc()));
   const isPurim = events.some((e) => /Purim|Shushan/i.test(e.getDesc()));
 
-  let chanukahDay = 0;
-  if (isChanukah) {
-    const ch = events.find((e) => /Chanukah/i.test(e.getDesc()));
-    if (ch) {
-      const m = /Day (\d)/i.exec(ch.getDesc());
-      if (m) chanukahDay = parseInt(m[1], 10);
-    }
-  }
-
   const m = hd.getMonth();
   const d = hd.getDate();
+
+  // Compute Chanukah day from Hebrew date: 25 Kislev = Day 1, 26 Kislev = 2,
+  // ..., 2 Tevet = Day 8 (Kislev 30 day years) or 8 days from 25 Kislev (29
+  // day years). Hebcal's event description varies ("Chanukah: 1 Candle",
+  // "Chanukah Day N", etc.) so deriving from HDate is more reliable.
+  let chanukahDay = 0;
+  if (isChanukah) {
+    if (m === months.KISLEV && d >= 25) chanukahDay = d - 24;
+    else if (m === months.TEVET) chanukahDay = (hd.prev().getDate() === 29 ? 5 : 6) + d;
+  }
   const isPesach = isCholHamoed && m === months.NISAN;
   const isSukkot = isCholHamoed && m === months.TISHREI && d >= 15 && d <= 21;
   const isAseretYemeiTeshuva = m === months.TISHREI && d >= 1 && d <= 10;
