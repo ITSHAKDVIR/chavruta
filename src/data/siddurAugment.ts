@@ -82,6 +82,8 @@ type DayContext = {
   isMonOrThu: boolean;
   isAseretYemeiTeshuva: boolean;
   chanukahDay: number;        // 1..8 (0 = not chanukah)
+  isYomAtzmaut: boolean;      // Hallel (with bracha) + Haftarah, no Musaf
+  isYomYerushalayim: boolean; // Hallel (with bracha), no Musaf
 };
 
 function buildCtx(date: Date, inIsrael: boolean): DayContext {
@@ -110,6 +112,10 @@ function buildCtx(date: Date, inIsrael: boolean): DayContext {
   const isPesach = isCholHamoed && m === months.NISAN;
   const isSukkot = isCholHamoed && m === months.TISHREI && d >= 15 && d <= 21;
   const isAseretYemeiTeshuva = m === months.TISHREI && d >= 1 && d <= 10;
+  // Yom HaAtzmaut / Yom Yerushalayim — hebcal places the event on the OBSERVED
+  // day (handles the Fri/Sat/Mon shift), so detect by event description.
+  const isYomAtzmaut = events.some((e) => /Yom HaAtzma|Atzma'?ut/i.test(e.getDesc()));
+  const isYomYerushalayim = events.some((e) => /Yom Yerushalayim|Jerusalem Day/i.test(e.getDesc()));
 
   return {
     date,
@@ -125,6 +131,8 @@ function buildCtx(date: Date, inIsrael: boolean): DayContext {
     isMonOrThu: date.getDay() === 1 || date.getDay() === 4,
     isAseretYemeiTeshuva,
     chanukahDay,
+    isYomAtzmaut,
+    isYomYerushalayim,
   };
 }
 
@@ -481,6 +489,36 @@ function augmentForChanukah(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext)
   return out;
 }
 
+/** Yom HaAtzmaut Haftarah — "עוד היום בנוב לעמוד" (Isaiah 10:32-12:6). */
+function buildYomAtzmautHaftarah(): FlatLeaf {
+  return {
+    ref: 'Isaiah 10:32-12:6',
+    he: 'הפטרה ליום העצמאות — עוד היום בנֹב לעמֹד',
+    en: 'Yom HaAtzmaut Haftarah — Isaiah 10:32-12:6',
+    trail: [{ he: 'הפטרת יום העצמאות', en: 'Yom HaAtzmaut Haftarah' }],
+  };
+}
+
+/**
+ * Yom HaAtzmaut / Yom Yerushalayim — Shacharit (religious-Zionist minhag,
+ * per R. Dvir): FULL Hallel WITH a bracha → Half Kaddish (no Musaf these days)
+ * → on Yom HaAtzmaut also the Haftarah "עוד היום בנֹב". Injected after the
+ * Amidah, like the other Hallel days.
+ */
+function augmentForYomHaatzmaut(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext): FlatLeaf[] {
+  const inject: FlatLeaf[] = [
+    ...buildFullHallelLeaves(nusach),       // includes the berakhah before/after
+    buildHallelClosingKaddish(false),       // no Musaf → Half Kaddish
+  ];
+  if (ctx.isYomAtzmaut) inject.push(buildYomAtzmautHaftarah());
+
+  let anchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  if (anchor < 0) anchor = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  if (anchor < 0) return leaves;
+  return injectAfter(leaves, anchor, inject);
+}
+
 /**
  * Chol HaMoed Pesach or Sukkot — Shacharit.
  *
@@ -672,12 +710,13 @@ export function augmentLeavesForToday(
   let out = baseLeaves;
 
   if (isWeekdayShacharit) {
-    // Priority order: RC > Chanukah > ChH"M > Purim > Fast.
+    // Priority order: RC > Chanukah > ChH"M > Purim > Fast > Yom HaAtzmaut/Yerushalayim.
     if (ctx.isRC) out = augmentForRoshChodesh(out, nusach, ctx);
     else if (ctx.isChanukah) out = augmentForChanukah(out, nusach, ctx);
     else if (ctx.isCholHamoed) out = augmentForCholHamoed(out, nusach, ctx);
     else if (ctx.isPurim) out = augmentForPurim(out, nusach);
     else if (ctx.isFast) out = augmentForFastShacharit(out, ctx, nusach);
+    else if (ctx.isYomAtzmaut || ctx.isYomYerushalayim) out = augmentForYomHaatzmaut(out, nusach, ctx);
 
     // (Shir HaMaalot for AYT is native to every nusach's text — not injected.)
   } else if (isWeekdayMincha) {
