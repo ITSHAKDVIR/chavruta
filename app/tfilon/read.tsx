@@ -118,16 +118,25 @@ function filterDailyPsalmForToday(lines: string[], dow: number): string[] {
  */
 function filterOmerForToday(lines: string[], omerCount: number | null): string[] {
   if (!omerCount) return lines; // unknown / not in omer — leave as-is
-  const out: string[] = [];
-  for (const l of lines) {
-    const bare = l.replace(/<[^>]+>/g, '').replace(NIKUD_RX, '');
-    // Sefard counts "...לעמר", Ashkenaz "...בעמר" (la/ba-omer); accept both.
-    const isDayLine = /\d+\.\s*היום/.test(bare) && /[לב]ע[ֹו]?מר/.test(bare);
-    if (!isDayLine) { out.push(l); continue; }
-    const m = bare.match(/(\d+)\.\s*היום/);
-    if (m && parseInt(m[1], 10) === omerCount) out.push(l);
+  const bareOf = (l: string) => l.replace(/<[^>]+>/g, '').replace(NIKUD_RX, '');
+  // A day-count line ends "...לעמר/בעמר" (Sefard la- / Ashkenaz ba-omer); the
+  // count phrasing varies — "19. היום..." (Sefard/Ashkenaz, numbered) or
+  // "תשעה עשר יום לעמר..." (Edot HaMizrach, no number, "היום" sits on the bracha
+  // line). Match any omer line that isn't the bracha ("...ספירת העמר").
+  const dayIdx = lines
+    .map((l, i) => ({ i, b: bareOf(l) }))
+    .filter(({ b }) => /[לב]ע[ֹו]?מר/.test(b) && !/ספירת/.test(b))
+    .map(({ i }) => i);
+  if (dayIdx.length === 0) return lines;
+  // Pick the line whose explicit "N." equals the count; else the Nth in order.
+  let keepIdx = -1;
+  for (const i of dayIdx) {
+    const m = bareOf(lines[i]).match(/(\d+)\.\s*היום/);
+    if (m && parseInt(m[1], 10) === omerCount) { keepIdx = i; break; }
   }
-  return out;
+  if (keepIdx < 0 && dayIdx.length >= omerCount) keepIdx = dayIdx[omerCount - 1];
+  const drop = new Set(dayIdx.filter((i) => i !== keepIdx));
+  return lines.filter((_, i) => !drop.has(i));
 }
 
 type LoadedLeaf = FlatLeaf & {
