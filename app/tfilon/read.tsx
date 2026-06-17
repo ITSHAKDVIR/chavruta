@@ -451,6 +451,15 @@ export default function SiddurReader() {
       const uid = `${idx}:${leaf.ref}`;
       (async () => {
         try {
+          // Synthesized leaves with inline text (YH Maariv piyutim, etc.) — use
+          // the embedded lines verbatim, no Sefaria fetch.
+          if (leaf.inlineHe && leaf.inlineHe.length > 0) {
+            const parsed = parseParagraphs(leaf.inlineHe);
+            setLeaves((prev) =>
+              prev.map((l) => (l.uid === uid ? { ...l, paragraphs: parsed, loading: false } : l)),
+            );
+            return;
+          }
           const t = await fetchSefariaText(leaf.ref);
           if (cancelled) return;
           if (t && t.heText.length > 0) {

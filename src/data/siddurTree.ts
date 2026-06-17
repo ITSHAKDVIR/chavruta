@@ -69,6 +69,10 @@ export type FlatLeaf = {
   en: string;
   /** Breadcrumb of parent labels (excluding the leaf itself) within the queried sub-tree. */
   trail: { he: string; en: string }[];
+  /** Synthesized leaves whose text is NOT in Sefaria (piyutim like התעוורי /
+   *  התקווה / אני מאמין). When present, the reader uses these lines verbatim
+   *  instead of fetching `ref`. Each string is one paragraph (parsed normally). */
+  inlineHe?: string[];
 };
 
 export function collectLeaves(node: SiddurNode, trail: { he: string; en: string }[] = []): FlatLeaf[] {

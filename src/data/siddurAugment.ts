@@ -520,6 +520,82 @@ function augmentForYomHaatzmaut(leaves: FlatLeaf[], nusach: Nusach, ctx: DayCont
 }
 
 /**
+ * Yom HaAtzmaut Maariv (religious-Zionist minhag, per R. Dvir — source sheet
+ * Sefaria 310233). The night service adds, around the regular Maariv:
+ *  BEFORE: opening psalms 107/97/98 (in the festival tune) + the piyut התעוררי.
+ *  AFTER the Amidah: Hallel WITH a berakhah (a widespread custom) → the
+ *    ceremonial opening of the ark (שמע ישראל / ה' הוא האלהים / מי שעשה נסים /
+ *    וכי תבאו מלחמה) → תהלים קכ"ו.
+ *  AT THE END (after Aleinu): אני מאמין + התקווה.
+ * The regular Maariv's omer count, Ps 67/Ana BeKoach and Aleinu are native to
+ * the nusach text, so they're NOT re-injected here.
+ */
+const YH_TRAIL = [{ he: 'ערבית ליום העצמאות', en: 'Yom HaAtzmaut Maariv' }];
+
+function buildYomAtzmautMaarivOpening(): FlatLeaf[] {
+  const hitoreri = [
+    'הִתְעוֹרְרִי, הִתְעוֹרְרִי, כִּי בָא אוֹרֵךְ קוּמִי אוֹרִי, עוּרִי עוּרִי שִׁיר דַּבֵּרִי, כְּבוֹד יהוה עָלַיִךְ נִגְלָה:',
+    'זֶה הַיּוֹם עָשָׂה יהוה, נָגִילָה וְנִשְׂמְחָה בּוֹ:',
+    'לֹא תֵבוֹשִׁי וְלֹא תִכָּלְמִי, מַה תִּשְׁתּוֹחֲחִי וּמַה תֶּהֱמִי, בָּךְ יֶחֱסוּ עֲנִיֵּי עַמִּי, וְנִבְנְתָה עִיר עַל תִּלָּהּ:',
+    'זֶה הַיּוֹם עָשָׂה יהוה, נָגִילָה וְנִשְׂמְחָה בּוֹ:',
+    'יָמִין וּשְׂמֹאל תִּפְרוֹצִי, וְאֶת יהוה תַּעֲרִיצִי, עַל יַד אִישׁ בֶּן פַּרְצִי, וְנִשְׂמְחָה וְנָגִילָה:',
+    'זֶה הַיּוֹם עָשָׂה יהוה, נָגִילָה וְנִשְׂמְחָה בּוֹ:',
+  ];
+  return [
+    { ref: 'Psalms 107:1-43', he: 'מזמורי פתיחה (במנגינת יום טוב) — תהלים ק״ז', en: 'Yom HaAtzmaut Maariv — Psalm 107', trail: YH_TRAIL },
+    { ref: 'Psalms 97:1-12', he: 'תהלים צ״ז', en: 'Yom HaAtzmaut Maariv — Psalm 97', trail: YH_TRAIL },
+    { ref: 'Psalms 98:1-9', he: 'תהלים צ״ח', en: 'Yom HaAtzmaut Maariv — Psalm 98', trail: YH_TRAIL },
+    { ref: 'yh-maariv-hitoreri', he: 'פיוט: הִתְעוֹרְרִי הִתְעוֹרְרִי', en: 'Yom HaAtzmaut Maariv — Hitoreri', trail: YH_TRAIL, inlineHe: hitoreri },
+  ];
+}
+
+function buildYomAtzmautMaarivPostAmidah(nusach: Nusach): FlatLeaf[] {
+  const shema = [
+    'חזן וקהל: שְׁמַע יִשְׂרָאֵל יהוה אֱלֹהֵינוּ יהוה אֶחָד:',
+    'יהוה הוּא הָאֱלֹהִים:',
+    'מִי שֶׁעָשָׂה נִסִּים לַאֲבוֹתֵינוּ וְגָאַל אוֹתָם מֵעַבְדוּת לְחֵרוּת, הוּא יִגְאַל אוֹתָנוּ בְּקָרוֹב וִיקַבֵּץ נִדָּחֵינוּ מֵאַרְבַּע כַּנְפוֹת הָאָרֶץ, חֲבֵרִים כָּל יִשְׂרָאֵל, וְנֹאמַר אָמֵן:',
+  ];
+  return [
+    // The night-Hallel custom (with a berakhah for those who say it).
+    ...buildFullHallelLeaves(nusach).map((l) => ({
+      ...l,
+      he: l.en === 'Berakhah before the Hallel' ? 'הלל (יש הנוהגים בערב יום העצמאות — ובברכה)' : l.he,
+      trail: YH_TRAIL,
+    })),
+    { ref: 'yh-maariv-shema', he: 'פתיחת ההיכל: שמע ישראל', en: 'Yom HaAtzmaut Maariv — Shema', trail: YH_TRAIL, inlineHe: shema },
+    { ref: 'Numbers 10:9-10', he: 'וְכִי תָבֹאוּ מִלְחָמָה (במדבר י׳)', en: 'Yom HaAtzmaut Maariv — Numbers 10:9-10', trail: YH_TRAIL },
+    { ref: 'Psalms 126:1-6', he: 'שִׁיר הַמַּעֲלוֹת — תהלים קכ״ו', en: 'Yom HaAtzmaut Maariv — Psalm 126', trail: YH_TRAIL },
+  ];
+}
+
+function buildYomAtzmautMaarivClosing(): FlatLeaf[] {
+  const aniMaamin = [
+    'מסיימים בשירת "אני מאמין" ו"התקווה".',
+    'אֲנִי מַאֲמִין בֶּאֱמוּנָה שְׁלֵמָה בְּבִיאַת הַמָּשִׁיחַ, וְאַף עַל פִּי שֶׁיִּתְמַהְמֵהַּ, עִם כָּל זֶה אֲחַכֶּה לּוֹ בְּכָל יוֹם שֶׁיָּבוֹא:',
+    'כֹּל עוֹד בַּלֵּבָב פְּנִימָה נֶפֶשׁ יְהוּדִי הוֹמִיָּה, וּלְפַאֲתֵי מִזְרָח קָדִימָה עַיִן לְצִיּוֹן צוֹפִיָּה —',
+    'עוֹד לֹא אָבְדָה תִּקְוָתֵנוּ, הַתִּקְוָה בַּת שְׁנוֹת אַלְפַּיִם, לִהְיוֹת עַם חָפְשִׁי בְּאַרְצֵנוּ, אֶרֶץ צִיּוֹן וִירוּשָׁלַיִם:',
+  ];
+  return [
+    { ref: 'yh-maariv-animaamin', he: 'סיום: אֲנִי מַאֲמִין וְהַתִּקְוָה', en: 'Yom HaAtzmaut Maariv — Ani Maamin & Hatikvah', trail: YH_TRAIL, inlineHe: aniMaamin },
+  ];
+}
+
+function augmentForYomHaatzmautMaariv(leaves: FlatLeaf[], nusach: Nusach): FlatLeaf[] {
+  const opening = buildYomAtzmautMaarivOpening();
+  const postAmidah = buildYomAtzmautMaarivPostAmidah(nusach);
+  const closing = buildYomAtzmautMaarivClosing();
+
+  // Inject the Hallel/Shema block right after the Maariv Amidah (before the
+  // native omer/Aleinu). If there's no Amidah anchor (monolithic Maariv leaf),
+  // append it after the body instead.
+  let anchor = findLastLeafByTrail(leaves, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
+    /Post[\s-]?Amid|שלאחר.עמידה/i);
+  if (anchor < 0) anchor = findFirstLeafByName(leaves, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
+  const withPost = anchor >= 0 ? injectAfter(leaves, anchor, postAmidah) : [...leaves, ...postAmidah];
+  return [...opening, ...withPost, ...closing];
+}
+
+/**
  * Chol HaMoed Pesach or Sukkot — Shacharit.
  *
  * Per spec A4:
@@ -747,6 +823,7 @@ export function augmentLeavesForToday(
       return true;
     });
     if (ctx.isPurim) out = augmentForPurimMaariv(out, nusach);
+    else if (ctx.isYomAtzmaut || ctx.isYomYerushalayim) out = augmentForYomHaatzmautMaariv(out, nusach);
   }
 
   return out;
