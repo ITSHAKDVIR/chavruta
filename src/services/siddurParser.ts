@@ -144,13 +144,18 @@ export function markerToTags(marker: string): ConditionTag[] {
   // Hebrew weekday letters: א=Sun, ב=Mon, ג=Tue, ד=Wed, ה=Thu, ו=Fri, ש/שבת=Sat.
   // Used heavily in Hoshanot — the order depends on which day of Sukkot falls
   // on which weekday in the current year.
-  if (/(כשחל|אם חל|חל)\s*ביום\s*א/.test(m)) tags.push('fell-sun');
-  if (/(כשחל|אם חל|חל)\s*ביום\s*ב/.test(m)) tags.push('fell-mon');
-  if (/(כשחל|אם חל|חל)\s*ביום\s*ג/.test(m)) tags.push('fell-tue');
-  if (/(כשחל|אם חל|חל)\s*ביום\s*ד/.test(m)) tags.push('fell-wed');
-  if (/(כשחל|אם חל|חל)\s*ביום\s*ה/.test(m)) tags.push('fell-thu');
-  if (/(כשחל|אם חל|חל)\s*ביום\s*ו/.test(m)) tags.push('fell-fri');
-  if (/(כשחל|אם חל|חל)\s*(ביום\s*ש|בשבת)/.test(m)) tags.push('fell-sat');
+  // The Sephardi "Order of Hoshanot" rubrics phrase it as
+  // "אם חל יום ראשון של סוכות ביום ב'", so allow that optional middle between
+  // the verb and "ביום X" (without it the simple "אם חל ביום X" still matches).
+  const fellMid = '(?:\\s+יום\\s+ראשון(?:\\s+של\\s+סוכות)?)?\\s*';
+  const fellRx = (day: string) => new RegExp(`(כשחל|אם חל|חל)${fellMid}${day}`);
+  if (fellRx('ביום\\s*א').test(m)) tags.push('fell-sun');
+  if (fellRx('ביום\\s*ב').test(m)) tags.push('fell-mon');
+  if (fellRx('ביום\\s*ג').test(m)) tags.push('fell-tue');
+  if (fellRx('ביום\\s*ד').test(m)) tags.push('fell-wed');
+  if (fellRx('ביום\\s*ה').test(m)) tags.push('fell-thu');
+  if (fellRx('ביום\\s*ו').test(m)) tags.push('fell-fri');
+  if (fellRx('(?:ביום\\s*ש|בשבת)').test(m)) tags.push('fell-sat');
 
   return tags;
 }

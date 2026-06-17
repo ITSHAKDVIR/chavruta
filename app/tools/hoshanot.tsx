@@ -51,6 +51,44 @@ function isShabbat(date: Date): boolean {
   return date.getDay() === 6;
 }
 
+/**
+ * The Sephardi "Order of Hoshanot" leaf lists FOUR alternative orders, keyed by
+ * the weekday the 1st day of Sukkot (15 Tishrei) fell on:
+ *   "אם חל יום ראשון של סוכות ביום ב'/ג'/ה'/בשבת אומרים זה הסדר".
+ * Only Mon/Tue/Thu/Sat are possible (לא אד"ו). Keep only this year's order
+ * (rubric + its incipit line) and the intro/closing lines; drop the others, so
+ * the reader sees the one order that actually applies. `day1wd` = JS weekday
+ * (0=Sun..6=Sat) of 15 Tishrei.
+ */
+function filterHoshanotOrder(lines: string[], day1wd: number): string[] {
+  const tokenRx: Record<number, RegExp> = {
+    1: /ביום ב/, // Monday
+    2: /ביום ג/, // Tuesday
+    4: /ביום ה/, // Thursday
+    6: /בשבת/, // Saturday
+  };
+  const myToken = tokenRx[day1wd];
+  if (!myToken) return lines; // impossible / unknown day → leave as-is
+  const bareOf = (l: string) => l.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '');
+  // NB: \b doesn't work after Hebrew letters (they aren't \w), so match the
+  // rubric phrasing literally: "(ו)אם חל ... ביום X / בשבת".
+  const isRubric = (b: string) => /(אם\s+חל|חל\s+יום)/.test(b) && /(ביום [בגהד]|בשבת)/.test(b);
+  const out: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const bare = bareOf(lines[i]);
+    if (isRubric(bare)) {
+      if (myToken.test(bare)) {
+        out.push(lines[i]);
+        if (i + 1 < lines.length) out.push(lines[i + 1]); // its incipit line
+      }
+      i++; // consume the incipit line either way
+      continue;
+    }
+    out.push(lines[i]);
+  }
+  return out;
+}
+
 export default function HoshanotScreen() {
   const router = useRouter();
   const { location } = useLocation();
@@ -88,6 +126,24 @@ export default function HoshanotScreen() {
     return SEPHARDI_REFS[selectedSephardiIdx]?.ref ?? null;
   }, [nusach, selectedDay, selectedSephardiIdx]);
 
+  // The Sephardi "Order of Hoshanot" view (idx 0) is the order-table leaf — it
+  // needs filtering to this year's order, and its (un-vocalized) incipits should
+  // show without forcing the "halachic notes" toggle.
+  const isOrderView = nusach === 'sephardi' && selectedSephardiIdx === 0;
+
+  // Weekday (0=Sun..6=Sat) that day 1 of the upcoming/current Sukkot falls on.
+  const firstDayWeekday = useMemo(() => {
+    const hd = new HDateForCalc(new Date());
+    let year = hd.getFullYear();
+    const inCurrentSukkot = hd.getMonth() === monthsForCalc.TISHREI && hd.getDate() <= 22;
+    if (!inCurrentSukkot) year++;
+    try {
+      return new HDateForCalc(15, monthsForCalc.TISHREI, year).greg().getDay();
+    } catch {
+      return new Date().getDay();
+    }
+  }, []);
+
   useEffect(() => {
     if (!refToFetch) {
       setParagraphs([]);
@@ -98,14 +154,16 @@ export default function HoshanotScreen() {
     fetchSefariaText(refToFetch)
       .then((t) => {
         if (t && t.heText.length > 0) {
-          setParagraphs(parseParagraphs(t.heText));
+          let lines = t.heText;
+          if (isOrderView) lines = filterHoshanotOrder(lines, firstDayWeekday);
+          setParagraphs(parseParagraphs(lines));
         } else {
           setError('הטקסט לא נטען');
         }
       })
       .catch(() => setError('שגיאת רשת'))
       .finally(() => setLoading(false));
-  }, [refToFetch]);
+  }, [refToFetch, isOrderView, firstDayWeekday]);
 
   // Determine the Gregorian weekday on which "Day N of Sukkot" falls this year.
   // Sukkot starts on 15 Tishrei. We need the upcoming Sukkot (or current, if we're
@@ -295,7 +353,9 @@ export default function HoshanotScreen() {
           {paragraphs.length > 0 && (
             <Card padding="xl">
               {paragraphs.map((p, j) => {
-                if (!shouldRender(p, active, { showAll, showNotes })) return null;
+                // The Order-of-Hoshanot incipits are un-vocalized by nature, so
+                // show them without requiring the "halachic notes" toggle.
+                if (!shouldRender(p, active, { showAll, showNotes: showNotes || isOrderView })) return null;
                 if (p.kind === 'halachic-note') {
                   return <Text key={j} style={[typography.small, styles.note]}>{p.body}</Text>;
                 }
