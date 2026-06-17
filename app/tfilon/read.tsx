@@ -1140,6 +1140,65 @@ export default function SiddurReader() {
                           );
                         })}
                     </View>
+                    {/* Monolithic Amidah (Edot HaMizrach / Chabad — no <b> split,
+                        so no per-bracha chazara). Per R. Dvir: a collapse that
+                        REPEATS the whole Amidah with the chazara-only lines and the
+                        קהל/חזן/"בחזרת הש״ץ" labels shown (showNotes + chazara). */}
+                    {prefs.withMinyan && !isMaarivLeaf(leaf) &&
+                     leaf.paragraphs && leaf.paragraphs.length > 0 &&
+                     (/^(Amid(ah|a)|The Amidah)$/i.test(leaf.en.trim()) ||
+                      /^(עמידה|תפילת עמידה|שמונה עשרה)$/.test((leaf.he || '').trim())) ? (() => {
+                      const open = chazaraOpenIdx.has(idx);
+                      return (
+                        <View style={{ marginTop: spacing.lg, marginBottom: spacing.md }}>
+                          <Pressable
+                            onPress={() => setChazaraOpenIdx((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(idx)) next.delete(idx); else next.add(idx);
+                              return next;
+                            })}
+                            style={styles.inlineNextLink}
+                            hitSlop={6}
+                          >
+                            <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>
+                              🕊  חזרת הש״ץ {open ? '▾' : '▸'}
+                            </Text>
+                            <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                              {open ? 'סגור חזרת הש״ץ' : 'לחץ להציג — חזרה על כל העמידה, כולל קדושה ומודים דרבנן'}
+                            </Text>
+                          </Pressable>
+                          {open ? (
+                            <View style={styles.chazaraBlock}>
+                              <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginBottom: spacing.md }]}>
+                                ⟦ חזרת הש״ץ — כל העמידה עם קדושה, מודים דרבנן והתוויות ⟧
+                              </Text>
+                              {leaf.paragraphs.map((p, k) => {
+                                if (!shouldRender(p, active, { showAll, showNotes: true, chazara: true })) return null;
+                                if (p.kind === 'halachic-note') {
+                                  return <Text key={k} style={[typography.small, styles.halachicNote]}>{p.body}</Text>;
+                                }
+                                if (p.kind === 'conditional' || p.kind === 'alternative') {
+                                  const body = enhanceConditionalText(p, today, inIsrael);
+                                  const inSeason = !p.tags || p.tags.length === 0 ||
+                                    p.tags.includes('unknown') || p.tags.includes('chazara-only') ||
+                                    p.tags.some((t) => active.has(t));
+                                  return (
+                                    <View key={k} style={[styles.conditionalBlock, !inSeason && styles.conditionalBlockMuted]}>
+                                      {p.marker ? (
+                                        <Text style={[typography.caption, styles.conditionalMarker]}>🔹 {p.marker}{!inSeason ? ' · לא היום' : ''}</Text>
+                                      ) : null}
+                                      <Text style={[typography.sacred, styles.paragraph, inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted]}>{body}</Text>
+                                    </View>
+                                  );
+                                }
+                                const unvoc = !hasNikud(p.body);
+                                return <Text key={k} style={[unvoc ? styles.rubric : typography.sacred, styles.paragraph]}>{stripInactiveInlineParens(p.body, active)}</Text>;
+                              })}
+                            </View>
+                          ) : null}
+                        </View>
+                      );
+                    })() : null}
                     {/* Inline COLLAPSE AFTER אלוקי נצור: חזרת הש"ץ.
                         Renders at EACH אלוקי נצור position (silent Shacharit
                         + silent Musaf on RC). Each collapse pulls the leaves of
