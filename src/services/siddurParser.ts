@@ -175,6 +175,20 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
   let txt = decodeEntities(raw).trim();
   txt = stripFormatting(txt);
 
+  // Modim DeRabbanan (kahal's chazara response) — detect by its unique signature
+  // regardless of wrapping, BEFORE any other logic. It appears as a single
+  // <small> (EM/Chabad Shacharit), or as a "מודים דרבנן <br><small>rubric</small>
+  // <br><small>text</small>" line (EM Mincha). "אלהי כל בשר" is unique to it, so
+  // this never matches the regular silent Modim. Always chazara-only.
+  {
+    const mdrBare = txt.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '');
+    if (/מודים אנחנו לך[,\s]*שאתה/.test(mdrBare) &&
+        /(אלהי כל.?בשר|יוצרנו.{0,2}יוצר בראשית)/.test(mdrBare)) {
+      const body = txt.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      return { body, kind: 'conditional', marker: 'מודים דרבנן (הקהל בחזרת הש״ץ)', tags: ['chazara-only'] };
+    }
+  }
+
   // Case A: whole paragraph wrapped in a SINGLE <small>...</small>. The inner
   // must not itself contain "</small>" — otherwise (with a lazy [\s\S]*?) the
   // match backtracks to the LAST </small> and swallows a line that is really
@@ -183,24 +197,8 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
   const wholeSmall = /^<small>((?:(?!<\/small>)[\s\S])*)<\/small>\s*$/i.exec(txt);
   if (wholeSmall) {
     const inner = wholeSmall[1].trim();
-    // Modim DeRabbanan (kahal's chazara response) — checked BEFORE isMarkerPhrase
-    // because Chabad glues the "מודים דרבנן" label onto the text, which would
-    // otherwise be diverted as a marker. "אלהי כל בשר" is unique to it, so this
-    // never catches the regular silent Modim.
-    {
-      const mdBare = inner.replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
-      // "כל־בשר" with a maqaf strips to "כלבשר" (no space), and Chabad writes
-      // "יוצרנו, יוצר" with a comma — so allow optional separators.
-      if (/מודים אנחנו לך[,\s]*שאתה/.test(mdBare) &&
-          /(אלהי כל.?בשר|יוצרנו.{0,2}יוצר בראשית)/.test(mdBare)) {
-        return {
-          body: inner.replace(/<\/?[a-zA-Z][^>]*>/g, '').trim(),
-          kind: 'conditional',
-          marker: 'מודים דרבנן (הקהל בחזרת הש״ץ)',
-          tags: ['chazara-only'],
-        };
-      }
-    }
+    // (Modim DeRabbanan is handled by the signature check at the top of this
+    // function, before the wholeSmall branch.)
     // Sub-case: marker-only (directive that will apply to following paragraphs).
     // If markerToTags found a date condition → 'marker-only' (consumes 1 paragraph).
     // If no date tags → RUBRIC (e.g. "ואומר החזן חצי קדיש"): applies to ALL
