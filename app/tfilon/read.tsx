@@ -1174,8 +1174,23 @@ export default function SiddurReader() {
                               ⟦ {label} — כל הברכות עם קדושה ומודים דרבנן ⟧
                             </Text>
                             {leaves
-                              .filter((l) => isAmidahLeaf(l) && !isConcludingPassage(l)
-                                && (isMusafAmidahLeaf(l) === isMyMusafChazara))
+                              .filter((l) => {
+                                if (!(isAmidahLeaf(l) && !isConcludingPassage(l)
+                                  && (isMusafAmidahLeaf(l) === isMyMusafChazara))) return false;
+                                // Ashkenaz: the Kedushah leaf is self-contained — its
+                                // "לדור ודור" runs through "...כי אל מלך גדול וקדוש אתה:
+                                // ברוך אתה ה' האל הקדוש". So in the chazara we say לדור
+                                // ודור, NOT the silent "אתה קדוש ושמך קדוש"; drop the
+                                // separate "Holiness of God" leaf. (Sefard's Kedushah has
+                                // no לדור ודור, so its קדושת השם stays in the chazara.)
+                                const isHoG = /^Holiness of God$/i.test(l.en) || /^קדושת השם$/.test(l.he);
+                                if (isHoG && leaves.some((k) =>
+                                  isKedushahLeaf(k) && (isMusafAmidahLeaf(k) === isMyMusafChazara) &&
+                                  k.paragraphs?.some((p) => /לדור ודור נגיד גדלך/.test((p.body || '').replace(/[֑-ׇ]/g, ''))))) {
+                                  return false;
+                                }
+                                return true;
+                              })
                               .map((cleaf, j) => (
                               <View key={`chazara-${cleaf.ref}-${j}`} style={{ marginBottom: spacing.sm }}>
                                 <Text style={[typography.h3, styles.sectionTitle]}>{cleaf.he || cleaf.en}</Text>
