@@ -167,8 +167,12 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
   let txt = decodeEntities(raw).trim();
   txt = stripFormatting(txt);
 
-  // Case A: whole paragraph wrapped in <small>...</small>
-  const wholeSmall = /^<small>([\s\S]*?)<\/small>\s*$/i.exec(txt);
+  // Case A: whole paragraph wrapped in a SINGLE <small>...</small>. The inner
+  // must not itself contain "</small>" — otherwise (with a lazy [\s\S]*?) the
+  // match backtracks to the LAST </small> and swallows a line that is really
+  // "<small>label</small> text <small>kavana</small>" (e.g. the Sefirat HaOmer
+  // day lines), wrongly treating the whole thing as one small note.
+  const wholeSmall = /^<small>((?:(?!<\/small>)[\s\S])*)<\/small>\s*$/i.exec(txt);
   if (wholeSmall) {
     const inner = wholeSmall[1].trim();
     // Sub-case: marker-only (directive that will apply to following paragraphs).

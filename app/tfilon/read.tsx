@@ -38,7 +38,7 @@ import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stri
 import { ANENU_TEXT } from '../../src/data/specialDayContent';
 import { CholimReminder } from '../../src/components/CholimReminder';
 import { getInsertsForDate, TefilaInsert } from '../../src/data/tefilaInserts';
-import { computeZmanim } from '../../src/data/hebcal';
+import { computeZmanim, omerDay } from '../../src/data/hebcal';
 import { getPrayerKind } from '../../src/data/prayerTimeWindows';
 import { PrayerTimeBanner } from '../../src/components/PrayerTimeBanner';
 import { colors, radius, spacing } from '../../src/theme/colors';
@@ -109,6 +109,24 @@ function filterDailyPsalmForToday(lines: string[], dow: number): string[] {
   const introEnd = markerIdxs[0].idx;
   const sectionEnd = nextMarker ? nextMarker.idx : lines.length;
   return [...lines.slice(0, introEnd), ...lines.slice(myMarker.idx, sectionEnd)];
+}
+
+/**
+ * Sefirat HaOmer leaves list ALL 49 day-counts. Keep only TONIGHT's count
+ * (`omerCount`) plus the non-day lines (intro, bracha, closing tefilot), so
+ * the reader isn't shown all 49. Each day line looks like "N. היום ... לעמר:".
+ */
+function filterOmerForToday(lines: string[], omerCount: number | null): string[] {
+  if (!omerCount) return lines; // unknown / not in omer — leave as-is
+  const out: string[] = [];
+  for (const l of lines) {
+    const bare = l.replace(/<[^>]+>/g, '').replace(NIKUD_RX, '');
+    const isDayLine = /\d+\.\s*היום/.test(bare) && /לע[ֹו]?מר/.test(bare);
+    if (!isDayLine) { out.push(l); continue; }
+    const m = bare.match(/(\d+)\.\s*היום/);
+    if (m && parseInt(m[1], 10) === omerCount) out.push(l);
+  }
+  return out;
 }
 
 type LoadedLeaf = FlatLeaf & {
@@ -422,6 +440,13 @@ export default function SiddurReader() {
             // שיר של יום: filter to TODAY's day section only.
             if (/Song of the Day|שיר של יום|Daily Psalm|Psalm of the Day/i.test(`${leaf.en} ${leaf.he}`)) {
               lines = filterDailyPsalmForToday(lines, todayDow);
+            }
+            // ספירת העומר: the leaf lists all 49 days — keep only tonight's count.
+            // Counted at Maariv, so tonight's count is the NEXT day's omer day.
+            if (/Sefirat HaOmer|Sefirat Ha'?Omer|ספירת הע[ומ]מר|Omer/i.test(`${leaf.en} ${leaf.he}`)) {
+              const tonight = new Date(today);
+              tonight.setDate(tonight.getDate() + 1);
+              lines = filterOmerForToday(lines, omerDay(tonight));
             }
             // Weekday Maariv: drop ברוך ה' לעולם + יראו עינינו (not said per the
             // Eretz-Yisrael minhag). Gated to Maariv so the verses aren't
