@@ -183,6 +183,24 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
   const wholeSmall = /^<small>((?:(?!<\/small>)[\s\S])*)<\/small>\s*$/i.exec(txt);
   if (wholeSmall) {
     const inner = wholeSmall[1].trim();
+    // Modim DeRabbanan (kahal's chazara response) — checked BEFORE isMarkerPhrase
+    // because Chabad glues the "מודים דרבנן" label onto the text, which would
+    // otherwise be diverted as a marker. "אלהי כל בשר" is unique to it, so this
+    // never catches the regular silent Modim.
+    {
+      const mdBare = inner.replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
+      // "כל־בשר" with a maqaf strips to "כלבשר" (no space), and Chabad writes
+      // "יוצרנו, יוצר" with a comma — so allow optional separators.
+      if (/מודים אנחנו לך[,\s]*שאתה/.test(mdBare) &&
+          /(אלהי כל.?בשר|יוצרנו.{0,2}יוצר בראשית)/.test(mdBare)) {
+        return {
+          body: inner.replace(/<\/?[a-zA-Z][^>]*>/g, '').trim(),
+          kind: 'conditional',
+          marker: 'מודים דרבנן (הקהל בחזרת הש״ץ)',
+          tags: ['chazara-only'],
+        };
+      }
+    }
     // Sub-case: marker-only (directive that will apply to following paragraphs).
     // If markerToTags found a date condition → 'marker-only' (consumes 1 paragraph).
     // If no date tags → RUBRIC (e.g. "ואומר החזן חצי קדיש"): applies to ALL
@@ -226,23 +244,10 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
         _markerOnly: true,
       };
     }
-    // Sub-case: Modim DeRabbanan (kahal's response during chazara).
-    // Sefaria wraps it in <small> inside the Modim leaf. Distinguish from
-    // regular Modim by the unique phrase "אלהי כל בשר" / "יוצרנו יוצר בראשית".
-    const innerBare = inner.replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
-    if (/^מודים אנחנו לך שאתה/.test(innerBare) &&
-        /(אלהי כל בשר|יוצרנו יוצר בראשית)/.test(innerBare)) {
-      const body = inner.replace(/<\/?[a-zA-Z][^>]*>/g, '').trim();
-      return {
-        body,
-        kind: 'conditional',
-        marker: 'מודים דרבנן (הקהל בחזרת הש״ץ)',
-        tags: ['chazara-only'],
-      };
-    }
     // Sub-case: Atta Chonantanu — Motzei Shabbat insert in the 4th Amidah
     // blessing ("אתה חונן לאדם דעת"). Sefaria wraps the entire insert in
     // <small> with no marker. Detect by the opening words.
+    const innerBare = inner.replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
     if (/^אתה חוננתנו/.test(innerBare)) {
       const body = inner.replace(/<\/?[a-zA-Z][^>]*>/g, '').trim();
       return {
@@ -583,7 +588,10 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
     // Amidah (chazara-only), keeping the silent אתה קדוש visible.
     if (bundledKedushah && p.body) {
       const bare = p.body.replace(/[֑-ׇ]/g, '').trim();
-      if (/^(נקדש את שמך|נקדישך)/.test(bare) || /אומרים כאן קדושה/.test(bare)) inKedushahBlock = true;
+      // Chabad glues a rubric onto the Kedushah line ("כשהש״ץ חוזר... אומרים
+      // זה:נקדישך ונעריצך"), so also match "נקדישך ונעריצך" / "נקדש את שמך"
+      // mid-line, not only at the start.
+      if (/^(נקדש את שמך|נקדישך)/.test(bare) || /(נקדישך ונעריצך|נקדש את שמך בעולם)/.test(bare) || /אומרים כאן קדושה/.test(bare)) inKedushahBlock = true;
       if (/^אתה קדוש ושמך קדוש/.test(bare)) {
         inKedushahBlock = false;
         // ONLY when the Kedushah self-closes with לדור-ודור (Ashkenazi) is the
@@ -846,6 +854,74 @@ const AMIDAH_HEADERS: { rx: RegExp; en: string; he: string }[] = [
   { rx: /^שלום$/,             en: 'Peace',               he: 'שלום' },
 ];
 
+/**
+ * Bracha חתימות (sealing phrases) → section name. Used to split a HEADERLESS
+ * monolithic Amidah (Edot HaMizrach / Chabad) by detecting the "ברוך אתה ה',
+ * <closing>:" that ENDS each bracha. Matching is by the closing phrase, so
+ * non-bracha chatimot (עננו "...בעת צרה", Birkat Kohanim) never split.
+ */
+const CHATIMA_TO_SECTION: { rx: RegExp; en: string; he: string }[] = [
+  { rx: /מגן אברהם/, en: 'Patriarchs', he: 'אבות' },
+  { rx: /מחיה ה?מתים/, en: 'Divine Might', he: 'גבורות' },
+  { rx: /ה(אל|מלך) הקדוש/, en: 'Holiness of God', he: 'קדושת השם' },
+  { rx: /חונן הדעת/, en: 'Knowledge', he: 'דעת' },
+  { rx: /הרוצה בתשובה/, en: 'Repentance', he: 'תשובה' },
+  { rx: /המרבה לסלוח/, en: 'Forgiveness', he: 'סליחה' },
+  { rx: /גואל ישראל/, en: 'Redemption', he: 'גאולה' },
+  { rx: /רופא (חולי עמו ישראל|החולים)/, en: 'Healing', he: 'רפואה' },
+  { rx: /מברך השנים/, en: 'Prosperity', he: 'ברכת השנים' },
+  { rx: /מקבץ נדחי עמו ישראל/, en: 'Gathering the Exiles', he: 'קיבוץ גלויות' },
+  { rx: /(מלך אוהב צדקה ומשפט|המלך המשפט)/, en: 'Justice', he: 'דין' },
+  { rx: /מכניע זדים/, en: 'Against Enemies', he: 'ברכת המינים' },
+  { rx: /משען ומבטח לצדיקים/, en: 'The Righteous', he: 'צדיקים' },
+  { rx: /בונה ירושל/, en: 'Rebuilding Jerusalem', he: 'בנין ירושלים' },
+  { rx: /מצמיח קרן ישועה/, en: 'Kingdom of David', he: 'מלכות בית דוד' },
+  { rx: /שומע תפל?ה/, en: 'Response to Prayer', he: 'שומע תפילה' },
+  { rx: /המחזיר שכינתו לציון/, en: 'Temple Service', he: 'עבודה' },
+  { rx: /הטוב שמך ולך נאה להודות/, en: 'Thanksgiving', he: 'הודאה' },
+  { rx: /(המברך את עמו ישראל בשלום|עושה ה?שלום)/, en: 'Peace', he: 'שלום' },
+];
+
+/** The closing of the LAST "ברוך אתה ה', X:" in a line → its section, or null. */
+function chatimaSection(bareLine: string): { en: string; he: string } | null {
+  const ms = [...bareLine.matchAll(/ברוך אתה (?:יהוה|ייי?|ה)[,\s]+([^:]{1,45}?)\s*[:׃]/g)];
+  if (ms.length === 0) return null;
+  const closing = ms[ms.length - 1][1];
+  for (const c of CHATIMA_TO_SECTION) if (c.rx.test(closing)) return { en: c.en, he: c.he };
+  return null;
+}
+
+/**
+ * Fallback splitter for a monolithic Amidah with NO blessing headers (Edot
+ * HaMizrach, Chabad). Walks the lines accumulating a buffer; when a VOCALIZED
+ * line ends with a recognized bracha חתימה, that buffer (incl. the chatima
+ * line) becomes that named section. A <small> line still counts as prayer when
+ * densely vocalized (so Kedushah / Modim chunks stay inside their bracha).
+ */
+function splitMonolithicAmidaByChatima(lines: string[]): AmidahSection[] {
+  const sections: AmidahSection[] = [];
+  let buffer: string[] = [];
+  for (const line of lines) {
+    buffer.push(line);
+    const isSmall = /^\s*<small>/.test(line);
+    const isPrayerLine = hasNikud(line) && (!isSmall || isVocalizedDense(line));
+    if (!isPrayerLine) continue;
+    const bare = line.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '');
+    const sec = chatimaSection(bare);
+    if (sec) {
+      sections.push({ en: sec.en, he: sec.he, lines: buffer });
+      buffer = [];
+    }
+  }
+  if (sections.length < 6) return []; // not a recognizable Amidah
+  // Whatever follows the שלום chatima (יהיו לרצון / אלהי נצור / post-Amidah) —
+  // fold the tail into a Concluding Passage so the chazara collapse anchors.
+  if (buffer.length > 0) {
+    sections.push({ en: 'Concluding Passage', he: 'אלהי נצור', lines: buffer });
+  }
+  return sections;
+}
+
 /** Strip HTML tags, nikud and trailing punctuation — for header matching. */
 function bareForHeader(s: string): string {
   return (s || '')
@@ -909,6 +985,12 @@ export function splitMonolithicAmidah(lines: string[]): AmidahSection[] {
   // isn't orphaned into a titleless section.
   if (sections.length > 0 && lead.length > 0) {
     sections[0].lines = [...lead, ...sections[0].lines];
+  }
+  // Headerless monolithic Amidah (Edot HaMizrach / Chabad): no <b> headers were
+  // found, so fall back to splitting by the bracha chatimot.
+  if (sections.length < 6) {
+    const byChatima = splitMonolithicAmidaByChatima(lines);
+    if (byChatima.length >= 6) return byChatima;
   }
   return sections;
 }
