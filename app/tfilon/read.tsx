@@ -121,7 +121,8 @@ function filterOmerForToday(lines: string[], omerCount: number | null): string[]
   const out: string[] = [];
   for (const l of lines) {
     const bare = l.replace(/<[^>]+>/g, '').replace(NIKUD_RX, '');
-    const isDayLine = /\d+\.\s*היום/.test(bare) && /לע[ֹו]?מר/.test(bare);
+    // Sefard counts "...לעמר", Ashkenaz "...בעמר" (la/ba-omer); accept both.
+    const isDayLine = /\d+\.\s*היום/.test(bare) && /[לב]ע[ֹו]?מר/.test(bare);
     if (!isDayLine) { out.push(l); continue; }
     const m = bare.match(/(\d+)\.\s*היום/);
     if (m && parseInt(m[1], 10) === omerCount) out.push(l);
