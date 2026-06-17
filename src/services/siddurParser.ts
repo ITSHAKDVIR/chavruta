@@ -549,7 +549,7 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
   // untouched.
   const bareAll = expanded.map((e) => e.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '')).join('\n');
   const bundledKedushah =
-    /אתה קדוש ושמך קדוש/.test(bareAll) &&
+    /אתה קדוש,?\s*ושמך קדוש/.test(bareAll) &&
     /(נקדש את שמך|נקדישך|נעריצך|כתר יתנו|אומרים כאן קדושה)/.test(bareAll);
   // ASHKENAZI Kedushah is self-contained: "לדור ודור נגיד גדלך... כי אל מלך
   // גדול וקדוש אתה: ברוך... האל הקדוש" CLOSES the bracha, so the chazara ends
@@ -591,7 +591,7 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
       // זה:נקדישך ונעריצך"), so also match "נקדישך ונעריצך" / "נקדש את שמך"
       // mid-line, not only at the start.
       if (/^(נקדש את שמך|נקדישך|נעריצך|כתר יתנו)/.test(bare) || /(נקדישך ונעריצך|נקדש את שמך בעולם|כתר יתנו לך)/.test(bare) || /אומרים כאן קדושה/.test(bare)) inKedushahBlock = true;
-      if (/^אתה קדוש ושמך קדוש/.test(bare)) {
+      if (/^אתה קדוש,?\s*ושמך קדוש/.test(bare)) {
         inKedushahBlock = false;
         // ONLY when the Kedushah self-closes with לדור-ודור (Ashkenazi) is the
         // silent 3rd bracha hidden in the chazara. For Sephardi/EM/Chabad it IS
