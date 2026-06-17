@@ -547,6 +547,13 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
   const bareAll = expanded.map((e) => e.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '')).join('\n');
   const bundledKedushah =
     /אתה קדוש ושמך קדוש/.test(bareAll) && /(נקדש את שמך|נקדישך|אומרים כאן קדושה)/.test(bareAll);
+  // ASHKENAZI Kedushah is self-contained: "לדור ודור נגיד גדלך... כי אל מלך
+  // גדול וקדוש אתה: ברוך... האל הקדוש" CLOSES the bracha, so the chazara ends
+  // there and the silent "אתה קדוש ושמך קדוש" is silent-only. Sephardi / Edot
+  // HaMizrach / Chabad end the Kedushah at "ימלך... הללויה" — there "אתה קדוש
+  // ושמך קדוש... האל הקדוש" IS the bracha close, said in BOTH silent and
+  // chazara, so it must NOT be silent-only.
+  const selfContainedKedushah = /לדור ודור נגיד גדלך/.test(bareAll);
   let inKedushahBlock = false;
   let inSilentBracha = false;
 
@@ -578,13 +585,15 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
       const bare = p.body.replace(/[֑-ׇ]/g, '').trim();
       if (/^(נקדש את שמך|נקדישך)/.test(bare) || /אומרים כאן קדושה/.test(bare)) inKedushahBlock = true;
       if (/^אתה קדוש ושמך קדוש/.test(bare)) {
-        // The silent 3rd bracha — shown in the silent Amidah, hidden in the
-        // chazara (where the chazan ends the Kedushah at "...האל הקדוש"). This
-        // is what makes the Ashkenazi chazara end at לדור ודור, not אתה קדוש.
         inKedushahBlock = false;
-        inSilentBracha = true;
-        result.push({ body: p.body, kind: 'normal', tags: ['silent-only'] });
-        continue;
+        // ONLY when the Kedushah self-closes with לדור-ודור (Ashkenazi) is the
+        // silent 3rd bracha hidden in the chazara. For Sephardi/EM/Chabad it IS
+        // the chazara's bracha close → leave it normal (shown in both).
+        if (selfContainedKedushah) {
+          inSilentBracha = true;
+          result.push({ body: p.body, kind: 'normal', tags: ['silent-only'] });
+          continue;
+        }
       }
       // When the silent bracha's closing ("ברוך אתה ה'... האל הקדוש") sits on its
       // OWN line (Musaf "Kedushat HaShem"), tag it silent-only too so it doesn't
