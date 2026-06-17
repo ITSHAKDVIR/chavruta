@@ -59,6 +59,14 @@ const KNOWN_EMPTY_REFS = new Set<string>([
   // text; the actual content loads from its sibling leaf. Showed a load error
   // on every Ashkenazi Torah-reading day (R"Ch, Mon/Thu, fasts).
   'Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Reading from Sefer, Prayers for Welfare of the People',
+  // Shabbat Shacharit refs Sefaria 404s on (found by a full ref scan):
+  //  - Holiness of God: the silent אתה קדוש is actually bundled in the sibling
+  //    "Kedushah" leaf, so this empty duplicate is safe to drop.
+  //  - Mizmor Letoda: not said on Shabbat (no text) — drop.
+  //  - Mi Sheberach Bat Mitzvah: optional, no text — drop.
+  'Siddur Ashkenaz, Shabbat, Shacharit, Amidah, Holiness of God',
+  'Siddur Ashkenaz, Shabbat, Shacharit, Pesukei Dezimra, Mizmor Letoda',
+  'Siddur Ashkenaz, Shabbat, Shacharit, Torah Reading, Reading from Sefer, Mi Sheberach, Bat Mitzvah',
 ]);
 
 /**
@@ -1018,8 +1026,17 @@ export default function SiddurReader() {
             return (
             <Card padding="xl">
               {leaves.map((leaf, idx) => {
-                // Skip Kedushah + Birkat Kohanim in silent עמידה (chazara-only)
-                if (isAmidahLeaf(leaf) && (isKedushahLeaf(leaf) || isBirkatKohanimLeaf(leaf))) return null;
+                // Skip Kedushah + Birkat Kohanim in silent עמידה (chazara-only).
+                // EXCEPTION: a Kedushah leaf that BUNDLES the silent 3rd bracha
+                // (אתה קדוש) — Shabbat Shacharit, Musaf — must NOT be hidden whole;
+                // the parser tags its public lines chazara-only, so render it and
+                // the silent shows only אתה קדוש.
+                if (isAmidahLeaf(leaf) && isBirkatKohanimLeaf(leaf)) return null;
+                if (isAmidahLeaf(leaf) && isKedushahLeaf(leaf)) {
+                  const bundlesAtahKadosh = leaf.paragraphs?.some((p) =>
+                    /אתה קדוש ושמך קדוש/.test((p.body || '').replace(/[֑-ׇ]/g, '')));
+                  if (!bundlesAtahKadosh) return null;
+                }
                 // Hide a section whose entire text was stripped (e.g. Ashkenaz's
                 // "ברוך ה' לעולם" leaf in weekday Maariv) — no bare title.
                 if (leaf.paragraphs && leaf.paragraphs.length === 0) return null;
