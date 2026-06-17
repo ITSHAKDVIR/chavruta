@@ -318,9 +318,11 @@ export default function SiddurReader() {
   const isKedushahLeaf = (l: { en: string; he: string; trail: { en: string; he: string }[] }) => {
     if (/^(Kedushah|Kedusha|Keduasha)$/i.test(l.en)) return true;
     if (/^קדושה$/i.test(l.he)) return true;
-    // "Kedushat HaShem" sub-leaf is chazara-only only when nested under Kedushah.
-    if (/^Kedushat HaShem$/i.test(l.en) &&
-        l.trail.some((t) => /^Kedushah$/i.test(t.en) || /^קדושה$/.test(t.he))) return true;
+    // "Kedushat HaShem" (Ashkenazi Musaf) BUNDLES the public Kedushah AND the
+    // silent 3rd bracha (אתה קדוש) in one leaf, so it must NOT be hidden whole —
+    // the parser tags only its public lines chazara-only. Don't treat it (or its
+    // parent "Kedushah" container) as a hide-wholesale Kedushah leaf.
+    if (/^Kedushat HaShem$/i.test(l.en)) return false;
     return l.trail.some((t) => /^Kedushah$/i.test(t.en) || /^קדושה$/.test(t.he));
   };
   // ברכת כהנים is said by the כהנים only during חזרת הש"ץ — never silently.

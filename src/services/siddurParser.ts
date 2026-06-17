@@ -526,6 +526,17 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
     expanded.push(r);
   }
 
+  // Bundled Kedushah (Ashkenazi Musaf "Kedushat HaShem"): one leaf holds BOTH
+  // the public Kedushah (נקדש/קדוש קדוש/לדור ודור — chazara only) AND the silent
+  // 3rd bracha (אתה קדוש ושמך קדוש... האל הקדוש). Tag the public block
+  // chazara-only so the silent Amidah shows only אתה קדוש. Scoped to leaves that
+  // contain BOTH, so the קדוש-קדוש in Uva Letzion / Yotzer (said silently) is
+  // untouched.
+  const bareAll = expanded.map((e) => e.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '')).join('\n');
+  const bundledKedushah =
+    /אתה קדוש ושמך קדוש/.test(bareAll) && /(נקדש את שמך|נקדישך|אומרים כאן קדושה)/.test(bareAll);
+  let inKedushahBlock = false;
+
   // Some markers open a MULTI-PARAGRAPH conditional block that doesn't end
   // until a closing-rubric marker appears (e.g. Birkat Kohanim on a fast day:
   //   open  → "בתענית ציבור אומר כאן הש"ץ ברכת כהנים:"
@@ -547,6 +558,18 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
     // stripFormatting which preserves <small> on purpose.
     const p = parseParagraphRaw(rRaw);
     if (!p.body && !p._markerOnly) continue;
+
+    // Bundled-Kedushah block: hide the public Kedushah lines from the silent
+    // Amidah (chazara-only), keeping the silent אתה קדוש visible.
+    if (bundledKedushah && p.body) {
+      const bare = p.body.replace(/[֑-ׇ]/g, '').trim();
+      if (/^(נקדש את שמך|נקדישך)/.test(bare) || /אומרים כאן קדושה/.test(bare)) inKedushahBlock = true;
+      if (/^אתה קדוש ושמך קדוש/.test(bare)) inKedushahBlock = false;
+      if (inKedushahBlock && p.kind !== 'halachic-note') {
+        result.push({ body: p.body, kind: 'conditional', marker: 'קדושה — בחזרת הש״ץ', tags: ['chazara-only'] });
+        continue;
+      }
+    }
 
     if (p._markerOnly) {
       // A new marker arrives — close any active multi-paragraph block first.
