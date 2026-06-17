@@ -339,11 +339,25 @@ function augmentForRoshChodeshAshkenazi(leaves: FlatLeaf[], nusach: Nusach, ctx:
   // 3c) Hallel + Kaddish Titkabal — inject after the Amidah (Elokai Netzor),
   // BEFORE the Torah Reading ceremony. If Hotzaat starts later in the flow,
   // anchor on the Amidah; otherwise fall back to amidahAnchor.
+  // RC has Musaf → Kaddish Titkabal closes the Hallel.
   if (hallel.length > 0 && amidahAnchor >= 0) {
-    out = injectAfter(out, amidahAnchor, hallel);
+    out = injectAfter(out, amidahAnchor, [...hallel, buildHallelClosingKaddish(true)]);
   }
 
   return out;
+}
+
+/** Kaddish after Hallel. Rule (per R. Dvir): when there's a Musaf today →
+ *  Kaddish Titkabal; when there's no Musaf → Half Kaddish. Hallel-without-Musaf
+ *  days are Chanukah (non-RC), Yom HaAtzmaut, Yom Yerushalayim. The synthesized
+ *  Hallel (buildHalf/FullHallelLeaves) carries no kaddish, so we append one. */
+function buildHallelClosingKaddish(hasMusaf: boolean): FlatLeaf {
+  const trail = [{ he: 'הלל', en: 'Hallel' }];
+  return hasMusaf
+    ? { ref: 'Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Kaddish Shalem',
+        he: 'קדיש תתקבל (אחרי הלל)', en: 'Kaddish Titkabal after Hallel', trail }
+    : { ref: 'Siddur Ashkenaz, Kaddish, Half Kaddish',
+        he: 'חצי קדיש (אחרי הלל)', en: 'Half Kaddish after Hallel', trail };
 }
 
 /** Build a closing Kaddish Titkabal leaf that follows Musaf chazaras. */
@@ -445,8 +459,12 @@ function augmentForChanukah(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext)
   // Always use FULL Hallel for Chanukah + synthesized day-specific Naso
   // reading. Sefaria's siddur trees only have generic "Chanukah" candle-
   // lighting nodes — not the day's Torah reading — so we build it ourselves.
+  // Chanukah (non-RC) has NO Musaf → Half Kaddish closes the Hallel, then the
+  // day's Torah reading. (RC Tevet during Chanukah goes through the RC path,
+  // which has Musaf and uses Kaddish Titkabal.)
   const inject: FlatLeaf[] = [
     ...buildFullHallelLeaves(nusach),
+    buildHallelClosingKaddish(false),
     ...buildChanukahNasoLeaves(ctx.chanukahDay || 1),
   ];
 
@@ -504,9 +522,9 @@ function augmentForCholHamoed(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContex
     out = injectAfter(out, aleinuIdx - 1, musafBlock);
   }
 
-  // Inject Hallel right after the Amidah.
+  // Inject Hallel right after the Amidah. ChH"M has Musaf → Kaddish Titkabal.
   if (hallel.length > 0 && amidahAnchor >= 0) {
-    out = injectAfter(out, amidahAnchor, hallel);
+    out = injectAfter(out, amidahAnchor, [...hallel, buildHallelClosingKaddish(true)]);
   }
 
   return out;
@@ -546,8 +564,8 @@ function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, ctx: Day
   const chMtrail = [{ he: ctx.isPesach ? 'הלל לחול המועד פסח (חצי)' : 'הלל לחול המועד סוכות (שלם)',
                      en: ctx.isPesach ? 'Half Hallel for Chol HaMoed Pesach' : 'Full Hallel for Chol HaMoed Sukkot' }];
   const hallel = hallelRaw.map((l) => ({ ...l, trail: chMtrail }));
-  // Mussaf goes AFTER Hallel.
-  out = injectAfter(out, amidahIdx, [...hallel, ...musafLeaves]);
+  // Kaddish Titkabal closes the Hallel (ChH"M has Musaf), then Mussaf.
+  out = injectAfter(out, amidahIdx, [...hallel, buildHallelClosingKaddish(true), ...musafLeaves]);
   return out;
 }
 
