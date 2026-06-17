@@ -50,6 +50,9 @@ export type ConditionTag =
   // Said only in chazarat hashatz (Modim DeRabbanan) — hidden in the silent
   // Amidah, shown in the chazara collapse.
   | 'chazara-only'
+  // Said only in the silent Amidah (the quiet 3rd bracha "אתה קדוש ושמך קדוש")
+  // — hidden in the chazara, where the chazan says the full Kedushah instead.
+  | 'silent-only'
   | 'unknown';
 
 export type ParsedParagraph = {
@@ -573,8 +576,20 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
     if (bundledKedushah && p.body) {
       const bare = p.body.replace(/[֑-ׇ]/g, '').trim();
       if (/^(נקדש את שמך|נקדישך)/.test(bare) || /אומרים כאן קדושה/.test(bare)) inKedushahBlock = true;
-      if (/^אתה קדוש ושמך קדוש/.test(bare)) inKedushahBlock = false;
-      if (inKedushahBlock && p.kind !== 'halachic-note') {
+      if (/^אתה קדוש ושמך קדוש/.test(bare)) {
+        // The silent 3rd bracha — shown in the silent Amidah, hidden in the
+        // chazara (where the chazan ends the Kedushah at "...האל הקדוש"). This
+        // is what makes the Ashkenazi chazara end at לדור ודור, not אתה קדוש.
+        inKedushahBlock = false;
+        result.push({ body: p.body, kind: 'normal', tags: ['silent-only'] });
+        continue;
+      }
+      // Tag every VOCALIZED line of the Kedushah block chazara-only. Use nikud
+      // (not p.kind) as the test: Sefaria wraps the Kedushah lines whole in
+      // <small> (נְקַדֵּשׁ / לְדוֹר וָדוֹר), which the parser would otherwise
+      // mis-classify as instruction notes and drop from the chazara. Genuine
+      // un-vocalized rubrics in the block stay as-is.
+      if (inKedushahBlock && hasNikud(p.body)) {
         result.push({ body: p.body, kind: 'conditional', marker: 'קדושה — בחזרת הש״ץ', tags: ['chazara-only'] });
         continue;
       }
@@ -930,6 +945,8 @@ export function shouldRender(
   // hashatz collapse, never in the silent Amidah. Decided before the
   // unvocalized/showAll checks so it's hidden even when "show all" is on.
   if (p.tags?.includes('chazara-only')) return !!opts.chazara;
+  // Silent-only (the quiet 3rd bracha אתה קדוש) — hidden inside the chazara.
+  if (p.tags?.includes('silent-only')) return !opts.chazara;
   // User-facing rule: "without halachic notes" means hide every line that
   // isn't vocalized — that catches rubric annotations whether or not the
   // parser tagged them as halachic-note. Vocalized text always shows.
