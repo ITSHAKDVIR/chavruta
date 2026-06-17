@@ -440,7 +440,8 @@ export default function SiddurReader() {
     // named exactly "Amidah" — its Amidah is already split into per-bracha
     // leaves — so this gate targets only the monolithic nuschach.
     const isMonolithicAmidah = (l: FlatLeaf) =>
-      /^(The\s+)?Amid(ah|a)$/i.test(l.en.trim()) || /^(עמידה|תפילת עמידה|שמונה עשרה)$/.test((l.he || '').trim());
+      /^(The\s+)?Amid(ah|a)$/i.test(l.en.trim()) || /^Muss?af$/i.test(l.en.trim()) ||
+      /^(עמידה|תפילת עמידה|שמונה עשרה|מוסף)$/.test((l.he || '').trim());
 
     // Progressive load: each leaf updates state the moment its text returns,
     // so the user sees the start of the prayer immediately instead of waiting

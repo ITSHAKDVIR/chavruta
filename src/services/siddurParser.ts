@@ -549,7 +549,8 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
   // untouched.
   const bareAll = expanded.map((e) => e.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '')).join('\n');
   const bundledKedushah =
-    /אתה קדוש ושמך קדוש/.test(bareAll) && /(נקדש את שמך|נקדישך|אומרים כאן קדושה)/.test(bareAll);
+    /אתה קדוש ושמך קדוש/.test(bareAll) &&
+    /(נקדש את שמך|נקדישך|נעריצך|כתר יתנו|אומרים כאן קדושה)/.test(bareAll);
   // ASHKENAZI Kedushah is self-contained: "לדור ודור נגיד גדלך... כי אל מלך
   // גדול וקדוש אתה: ברוך... האל הקדוש" CLOSES the bracha, so the chazara ends
   // there and the silent "אתה קדוש ושמך קדוש" is silent-only. Sephardi / Edot
@@ -589,7 +590,7 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
       // Chabad glues a rubric onto the Kedushah line ("כשהש״ץ חוזר... אומרים
       // זה:נקדישך ונעריצך"), so also match "נקדישך ונעריצך" / "נקדש את שמך"
       // mid-line, not only at the start.
-      if (/^(נקדש את שמך|נקדישך)/.test(bare) || /(נקדישך ונעריצך|נקדש את שמך בעולם)/.test(bare) || /אומרים כאן קדושה/.test(bare)) inKedushahBlock = true;
+      if (/^(נקדש את שמך|נקדישך|נעריצך|כתר יתנו)/.test(bare) || /(נקדישך ונעריצך|נקדש את שמך בעולם|כתר יתנו לך)/.test(bare) || /אומרים כאן קדושה/.test(bare)) inKedushahBlock = true;
       if (/^אתה קדוש ושמך קדוש/.test(bare)) {
         inKedushahBlock = false;
         // ONLY when the Kedushah self-closes with לדור-ודור (Ashkenazi) is the
@@ -880,9 +881,12 @@ const CHATIMA_TO_SECTION: { rx: RegExp; en: string; he: string }[] = [
   { rx: /(המברך את עמו ישראל בשלום|עושה ה?שלום)/, en: 'Peace', he: 'שלום' },
 ];
 
-/** The closing of the LAST "ברוך אתה ה', X:" in a line → its section, or null. */
+/** The closing of the LAST "ברוך אתה ה', X:" in a line → its section, or null.
+ *  The divine name is spelled inconsistently in the source (יהוה / יי / ה, and
+ *  the expanded "יוהוווהו" in some EM Musaf chatimot), so match it loosely as a
+ *  short run of י/ו/ה. Only MAPPED closings create a section, so this is safe. */
 function chatimaSection(bareLine: string): { en: string; he: string } | null {
-  const ms = [...bareLine.matchAll(/ברוך אתה (?:יהוה|ייי?|ה)[,\s]+([^:]{1,45}?)\s*[:׃]/g)];
+  const ms = [...bareLine.matchAll(/ברוך אתה [יוה'״]{1,10}[,\s]+([^:]{1,45}?)\s*[:׃]/g)];
   if (ms.length === 0) return null;
   const closing = ms[ms.length - 1][1];
   for (const c of CHATIMA_TO_SECTION) if (c.rx.test(closing)) return { en: c.en, he: c.he };
