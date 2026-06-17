@@ -548,6 +548,7 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
   const bundledKedushah =
     /אתה קדוש ושמך קדוש/.test(bareAll) && /(נקדש את שמך|נקדישך|אומרים כאן קדושה)/.test(bareAll);
   let inKedushahBlock = false;
+  let inSilentBracha = false;
 
   // Some markers open a MULTI-PARAGRAPH conditional block that doesn't end
   // until a closing-rubric marker appears (e.g. Birkat Kohanim on a fast day:
@@ -581,8 +582,20 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
         // chazara (where the chazan ends the Kedushah at "...האל הקדוש"). This
         // is what makes the Ashkenazi chazara end at לדור ודור, not אתה קדוש.
         inKedushahBlock = false;
+        inSilentBracha = true;
         result.push({ body: p.body, kind: 'normal', tags: ['silent-only'] });
         continue;
+      }
+      // When the silent bracha's closing ("ברוך אתה ה'... האל הקדוש") sits on its
+      // OWN line (Musaf "Kedushat HaShem"), tag it silent-only too so it doesn't
+      // leak into the chazara as a duplicate closing.
+      if (inSilentBracha) {
+        if (/^ברוך אתה/.test(bare)) {
+          inSilentBracha = false;
+          result.push({ body: p.body, kind: 'normal', tags: ['silent-only'] });
+          continue;
+        }
+        inSilentBracha = false;
       }
       // Tag every VOCALIZED line of the Kedushah block chazara-only. Use nikud
       // (not p.kind) as the test: Sefaria wraps the Kedushah lines whole in
