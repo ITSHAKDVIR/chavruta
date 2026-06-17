@@ -822,8 +822,21 @@ export function augmentLeavesForToday(
       if (/Birkat ha[- ]?Levana|Kiddush Levana|ברכת הלבנה|קידוש לבנה/i.test(blob)) return false;
       return true;
     });
+    // Yom HaAtzmaut / Yom Yerushalayim Maariv is the EVE service — said the
+    // night that BEGINS the day. So it fires when TOMORROW is the day (not
+    // today), exactly like Erev Shabbat/YT detection. This also keeps the omer
+    // automatic: the night's count is today+1, which the regular Maariv omer
+    // already shows. HebrewCalendar reports the OBSERVED day, so postponements
+    // (Yom HaAtzmaut isn't always 5 Iyar — it shifts off Fri/Sat/Mon) are
+    // handled automatically.
+    const tomorrowHdMaariv = ctx.hd.add(1, 'd');
+    const tomorrowEventsMaariv = HebrewCalendar.calendar({
+      start: tomorrowHdMaariv, end: tomorrowHdMaariv, il: inIsrael, sedrot: false,
+    });
+    const tomorrowIsYomAtzmaut = tomorrowEventsMaariv.some((e) => /Yom HaAtzma|Atzma'?ut/i.test(e.getDesc()));
+    const tomorrowIsYomYerushalayim = tomorrowEventsMaariv.some((e) => /Yom Yerushalayim|Jerusalem Day/i.test(e.getDesc()));
     if (ctx.isPurim) out = augmentForPurimMaariv(out, nusach);
-    else if (ctx.isYomAtzmaut || ctx.isYomYerushalayim) out = augmentForYomHaatzmautMaariv(out, nusach);
+    else if (tomorrowIsYomAtzmaut || tomorrowIsYomYerushalayim) out = augmentForYomHaatzmautMaariv(out, nusach);
   }
 
   return out;
