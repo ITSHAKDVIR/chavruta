@@ -2,8 +2,6 @@ import { DafYomi, MishnaYomiIndex, yerushalmiYomi, vilna, dailyPsalms, chofetzCh
 import { HDate, HebrewCalendar, Sedra } from '@hebcal/core';
 import { getJSON, setJSON } from '../storage/storage';
 
-const CACHE_KEY = '@yahadut/sefaria-cache';
-
 export type SefariaText = {
   ref: string;
   heRef: string;
@@ -24,15 +22,27 @@ const TRACTATE_TO_EN: Record<string, string> = {
   'מעילה': 'Meilah', 'נדה': 'Niddah',
 };
 
-type Cache = Record<string, { ts: number; data: SefariaText }>;
+// Per-ref persistent cache. ONE AsyncStorage key per ref keeps every read/write
+// tiny and independent. The old design stored a single blob of ALL fetched text
+// and reparsed+rewrote the WHOLE thing on every call — so ~100 concurrent leaf
+// loads (the progressive siddur render) thrashed the JS thread with 200 full
+// parse/stringify passes AND clobbered each other (last-writer-wins), so the
+// cache never persisted and every open re-fetched all sections over the network.
+// A session-level in-memory Map serves repeat hits with zero I/O.
+type CacheEntry = { ts: number; data: SefariaText };
+const CACHE_PREFIX = '@yahadut/sefaria/';
+const CACHE_TTL_MS = 30 * 86_400_000;
+const memCache = new Map<string, SefariaText>();
+const cacheKeyFor = (ref: string) => CACHE_PREFIX + ref;
 
-async function loadCache(): Promise<Cache> {
-  return getJSON<Cache>(CACHE_KEY, {});
-}
-
-async function saveCache(c: Cache): Promise<void> {
-  await setJSON(CACHE_KEY, c);
-}
+// Strip te'amim (cantillation marks, U+0591–U+05AF) but KEEP nikud (vowels,
+// U+05B0+). The app renders vocalized text in Frank Ruhl Libre, which has no
+// proper GPOS positioning for cantillation — so a ta'am+nikud on one letter
+// makes the nikud slide sideways, and some ta'am glyphs fall back to another
+// font. Per R. Dvir's choice, Torah-reading + any te'amim verses show nikud
+// only. Vowels are untouched (segol = U+05B6 stays).
+const TEAMIM_RE = new RegExp('[\\u0591-\\u05AF]', 'g');
+const stripTeamim = (s: string) => s.replace(TEAMIM_RE, '');
 
 export async function fetchSefariaText(ref: string): Promise<SefariaText | null> {
   // "Custom:Foo" refs are synthesized locally — embedded siddur content
@@ -46,9 +56,11 @@ export async function fetchSefariaText(ref: string): Promise<SefariaText | null>
     }
     return null;
   }
-  const cache = await loadCache();
-  const cached = cache[ref];
-  if (cached && Date.now() - cached.ts < 30 * 86_400_000) {
+  const memHit = memCache.get(ref);
+  if (memHit) return memHit;
+  const cached = await getJSON<CacheEntry | null>(cacheKeyFor(ref), null);
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+    memCache.set(ref, cached.data);
     return cached.data;
   }
   try {
@@ -57,15 +69,18 @@ export async function fetchSefariaText(ref: string): Promise<SefariaText | null>
     if (!res.ok) return null;
     const json: any = await res.json();
     const raw = json.versions?.[0]?.text;
-    const text = Array.isArray(raw) ? flatten(raw) : typeof raw === 'string' && raw ? [raw] : [];
+    const text = (Array.isArray(raw) ? flatten(raw) : typeof raw === 'string' && raw ? [raw] : [])
+      .map(stripTeamim);
     const data: SefariaText = {
       ref: json.ref || ref,
       heRef: json.heRef || ref,
       heText: text,
       url: `https://www.sefaria.org/${ref.replace(/\s/g, '_')}?lang=he`,
     };
-    cache[ref] = { ts: Date.now(), data };
-    await saveCache(cache);
+    memCache.set(ref, data);
+    // Fire-and-forget — a tiny per-ref write must not block the fetch (and thus
+    // the progressive render) on AsyncStorage I/O.
+    setJSON(cacheKeyFor(ref), { ts: Date.now(), data }).catch(() => {});
     return data;
   } catch {
     return null;

@@ -23,9 +23,25 @@ import { typography } from '../../src/theme/typography';
 
 const ALIYAH_LABELS = ['ראשון (כהן)', 'שני (לוי)', 'שלישי (ישראל)'];
 
-/** Strip HTML tags (<b>, <i>, etc.) that Sefaria sometimes embeds. */
+/** Strip HTML tags AND decode the HTML entities Sefaria embeds (&thinsp;,
+ *  &nbsp;, numeric, etc.) — otherwise "&thinsp;" renders as literal gibberish
+ *  inside the verse. */
 function stripHtml(s: string): string {
-  return s.replace(/<[^>]+>/g, '');
+  return s
+    .replace(/<[^>]+>/g, '')
+    .replace(/&thinsp;|&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&(?:apos|#39);/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&ndash;/g, '–')
+    .replace(/&mdash;/g, '—')
+    .replace(/&hellip;/g, '…')
+    .replace(/&(?:shy|zwnj|zwj|lrm|rlm);/g, '')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/[ \t]+/g, ' ')
+    .trim();
 }
 
 type AliyaText = { ref: string; lines: string[]; loading: boolean; error?: boolean };
