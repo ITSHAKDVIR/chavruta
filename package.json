@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/frank-ruhl-libre": "^0.4.1",
     "@expo-google-fonts/rubik": "^0.4.2",
     "@expo/metro-runtime": "^56.0.12",
     "@hebcal/core": "^6.5.1",

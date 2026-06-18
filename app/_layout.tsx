@@ -34,6 +34,13 @@ import {
   Rubik_700Bold,
   Rubik_800ExtraBold,
 } from '@expo-google-fonts/rubik';
+// Frank Ruhl Libre — traditional Hebrew serif with correct nikud. Used ONLY
+// for vocalized prayer text (typography.sacred); Rubik renders segol as kamatz.
+import {
+  FrankRuhlLibre_400Regular,
+  FrankRuhlLibre_500Medium,
+  FrankRuhlLibre_700Bold,
+} from '@expo-google-fonts/frank-ruhl-libre';
 
 // CRITICAL INSIGHT: Our codebase uses explicit `flexDirection: 'row-reverse'`
 // throughout to achieve a Hebrew RTL look. When I18nManager.isRTL=true, React
@@ -309,6 +316,9 @@ export default function RootLayout() {
     'Rubik-SemiBold': Rubik_600SemiBold,
     'Rubik-Bold': Rubik_700Bold,
     'Rubik-ExtraBold': Rubik_800ExtraBold,
+    'FrankRuhlLibre-Regular': FrankRuhlLibre_400Regular,
+    'FrankRuhlLibre-Medium': FrankRuhlLibre_500Medium,
+    'FrankRuhlLibre-Bold': FrankRuhlLibre_700Bold,
   });
 
   // Set Rubik as the default font for ALL Text components once loaded

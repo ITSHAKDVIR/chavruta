@@ -96,7 +96,10 @@
             "./assets/fonts/Rubik-500Medium.ttf",
             "./assets/fonts/Rubik-600SemiBold.ttf",
             "./assets/fonts/Rubik-700Bold.ttf",
-            "./assets/fonts/Rubik-800ExtraBold.ttf"
+            "./assets/fonts/Rubik-800ExtraBold.ttf",
+            "./assets/fonts/FrankRuhlLibre-400Regular.ttf",
+            "./assets/fonts/FrankRuhlLibre-500Medium.ttf",
+            "./assets/fonts/FrankRuhlLibre-700Bold.ttf"
           ]
         }
       ]

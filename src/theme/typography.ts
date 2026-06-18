@@ -117,15 +117,15 @@ export const typography = {
     textAlign: 'right',
   } as TextStyle,
 
-  // Vocalized prayer text. Originally used the system serif font, but on
-  // Android that's Noto Serif which renders some nikud combinations wrong
-  // (segol can appear as kamatz). Rubik-Regular handles the full Hebrew
-  // nikud range correctly.
+  // Vocalized prayer text. Rubik (sans-serif) rendered nikud poorly — segol
+  // (three dots) came out looking like a kamatz. Frank Ruhl Libre is the
+  // traditional Hebrew sefarim/siddur serif with correct, well-tested nikud.
+  // Use its baked-in Medium weight (NO separate fontWeight — on Android a
+  // weighted family + fontWeight makes RN fall back to the system font).
   sacred: {
-    fontFamily: hebrewFontFamily,
-    fontSize: 19,
-    fontWeight: '500',
-    lineHeight: 32,
+    fontFamily: 'FrankRuhlLibre-Medium',
+    fontSize: 21,
+    lineHeight: 34,
     writingDirection: 'rtl',
     textAlign: 'right',
   } as TextStyle,
