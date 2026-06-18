@@ -1330,13 +1330,17 @@ export default function SiddurReader() {
                       </View>
                       );
                     })() : null}
-                    {/* Gabbai assistance card — render ONCE at the actual aliyah-
-                        blessing leaf ("Birkat HaTorah" / "ברכת התורה" / "Reading
-                        from Sefer"). Previously we also matched any leaf whose
-                        trail contained "Torah Reading", which produced ~10
-                        duplicate cards (one per olim/aliyah leaf). */}
-                    {(/^Birkat HaTorah$|^Reading from Sefer$|^ברכת התורה$|^קריאת הקודש$/i.test(leaf.en) ||
-                      /^ברכת התורה$|^קריאת הקודש$/i.test(leaf.he)) ? (
+                    {/* Gabbai assistance card — render ONCE at the aliyah-blessing
+                        leaf. Ashkenaz exposes a dedicated "Birkat HaTorah" leaf;
+                        Sefard / Edot HaMizrach / Chabad pack the whole service into
+                        a single "Torah Reading" / "קריאת התורה" leaf, so match that
+                        too (otherwise the gabbai card never appears in those three
+                        nuschaot). Each nusach has exactly ONE matching leaf, so no
+                        duplicate cards. Previously matching any "Torah Reading" in
+                        the TRAIL produced ~10 duplicates — we match the leaf's own
+                        en/he only. */}
+                    {(/^Birkat HaTorah$|^Reading from Sefer$|^Torah Reading$|^ברכת התורה$|^קריאת הקודש$/i.test(leaf.en.trim()) ||
+                      /^ברכת התורה$|^קריאת הקודש$|^קריאת התורה$/.test(leaf.he.trim())) ? (
                       <View style={{ marginTop: spacing.md }}>
                         <GabbaiCard />
                       </View>
