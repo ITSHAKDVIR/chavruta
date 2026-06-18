@@ -440,8 +440,17 @@ export default function SiddurReader() {
     // named exactly "Amidah" — its Amidah is already split into per-bracha
     // leaves — so this gate targets only the monolithic nuschach.
     const isMonolithicAmidah = (l: FlatLeaf) =>
-      /^(The\s+)?Amid(ah|a)$/i.test(l.en.trim()) || /^Muss?af$/i.test(l.en.trim()) ||
-      /^(עמידה|תפילת עמידה|שמונה עשרה|מוסף)$/.test((l.he || '').trim());
+      // "Amidah" / "Mussaf" / "Yom Tov Musaf Amidah" / "...Musaf..." — a word-
+      // boundary match on Musaf catches the multi-word Musaf-Amidah leaf names
+      // (Sefard YT, RC) the old anchored /^Muss?af$/ missed.
+      /^(The\s+)?Amid(ah|a)$/i.test(l.en.trim()) || /\bMuss?af\b/i.test(l.en.trim()) ||
+      // Chabad's RC Musaf is a single flat leaf named "Rosh Chodesh" (chatzi-
+      // kaddish + a clean Musaf Amidah + full kaddish). Only Chabad has this as
+      // a fetchable leaf; the other nuschaot's "Rosh Chodesh" are containers.
+      // The splitter self-guards (returns [] below 6 sections) so this is safe.
+      /^Rosh Chodesh$/i.test(l.en.trim()) ||
+      /^(עמידה|תפילת עמידה|שמונה עשרה|ראש חודש)$/.test((l.he || '').trim()) ||
+      /מוסף/.test((l.he || '').trim());
 
     // Progressive load: each leaf updates state the moment its text returns,
     // so the user sees the start of the prayer immediately instead of waiting
@@ -497,7 +506,10 @@ export default function SiddurReader() {
                   en: s.en,
                   he: s.he,
                   trail: amidahTrail,
-                  paragraphs: parseParagraphs(s.lines),
+                  // amidah:true — promote whole-<small> vocalized bracha bodies
+                  // (Sefard Yom Tov Musaf wraps every line in <small>) back to
+                  // prayer; chazara-only liturgy stays hidden in the silent.
+                  paragraphs: parseParagraphs(s.lines, { amidah: true }),
                   loading: false,
                 }));
                 // עננו — on a public fast the (Sephardi) individual says it within

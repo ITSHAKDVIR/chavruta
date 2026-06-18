@@ -514,7 +514,7 @@ function preExtractCombinedSeason(raw: string): string[] | null {
   return [`<small>בקיץ:</small> ${summer}`, `<small>בחורף:</small> ${winter}`];
 }
 
-export function parseParagraphs(raw: string[]): ParsedParagraph[] {
+export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): ParsedParagraph[] {
   const result: ParsedParagraph[] = [];
   let pendingMarker: { marker: string; tags: ConditionTag[]; alternative: boolean } | null = null;
 
@@ -688,9 +688,21 @@ export function parseParagraphs(raw: string[]): ParsedParagraph[] {
       pendingMarker = null;
     }
 
+    // Inside a split monolithic Amidah (opts.amidah), Sefaria sometimes wraps
+    // every bracha body whole in <small> (Sefard Yom Tov Musaf). parseParagraphRaw
+    // classifies the long ones (>80 chars, not marker-shaped) as halachic-notes,
+    // which would hide the actual Amidah text from the silent reading. We KNOW
+    // these are prayer — the chatima-splitter only groups vocalized lines — so
+    // promote dense-vocalized notes back to prayer. The chazara-only liturgy
+    // (Kedushah / Modim DeRabbanan) was already tagged and `continue`d above, so
+    // it never reaches here; only genuine bracha bodies are promoted.
+    const outKind =
+      opts?.amidah && p.kind === 'halachic-note' && isVocalizedDense(p.body)
+        ? 'normal'
+        : p.kind;
     result.push({
       body: p.body,
-      kind: p.kind,
+      kind: outKind,
       marker: p.marker,
       tags: p.tags,
     });
@@ -863,6 +875,11 @@ const CHATIMA_TO_SECTION: { rx: RegExp; en: string; he: string }[] = [
   { rx: /מגן אברהם/, en: 'Patriarchs', he: 'אבות' },
   { rx: /מחיה ה?מתים/, en: 'Divine Might', he: 'גבורות' },
   { rx: /ה(אל|מלך) הקדוש/, en: 'Holiness of God', he: 'קדושת השם' },
+  // Musaf only — the 4th bracha (קדושת היום). The chatima takes several forms
+  // (מקדש השבת / ...ישראל וראשי חדשים / ...ישראל והזמנים), sometimes split by a
+  // parenthetical rubric (Sefard YT Musaf: "מקדש (לשבת השבת ו) ישראל והזמנים").
+  // No weekday-Amidah chatima closing contains "מקדש", so a bare match is safe.
+  { rx: /מקדש/, en: 'Sanctity of the Day', he: 'קדושת היום' },
   { rx: /חונן הדעת/, en: 'Knowledge', he: 'דעת' },
   { rx: /הרוצה בתשובה/, en: 'Repentance', he: 'תשובה' },
   { rx: /המרבה לסלוח/, en: 'Forgiveness', he: 'סליחה' },
@@ -908,7 +925,11 @@ function splitMonolithicAmidaByChatima(lines: string[]): AmidahSection[] {
     const isSmall = /^\s*<small>/.test(line);
     const isPrayerLine = hasNikud(line) && (!isSmall || isVocalizedDense(line));
     if (!isPrayerLine) continue;
-    const bare = line.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '');
+    // Convert the maqaf (־, U+05BE) to a space BEFORE stripping nikud — it sits
+    // inside the [֑-ׇ] range, so a plain strip would glue the words it joins
+    // ("אֶת־עַמּוֹ" → "אתעמו"), breaking chatimot like "המברך את עמו ישראל בשלום"
+    // (Chabad spells it with a maqaf; Sefard/EM use a space).
+    const bare = line.replace(/<[^>]+>/g, '').replace(/־/g, ' ').replace(/[֑-ׇ]/g, '');
     const sec = chatimaSection(bare);
     if (sec) {
       sections.push({ en: sec.en, he: sec.he, lines: buffer });
