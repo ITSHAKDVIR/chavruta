@@ -1043,8 +1043,15 @@ export default function SiddurReader() {
               }
               return -1;
             };
-            const torahAnchorIdx = findLastIdx(/Removing the Torah from Ark|הוצאת ספר תורה/i)
-                                   || findLastIdx(/Torah Reading|קריאת התורה/i);
+            // NOTE: findLastIdx returns -1 when not found, and -1 is TRUTHY in JS,
+            // so `findLastIdx(A) || findLastIdx(B)` would never fall through to B.
+            // Sefard/EM/Chabad have no separate "הוצאת ספר תורה" leaf (the whole
+            // service is one "קריאת התורה" leaf), so the fallback MUST run for them
+            // — use an explicit >= 0 check, not `||`.
+            const hotzaaIdx = findLastIdx(/Removing the Torah from Ark|הוצאת ספר תורה/i);
+            const torahAnchorIdx = hotzaaIdx >= 0
+              ? hotzaaIdx
+              : findLastIdx(/Torah Reading|קריאת התורה/i);
             return (
             <Card padding="xl">
               {leaves.map((leaf, idx) => {
