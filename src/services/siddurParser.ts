@@ -1038,6 +1038,28 @@ export function stripMaarivBaruchHashemLeolam(lines: string[]): string[] {
   });
 }
 
+/**
+ * Sefard weekday-Shacharit "לשני וחמישי" Tachanun leaf bundles TWO branches
+ * (per its own opening rubric "בשני וחמישי יאמר והוא רחום, בשאר ימים יאמר שומר
+ * ישראל"): the long "והוא רחום" supplication — said ONLY on Mon/Thu — and the
+ * daily "שומר ישראל … ואנחנו לא נדע" conclusion + חצי קדיש, said on EVERY
+ * Tachanun day. On non-Mon/Thu we drop the long supplication so only the daily
+ * conclusion (otherwise lost when the whole leaf was hidden) remains. Drops the
+ * contiguous block from "והוא רחום יכפר" up to (not including) "שומר ישראל".
+ */
+export function stripLongTachanunSupplication(lines: string[]): string[] {
+  const bare = (s: string) => (s || '').replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '').trim();
+  const out: string[] = [];
+  let dropping = false;
+  for (const l of lines) {
+    const b = bare(l);
+    if (/^והוא רחום יכפר/.test(b)) { dropping = true; continue; } // start of Mon/Thu-only supplication
+    if (dropping && /^שומר ישראל/.test(b)) dropping = false;      // resume at the daily conclusion
+    if (!dropping) out.push(l);
+  }
+  return out;
+}
+
 /** Maps a JS getDay() value (0=Sun..6=Sat) to the corresponding "fell-" tag. */
 export function weekdayTag(day: number): ConditionTag {
   return (['fell-sun', 'fell-mon', 'fell-tue', 'fell-wed', 'fell-thu', 'fell-fri', 'fell-sat'][day] ??

@@ -34,7 +34,7 @@ import {
   getTishaBAvTallitWarning,
 } from '../../src/data/specialDayLinks';
 import { fetchSefariaText } from '../../src/services/sefaria';
-import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, splitMonolithicAmidah, stripMaarivBaruchHashemLeolam, ParsedParagraph } from '../../src/services/siddurParser';
+import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, splitMonolithicAmidah, stripMaarivBaruchHashemLeolam, stripLongTachanunSupplication, ParsedParagraph } from '../../src/services/siddurParser';
 import { ANENU_TEXT } from '../../src/data/specialDayContent';
 import { CholimReminder } from '../../src/components/CholimReminder';
 import { getInsertsForDate, TefilaInsert } from '../../src/data/tefilaInserts';
@@ -538,9 +538,19 @@ export default function SiddurReader() {
                 return;
               }
             }
+            // Sefard "לשני וחמישי" Tachanun leaf — shown on every Tachanun day now
+            // (relevance). On non-Mon/Thu, drop the Mon/Thu-only "והוא רחום"
+            // supplication so only the daily "שומר ישראל…" conclusion + חצי קדיש
+            // remain, and retitle the section accordingly (it's no longer the
+            // Mon/Thu addition).
+            let heOverride: string | null = null;
+            if (/^לשני וחמישי$/.test((leaf.he || '').trim()) && todayDow !== 1 && todayDow !== 4) {
+              lines = stripLongTachanunSupplication(lines);
+              heOverride = 'שומר ישראל';
+            }
             const parsed = parseParagraphs(lines);
             setLeaves((prev) =>
-              prev.map((l) => (l.uid === uid ? { ...l, paragraphs: parsed, loading: false } : l)),
+              prev.map((l) => (l.uid === uid ? { ...l, he: heOverride ?? l.he, paragraphs: parsed, loading: false } : l)),
             );
           } else {
             setLeaves((prev) =>

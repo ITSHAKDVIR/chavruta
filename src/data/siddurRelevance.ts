@@ -280,8 +280,13 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
   // "El Erech Appayim" is said before opening the Ark — but ONLY on days where
   // Tachanun is said (skipped on RC + Shabbat + festivals + Mondays-Thursdays
   // that are exempt).
+  // Sefard's "לשני וחמישי" leaf bundles the Mon/Thu-only "והוא רחום" supplication
+  // WITH the daily "שומר ישראל" conclusion (+ חצי קדיש), so it must show on EVERY
+  // Tachanun day — not only Mon/Thu (read.tsx strips the long part on other days).
+  // Ashkenaz's Mon/Thu leaf is he="והוא רחום" with a SEPARATE daily Shomer Yisrael
+  // leaf, so it is NOT matched here and stays Mon/Thu-only (rule further down).
   if (/^tac?hanun$|^tachnun$|tachanun$|tachnun$|^vidui|vidui and 13|^post amidah$|וידוי|^el erech app?ayim$|אל ארך אפים/.test(name) ||
-      /וידוי|^אל ארך אפים$/.test(he || '')) {
+      /וידוי|^אל ארך אפים$|^לשני וחמישי$/.test(he || '')) {
     if (isShabbat(ctx)) return false;
     const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
     if (events.some((e) => e.getFlags() & flags.MAJOR_FAST)) return false; // T"B / YK
