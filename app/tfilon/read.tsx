@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable, ActivityIndicator, Linking, Modal, Platform, findNodeHandle } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable, ActivityIndicator, Linking, Modal, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
@@ -570,27 +570,34 @@ export default function SiddurReader() {
   // ScrollView.getInnerViewNode() — an old-arch-only API that returns undefined
   // on Fabric, so the jump silently fell back to the wrong Card-relative y.
   const contentRef = useRef<View>(null);
-  // Card-relative y from onLayout — last-resort fallback only.
+  // A FIXED on-screen anchor wrapping the scroll viewport — its window Y stays
+  // constant as content scrolls.
+  const scrollOuterRef = useRef<View>(null);
+  // Current scroll offset, tracked via onScroll.
+  const currentScrollY = useRef(0);
+  // Card-relative y from onLayout — kept as a coarse fallback.
   const sectionPositions = useRef<Record<string, number>>({});
   const leafViewRefs = useRef<Record<string, View | null>>({});
 
+  // Jump to a section. measureLayout()/getInnerViewNode() are unreliable on the
+  // new architecture (Fabric) — they silently no-op — so we use absolute window
+  // coords from measure(): target = currentScroll + (sectionWindowY - viewportWindowY).
   function jumpTo(ref: string) {
     const scroll = scrollRef.current;
-    const content = contentRef.current;
     const view = leafViewRefs.current[ref];
-    const scrollToCached = () => {
-      const cached = sectionPositions.current[ref];
-      if (scroll && cached !== undefined) scroll.scrollTo({ y: Math.max(0, cached - 20), animated: true });
-    };
-    if (!scroll || !content || !view) { scrollToCached(); return; }
-    const node = findNodeHandle(content);
-    if (node == null) { scrollToCached(); return; }
-    // Measure the section relative to the content wrapper → absolute scroll y.
-    view.measureLayout(
-      node,
-      (_x: number, y: number) => { scroll.scrollTo({ y: Math.max(0, y - 20), animated: true }); },
-      scrollToCached,
-    );
+    const outer = scrollOuterRef.current;
+    if (!scroll || !view) return;
+    // Defer one frame so a just-closed nav modal is dismissed and layout is
+    // settled before we measure window coords.
+    requestAnimationFrame(() => {
+      const finish = (outerY: number) =>
+        view.measure((_x, _y, _w, _h, _vx, viewPageY) => {
+          const target = currentScrollY.current + (viewPageY - outerY);
+          scroll.scrollTo({ y: Math.max(0, target - 16), animated: true });
+        });
+      if (outer) outer.measure((_x, _y, _w, _h, _ox, outerPageY) => finish(outerPageY));
+      else finish(0);
+    });
   }
 
   function navigateTo(slug: string) {
@@ -662,7 +669,13 @@ export default function SiddurReader() {
         </Pressable>
       </Modal>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
+      <View ref={scrollOuterRef} collapsable={false} style={{ flex: 1 }}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={{ paddingBottom: spacing.xxl }}
+        onScroll={(e) => { currentScrollY.current = e.nativeEvent.contentOffset.y; }}
+        scrollEventThrottle={16}
+      >
         <View ref={contentRef} collapsable={false}>
         <ScreenHeader title={title} />
         {/* Nusach indicator — tap to jump to settings and change it. */}
@@ -1390,6 +1403,7 @@ export default function SiddurReader() {
         <View style={{ height: 40 }} />
         </View>
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
