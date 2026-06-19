@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable, ActivityIndicator, Linking, Modal, Platform } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable, ActivityIndicator, Linking, Modal, Platform, findNodeHandle } from 'react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
@@ -562,38 +562,35 @@ export default function SiddurReader() {
 
   // ===== Scroll-to-section for TOC =====
   const scrollRef = useRef<ScrollView>(null);
-  // Cached y positions from onLayout — used as a fallback only. The active path
-  // re-measures the View ref at scroll time, because progressive Sefaria fetch
-  // grows leaves above the target and the cached y values go stale.
+  // A non-collapsing wrapper around ALL ScrollView content. The section Views
+  // live INSIDE a Card (not direct children of the ScrollView), so their
+  // onLayout y is Card-relative — wrong for scrollTo. We measure each section
+  // relative to THIS wrapper (an ancestor at scroll-origin) via findNodeHandle,
+  // which works on the new architecture (Fabric). The old code measured against
+  // ScrollView.getInnerViewNode() — an old-arch-only API that returns undefined
+  // on Fabric, so the jump silently fell back to the wrong Card-relative y.
+  const contentRef = useRef<View>(null);
+  // Card-relative y from onLayout — last-resort fallback only.
   const sectionPositions = useRef<Record<string, number>>({});
   const leafViewRefs = useRef<Record<string, View | null>>({});
 
   function jumpTo(ref: string) {
     const scroll = scrollRef.current;
-    if (!scroll) return;
+    const content = contentRef.current;
     const view = leafViewRefs.current[ref];
-    if (view) {
-      // Re-measure NOW. Avoids the "lands above the section" symptom that
-      // happens when a leaf above this one finished loading after layout.
-      view.measureLayout(
-        // @ts-ignore — ScrollView exposes getInnerViewNode() at runtime.
-        scroll.getInnerViewNode ? scroll.getInnerViewNode() : (scroll as any),
-        (_x: number, y: number) => {
-          scroll.scrollTo({ y: Math.max(0, y - 20), animated: true });
-        },
-        () => {
-          const cached = sectionPositions.current[ref];
-          if (cached !== undefined) {
-            scroll.scrollTo({ y: Math.max(0, cached - 20), animated: true });
-          }
-        },
-      );
-      return;
-    }
-    const cached = sectionPositions.current[ref];
-    if (cached !== undefined) {
-      scroll.scrollTo({ y: Math.max(0, cached - 20), animated: true });
-    }
+    const scrollToCached = () => {
+      const cached = sectionPositions.current[ref];
+      if (scroll && cached !== undefined) scroll.scrollTo({ y: Math.max(0, cached - 20), animated: true });
+    };
+    if (!scroll || !content || !view) { scrollToCached(); return; }
+    const node = findNodeHandle(content);
+    if (node == null) { scrollToCached(); return; }
+    // Measure the section relative to the content wrapper → absolute scroll y.
+    view.measureLayout(
+      node,
+      (_x: number, y: number) => { scroll.scrollTo({ y: Math.max(0, y - 20), animated: true }); },
+      scrollToCached,
+    );
   }
 
   function navigateTo(slug: string) {
@@ -666,6 +663,7 @@ export default function SiddurReader() {
       </Modal>
 
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: spacing.xxl }}>
+        <View ref={contentRef} collapsable={false}>
         <ScreenHeader title={title} />
         {/* Nusach indicator — tap to jump to settings and change it. */}
         <Pressable
@@ -1390,6 +1388,7 @@ export default function SiddurReader() {
         </View>
 
         <View style={{ height: 40 }} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
