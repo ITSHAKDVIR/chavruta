@@ -500,16 +500,26 @@ export default function SiddurReader() {
               const sections = splitMonolithicAmidah(lines);
               if (sections.length >= 6) {
                 const amidahTrail = [...leaf.trail, { en: 'Amidah', he: 'עמידה' }];
+                // amidah:true promotes whole-<small> dense lines back to prayer —
+                // needed ONLY for an "all-<small>" leaf (Sefard Yom Tov Musaf wraps
+                // every bracha body in <small>). On a NORMAL amidah leaf the bracha
+                // bodies are plain text and the only <small> lines are CONDITIONAL
+                // inserts (עננו / נחם / the Avinu Malkeinu litany); promoting those
+                // would leak them onto ordinary days. The clean distinguisher: are
+                // the STANDARD bracha chatimot themselves <small>? (true only for
+                // the all-<small> leaf; a fraction-of-<small>-lines heuristic fails
+                // because a normal amidah can have many <small> inserts.)
+                const allSmallAmidah = lines.some(
+                  (l) => /^\s*<small>/.test(l) &&
+                    /(מגן אברהם|מחיה ה?מתים|האל הקדוש)/.test(l.replace(/[֑-ׇ]/g, '')),
+                );
                 const subLeaves: LoadedLeaf[] = sections.map((s, k) => ({
                   uid: `${uid}#${k}`,
                   ref: `${leaf.ref}#${s.en}`,
                   en: s.en,
                   he: s.he,
                   trail: amidahTrail,
-                  // amidah:true — promote whole-<small> vocalized bracha bodies
-                  // (Sefard Yom Tov Musaf wraps every line in <small>) back to
-                  // prayer; chazara-only liturgy stays hidden in the silent.
-                  paragraphs: parseParagraphs(s.lines, { amidah: true }),
+                  paragraphs: parseParagraphs(s.lines, { amidah: allSmallAmidah }),
                   loading: false,
                 }));
                 // עננו — on a public fast the (Sephardi) individual says it within
