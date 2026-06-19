@@ -115,10 +115,12 @@ export function markerToTags(marker: string): ConditionTag[] {
   if (/(בשבועות|חג השבועות|לשבועות)/.test(m)) { tags.push('shavuot'); tags.push('yom-tov'); }
   if (/(שמיני עצרת|בעצרת|שמ ע|לשמיני עצרת)/.test(m)) { tags.push('shmini-atzeret'); tags.push('yom-tov'); }
 
-  if (/בחנוכה/.test(m)) tags.push('chanukah');
-  if (/בפורים/.test(m)) tags.push('purim');
+  // Accept BOTH the "ב…" (on) and "ל…" (for) prefixes — Chabad/EM labels print
+  // "לחנוכה" / "לפורים" as the inline cue, not only "בחנוכה".
+  if (/[בל]חנוכה/.test(m)) tags.push('chanukah');
+  if (/[בל]פורים/.test(m)) tags.push('purim');
 
-  if (/(בתענית|בצום|תענית ציבור)/.test(m)) tags.push('fast');
+  if (/(בתענית|לתענית|בצום|צומות|תענית ציבור|ביום צום)/.test(m)) tags.push('fast');
 
   if (/(במוצש|במוצאי שבת|במוצאי שבת ויום טוב|מוצש)/.test(m)) tags.push('motzei-shabbat');
 
@@ -712,6 +714,16 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
     // no body — those look like floating orphans to the reader).
     if (pendingMarker) {
       pendingMarker = null;
+    }
+
+    // Avinu Malkeinu litany opened by a leadSmall conditional (Chabad: the
+    // rubric+first verse are one "<small>…אבינו מלכנו</small>אבינו מלכנו…" line,
+    // so parseParagraphRaw already returned a conditional). Start the litany so
+    // the following plain "אבינו מלכנו" verses inherit the same condition.
+    if ((p.kind === 'conditional' || p.kind === 'alternative') && p.tags && p.tags.length &&
+        /^אבינו מלכנו/.test((p.body || '').replace(/[֑-ׇ]/g, '').trim())) {
+      litanyTags = p.tags;
+      litanyMarker = p.marker;
     }
 
     // Inside a split monolithic Amidah (opts.amidah), Sefaria sometimes wraps
