@@ -575,6 +575,11 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
       || /ברכת כהנים|נחם/.test(marker);
   };
   let multiParaActive: { marker: string; tags: ConditionTag[] } | null = null;
+  // אבינו מלכנו litany: a date-marker opens a multi-line run (EM prints each
+  // verse on its own <small> line). The opener's condition is carried across the
+  // whole run via this state so the entire litany is gated, not just line 1.
+  let litanyTags: ConditionTag[] | null = null;
+  let litanyMarker: string | undefined;
 
   for (const rRaw of expanded) {
     // DO NOT stripHtml here — that wipes <small> markers that parseParagraphRaw
@@ -677,8 +682,29 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
         marker: pendingMarker.marker,
         tags: pendingMarker.tags,
       });
+      // אבינו מלכנו litany: the marker ("בעשרת ימי תשובה אומרים" / "בתענית...")
+      // gates only THIS first line; EM prints the rest of the litany as separate
+      // <small> lines. Remember the condition so the whole run stays gated below.
+      if (/^אבינו מלכנו/.test((p.body || '').replace(/[֑-ׇ]/g, '').trim())) {
+        litanyTags = pendingMarker.tags;
+        litanyMarker = pendingMarker.marker;
+      }
       pendingMarker = null;
       continue;
+    }
+
+    // Continuation of an active אבינו מלכנו litany — carry the opener's condition
+    // onto each subsequent "אבינו מלכנו" line so the whole litany is hidden on
+    // ordinary days (and not promoted to prayer by opts.amidah). The first
+    // non-litany line ends the run.
+    if (litanyTags) {
+      if (/^אבינו מלכנו/.test((p.body || '').replace(/[֑-ׇ]/g, '').trim()) &&
+          (p.kind === 'normal' || (p.kind === 'halachic-note' && isVocalizedDense(p.body)))) {
+        result.push({ body: p.body, kind: 'conditional', marker: litanyMarker, tags: litanyTags });
+        continue;
+      }
+      litanyTags = null;
+      litanyMarker = undefined;
     }
 
     // If a marker was pending but the next was already conditional/note,
