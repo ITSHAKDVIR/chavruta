@@ -1039,22 +1039,27 @@ export function stripMaarivBaruchHashemLeolam(lines: string[]): string[] {
 }
 
 /**
- * Sefard weekday-Shacharit "לשני וחמישי" Tachanun leaf bundles TWO branches
- * (per its own opening rubric "בשני וחמישי יאמר והוא רחום, בשאר ימים יאמר שומר
- * ישראל"): the long "והוא רחום" supplication — said ONLY on Mon/Thu — and the
- * daily "שומר ישראל … ואנחנו לא נדע" conclusion + חצי קדיש, said on EVERY
- * Tachanun day. On non-Mon/Thu we drop the long supplication so only the daily
- * conclusion (otherwise lost when the whole leaf was hidden) remains. Drops the
- * contiguous block from "והוא רחום יכפר" up to (not including) "שומר ישראל".
+ * The long "לשני וחמישי" Tachanun supplication (אל ארך אפים / והוא רחום /
+ * selichot) is said ONLY on Monday & Thursday. But "שני וחמישי" is not a date
+ * the conditional-marker system knows, so every monolithic nusach mishandles it:
+ *   • Sefard  — a separate leaf "לשני וחמישי" bundling the long supplication WITH
+ *     the daily "שומר ישראל…" conclusion + חצי קדיש (per its own opening rubric).
+ *   • Chabad  — inline in the daily "תחנון" leaf after "לדוד אליך", before שומר ישראל.
+ *   • Edot HaMizrach — inline in the daily "וידוי" leaf after "בימי שני וחמישי מוסיפים".
+ * On non-Mon/Thu this drops the long block so only the DAILY Tachanun remains.
+ * It runs from the block opener up to (not including) "שומר ישראל" — or to the
+ * end of the leaf when there is no Shomer Yisrael after it (EM, which doesn't
+ * say it). No-op on leaves with no such block (Mincha, Sefard's daily Tachanun).
  */
 export function stripLongTachanunSupplication(lines: string[]): string[] {
-  const bare = (s: string) => (s || '').replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '').trim();
+  const bare = (s: string) => (s || '').replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '').replace(/[־]/g, ' ').trim();
   const out: string[] = [];
   let dropping = false;
   for (const l of lines) {
     const b = bare(l);
-    if (/^והוא רחום יכפר/.test(b)) { dropping = true; continue; } // start of Mon/Thu-only supplication
-    if (dropping && /^שומר ישראל/.test(b)) dropping = false;      // resume at the daily conclusion
+    // Block openers across the three nuschaot.
+    if (/^והוא רחום יכפר|^לשני וחמישי$|^בימי שני וחמישי מוסיפים/.test(b)) { dropping = true; continue; }
+    if (dropping && /^שומר ישראל/.test(b)) dropping = false; // resume at the daily conclusion (Sefard/Chabad)
     if (!dropping) out.push(l);
   }
   return out;

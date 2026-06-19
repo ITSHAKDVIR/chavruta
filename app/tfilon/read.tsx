@@ -538,15 +538,19 @@ export default function SiddurReader() {
                 return;
               }
             }
-            // Sefard "לשני וחמישי" Tachanun leaf — shown on every Tachanun day now
-            // (relevance). On non-Mon/Thu, drop the Mon/Thu-only "והוא רחום"
-            // supplication so only the daily "שומר ישראל…" conclusion + חצי קדיש
-            // remain, and retitle the section accordingly (it's no longer the
-            // Mon/Thu addition).
+            // Tachanun family — the long "לשני וחמישי" supplication is Mon/Thu-only.
+            // Sefard keeps it in a separate "לשני וחמישי" leaf; Chabad ("תחנון") and
+            // Edot HaMizrach ("וידוי") keep it inline in the daily Tachanun leaf. On
+            // non-Mon/Thu strip the long block (no-op when the leaf has none, e.g.
+            // Mincha / Sefard's daily Tachanun). Only Sefard's leaf needs retitling
+            // (it's labeled "לשני וחמישי"); "תחנון"/"וידוי" are already correct.
+            const isTachanunFamily =
+              /^(לשני וחמישי|תחנון|וידוי)$/.test((leaf.he || '').trim()) ||
+              /^(Tac?hnun|Tachanun|Vidui)$/i.test(leaf.en.trim());
             let heOverride: string | null = null;
-            if (/^לשני וחמישי$/.test((leaf.he || '').trim()) && todayDow !== 1 && todayDow !== 4) {
+            if (isTachanunFamily && todayDow !== 1 && todayDow !== 4) {
               lines = stripLongTachanunSupplication(lines);
-              heOverride = 'שומר ישראל';
+              if (/^לשני וחמישי$/.test((leaf.he || '').trim())) heOverride = 'שומר ישראל';
             }
             const parsed = parseParagraphs(lines);
             setLeaves((prev) =>
