@@ -121,7 +121,7 @@ jobs:
         with:
           name: chavruta-v${{ steps.locate.outputs.version }}-apk
           path: ${{ steps.locate.outputs.apk_path }}
-          retention-days: 30
+          retention-days: 2
 
       # The AAB is what you upload to Google Play Console (Internal/Closed/
       # Production tracks). The APK above is for sideloading directly onto
@@ -132,7 +132,7 @@ jobs:
         with:
           name: chavruta-v${{ steps.locate.outputs.version }}-aab
           path: ${{ steps.locate.outputs.aab_path }}
-          retention-days: 30
+          retention-days: 2
 
       # Optional: create a GitHub Release with the APK attached, on push to main.
       # Uncomment if you'd rather get a downloadable Release link instead of a
