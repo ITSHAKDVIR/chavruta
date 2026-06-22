@@ -23,6 +23,8 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
+    permissions:
+      contents: write   # needed to publish the APK/AAB to a GitHub Release
 
     steps:
       - name: Checkout
@@ -116,23 +118,20 @@ jobs:
           VERSION=$(node -e "console.log(require('./app.json').expo.version)")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Upload APK as artifact
-        uses: actions/upload-artifact@v4
+      # Publish the APK + AAB straight to a GitHub Release instead of as Actions
+      # artifacts. Release assets are stored SEPARATELY from the Actions artifact
+      # quota (which filled to ~2.8GB and broke the old upload-artifact step with
+      # "Artifact storage quota has been hit"). The Release is also the phone
+      # download link; the AAB is for Google Play. Tag = v<version> from app.json.
+      - name: Publish APK + AAB to GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: chavruta-v${{ steps.locate.outputs.version }}-apk
-          path: ${{ steps.locate.outputs.apk_path }}
-          retention-days: 2
-
-      # The AAB is what you upload to Google Play Console (Internal/Closed/
-      # Production tracks). The APK above is for sideloading directly onto
-      # devices for testing.
-      - name: Upload AAB as artifact (Play Store)
-        if: steps.locate.outputs.aab_path != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: chavruta-v${{ steps.locate.outputs.version }}-aab
-          path: ${{ steps.locate.outputs.aab_path }}
-          retention-days: 2
+          tag_name: v${{ steps.locate.outputs.version }}
+          name: חברותא ${{ steps.locate.outputs.version }}
+          files: |
+            ${{ steps.locate.outputs.apk_path }}
+            ${{ steps.locate.outputs.aab_path }}
+          fail_on_unmatched_files: false
 
       # Optional: create a GitHub Release with the APK attached, on push to main.
       # Uncomment if you'd rather get a downloadable Release link instead of a
