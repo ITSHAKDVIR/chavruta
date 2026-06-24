@@ -107,10 +107,18 @@ function isFastDay(ctx: Ctx, includeMinor = true): boolean {
   const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
   return events.some((e) => {
     const f = e.getFlags();
+    if (f & flags.EREV) return false; // Erev T"B / Taanit Bechorot — not the fast itself
     if (f & flags.MAJOR_FAST) return true;
     if (includeMinor && (f & flags.MINOR_FAST)) return true;
     return false;
   });
+}
+
+/** Tisha b'Av (or its deferred 10-Av observance): the only MAJOR_FAST in Av. */
+function isTishaBav(ctx: Ctx): boolean {
+  if (ctx.m !== months.AV) return false;
+  const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
+  return events.some((e) => (e.getFlags() & flags.MAJOR_FAST) && !(e.getFlags() & flags.EREV));
 }
 
 function isRoshChodesh(ctx: Ctx): boolean {
@@ -267,10 +275,15 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
   if (/rosh chodesh|rosh hodesh|musaf for rosh chodesh|musaf for shabbat rosh chodesh/.test(name)) {
     return isRoshChodesh(ctx);
   }
-  // Hallel - holiday or Rosh Chodesh
+  // Hallel - holiday, Rosh Chodesh, Chol HaMoed, Chanukah, or Yom HaAtzmaut /
+  // Yom Yerushalayim. (CHOL_HAMOED was missing — that hid the Hallel-closing
+  // kaddish, whose trail is "Hallel", on every Chol HaMoed day.)
   if (/^hallel$|order of hallel|hallel for rosh chodesh|hallel and festivals/.test(name)) {
     const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
-    const isHallelDay = events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.ROSH_CHODESH) || (e.getFlags() & flags.CHANUKAH_CANDLES));
+    const isHallelDay = events.some((e) =>
+      (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.ROSH_CHODESH) ||
+      (e.getFlags() & flags.CHOL_HAMOED) || (e.getFlags() & flags.CHANUKAH_CANDLES) ||
+      /Yom HaAtzma|Yom Yerushalayim/i.test(e.getDesc()));
     return isHallelDay;
   }
   // Tachanun - not on Shabbat, RC, or holidays. Catches "Tachanun" + Chabad's
@@ -291,7 +304,15 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
     const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
     if (events.some((e) => e.getFlags() & flags.MAJOR_FAST)) return false; // T"B / YK
     if (ctx.m === months.NISAN) return false; // All of Nisan — no Tachanun
-    if (ctx.m === months.TISHREI && ctx.d >= 1 && ctx.d <= 12) return false; // Tishrei 1-12 (incl YK+Sukkot)
+    // Tishrei: no Tachanun on Rosh Hashana (1-2), Erev Yom Kippur (9), and from
+    // after Yom Kippur through Sukkot/Shmini Atzeret (Rama O.C. 624:5). But it IS
+    // said on Tzom Gedaliah (3) and the Aseret-Yemei-Teshuva weekdays (4-8) — the
+    // old "1-12" blanket wrongly hid Tachanun + Avinu Malkenu on those days.
+    if (ctx.m === months.TISHREI && (ctx.d <= 2 || ctx.d === 9 || ctx.d >= 11)) return false;
+    // Yom HaAtzma'ut / Yom Yerushalayim — Tachanun omitted (religious-Zionist
+    // custom). hebcal tags them MODERN_HOLIDAY; match by name (Yom HaShoah /
+    // HaZikaron are also MODERN_HOLIDAY but DO have Tachanun, so don't blanket).
+    if (events.some((e) => /Yom HaAtzma|Yom Yerushalayim/i.test(e.getDesc()))) return false;
     if (ctx.m === months.IYYAR && ctx.d === 14) return false; // Pesach Sheni
     if (ctx.m === months.IYYAR && ctx.d === 18) return false; // Lag BaOmer
     if (ctx.m === months.SIVAN && ctx.d <= 12) return false; // Sivan 1-12 (incl Shavuot+Isru Chag)
@@ -317,8 +338,11 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
     if (events.some((e) => e.getFlags() & flags.CHAG)) return false;
     return true;
   }
-  // Avinu Malkenu
+  // Avinu Malkenu — on Aseret Yemei Teshuva and public fasts, but NOT on Tisha
+  // b'Av (a day of mourning; Avinu Malkenu is omitted at both Shacharit and
+  // Mincha) and not on Shabbat.
   if (/avinu malkenu|avinu malkeinu/.test(name)) {
+    if (isShabbat(ctx) || isTishaBav(ctx)) return false;
     return isAseretYemeiTeshuva(ctx) || isFastDay(ctx);
   }
   // Pirkei Avot

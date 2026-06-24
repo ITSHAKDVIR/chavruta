@@ -68,3 +68,11 @@ test.jpg
 # Env files
 .env
 .env.*
+
+# Siddur audit / scratch tooling (local only — not app code)
+.audittmp/
+_shim/
+sef_cache/
+siddur-audit/
+amida.json
+tsconfig.dump.json

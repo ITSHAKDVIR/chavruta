@@ -34,6 +34,7 @@ import {
   getTishaBAvTallitWarning,
 } from '../../src/data/specialDayLinks';
 import { fetchSefariaText } from '../../src/services/sefaria';
+import { filterDailyPsalmForToday } from '../../src/services/songOfDay';
 import { parseParagraphs, activeTags, shouldRender, enhanceConditionalText, stripInactiveInlineParens, hasNikud, splitMonolithicAmidah, stripMaarivBaruchHashemLeolam, stripLongTachanunSupplication, ParsedParagraph } from '../../src/services/siddurParser';
 import { ANENU_TEXT } from '../../src/data/specialDayContent';
 import { CholimReminder } from '../../src/components/CholimReminder';
@@ -79,45 +80,6 @@ const KNOWN_EMPTY_REFS = new Set<string>([
  *  returns text with nikud (e.g. "בָּרְבִיעִי") and sometimes without; we
  *  normalize to bare consonants so a single regex matches either form. */
 const NIKUD_RX = /[֑-ׇ]/g;
-
-/** Headers preceding intro paragraphs. Sefaria uses "בראשון בשבת:" etc.
- *  We match the bare-consonant form (post nikud-strip). */
-// Two Sefaria formats: Ashkenazi "בראשון בשבת:" (anchored) and Sephardi/EM
-// "שיר של יום ראשון:" (each day's block opens with this — the per-day divider).
-const DAY_OF_WEEK_MARKERS = [
-  /^ב?ראשון\s+ב?שבת|שיר של יום ראשון/,  // Sunday
-  /^ב?שני\s+ב?שבת|שיר של יום שני/,      // Monday
-  /^ב?שלישי\s+ב?שבת|שיר של יום שלישי/,  // Tuesday
-  /^ב?רביעי\s+ב?שבת|שיר של יום רביעי/,  // Wednesday
-  /^ב?חמישי\s+ב?שבת|שיר של יום חמישי/,  // Thursday
-  /^ב?שישי\s+ב?שבת|שיר של יום שישי/,    // Friday
-  /^ב?שבת|^יום\s+השבת|שיר של יום שבת|שיר של יום שביעי/, // Shabbat
-];
-
-function filterDailyPsalmForToday(lines: string[], dow: number): string[] {
-  // Map raw line index → which day's marker it starts with (or -1).
-  // Strip HTML tags + nikud before matching (Sefaria sometimes returns
-  // markers like "<small>בָּרִאשׁוֹן בַּשַּׁבָּת:</small>").
-  const markerIdxs: { dow: number; idx: number }[] = [];
-  for (let i = 0; i < lines.length; i++) {
-    const bare = lines[i].replace(/<[^>]+>/g, '').replace(NIKUD_RX, '').trim();
-    for (let d = 0; d < DAY_OF_WEEK_MARKERS.length; d++) {
-      if (DAY_OF_WEEK_MARKERS[d].test(bare)) {
-        markerIdxs.push({ dow: d, idx: i });
-        break;
-      }
-    }
-  }
-  if (markerIdxs.length === 0) return lines;
-  // Keep intro lines (before the first marker), and today's section only.
-  const myMarker = markerIdxs.find((m) => m.dow === dow);
-  if (!myMarker) return lines; // unknown day; show everything
-  const myIdxInList = markerIdxs.indexOf(myMarker);
-  const nextMarker = markerIdxs[myIdxInList + 1];
-  const introEnd = markerIdxs[0].idx;
-  const sectionEnd = nextMarker ? nextMarker.idx : lines.length;
-  return [...lines.slice(0, introEnd), ...lines.slice(myMarker.idx, sectionEnd)];
-}
 
 /**
  * Sefirat HaOmer leaves list ALL 49 day-counts. Keep only TONIGHT's count
@@ -1084,9 +1046,17 @@ export default function SiddurReader() {
             // service is one "קריאת התורה" leaf), so the fallback MUST run for them
             // — use an explicit >= 0 check, not `||`.
             const hotzaaIdx = findLastIdx(/Removing the Torah from Ark|הוצאת ספר תורה/i);
-            const torahAnchorIdx = hotzaaIdx >= 0
-              ? hotzaaIdx
-              : findLastIdx(/Torah Reading|קריאת התורה/i);
+            // Ashkenaz has a separate short "הוצאת ספר תורה" leaf that ends at
+            // ברכו, so the link sits AFTER it (right before the leyning leaf).
+            // Sefard/EM/Chabad pack the whole Torah service (procession → ברכו →
+            // הגבהה → הכנסה) into ONE "קריאת התורה" leaf; placing the link after it
+            // buries it past הכנסת ספר תורה. So for them anchor on that leaf but
+            // render the link BEFORE it (at the start of the Torah service), to
+            // match Ashkenaz's "after ברכו" position as closely as the leaf
+            // granularity allows.
+            const torahReadingIdx = findLastIdx(/Torah Reading|קריאת התורה/i);
+            const torahAnchorIdx = hotzaaIdx >= 0 ? hotzaaIdx : torahReadingIdx;
+            const torahLinkBefore = hotzaaIdx < 0;
             return (
             <Card padding="xl">
               {leaves.map((leaf, idx) => {
@@ -1118,6 +1088,28 @@ export default function SiddurReader() {
                 const myChapter = leaf.trail[0]?.he;
                 const showChapterHeader =
                   myChapter && (idx === 0 || myChapter !== prevChapter);
+                // Mon/Thu קריאת התורה jump-link. Anchored on the Torah-service
+                // leaf; rendered BEFORE it for Sefard/EM/Chabad (whole service is
+                // one leaf) and AFTER it for Ashkenaz (separate הוצאה leaf).
+                const showTorahLink =
+                  idx === torahAnchorIdx && prefs.includeMondayThursdayLeyning &&
+                  !active.has('rosh-chodesh') && !active.has('chol-hamoed') &&
+                  !active.has('fast') && !active.has('chanukah') && !active.has('purim');
+                const torahLinkEl = (
+                  <Pressable
+                    onPress={() => router.push('/tfilon/leyning' as any)}
+                    style={styles.inlineNextLink}
+                  >
+                    <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>
+                      📖  קריאת התורה לשני/חמישי ←
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                      {isMonOrThu
+                        ? '3 עליות מהפרשה הקרובה'
+                        : 'מוצג רק בימי ב׳ ו-ה׳ (לתצוגה מקדימה)'}
+                    </Text>
+                  </Pressable>
+                );
                 return (
                   <View
                     key={`${leaf.ref}-${idx}`}
@@ -1135,6 +1127,7 @@ export default function SiddurReader() {
                     )}
                     <View style={[styles.sectionBlock, idx > 0 && !showChapterHeader && styles.sectionDivider]}>
                       <Text style={[typography.h3, styles.sectionTitle]}>{subTitle}</Text>
+                      {showTorahLink && torahLinkBefore ? torahLinkEl : null}
                       {leaf.loading && (
                         <View style={{ paddingVertical: spacing.md }}>
                           <ActivityIndicator color={colors.primary} />
@@ -1380,26 +1373,12 @@ export default function SiddurReader() {
                         <GabbaiCard />
                       </View>
                     ) : null}
-                    {/* Inline anchor for קריאת התורה (Mon/Thu) — right after הוצאת ספר תורה.
+                    {/* Inline anchor for קריאת התורה (Mon/Thu). Ashkenaz: AFTER the
+                        הוצאת ספר תורה leaf (= right after ברכו, before the leyning).
+                        Sefard/EM/Chabad render it BEFORE the leaf (handled above).
                         SKIP on RC/Chag/Chol HaMoed/fasts — those days have their own
                         Torah reading, so a "Mon/Thu" leyning link would be misleading. */}
-                    {idx === torahAnchorIdx && prefs.includeMondayThursdayLeyning &&
-                     !active.has('rosh-chodesh') && !active.has('chol-hamoed') &&
-                     !active.has('fast') && !active.has('chanukah') && !active.has('purim') ? (
-                      <Pressable
-                        onPress={() => router.push('/tfilon/leyning' as any)}
-                        style={styles.inlineNextLink}
-                      >
-                        <Text style={[typography.bodyBold, { color: colors.primaryDark }]}>
-                          📖  קריאת התורה לשני/חמישי ←
-                        </Text>
-                        <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
-                          {isMonOrThu
-                            ? '3 עליות מהפרשה הקרובה'
-                            : 'מוצג רק בימי ב׳ ו-ה׳ (לתצוגה מקדימה)'}
-                        </Text>
-                      </Pressable>
-                    ) : null}
+                    {showTorahLink && !torahLinkBefore ? torahLinkEl : null}
                   </View>
                 );
               })}

@@ -25,6 +25,7 @@ export type ConditionTag =
   | 'chanukah'
   | 'purim'
   | 'fast'
+  | 'tisha-b-av'     // נחם / עננו-of-Tisha-b'Av — said ONLY on the 9th of Av
   | 'motzei-shabbat'
   | 'shabbat'
   | 'weekday'
@@ -63,6 +64,9 @@ export type ParsedParagraph = {
   /** Internal: true when this paragraph's "marker" is an unrecognized rubric/
    *  directive (e.g. "ואומר החזן חצי קדיש") rather than a date condition. */
   _rubric?: boolean;
+  /** Internal: the marker is NEGATIVE ("…אין אומרים ברכה זו") — the body is said
+   *  on ordinary days and OMITTED when one of `tags` is active (inverted gate). */
+  _negate?: boolean;
 };
 
 function decodeEntities(s: string): string {
@@ -92,8 +96,10 @@ function isMarkerPhrase(text: string): boolean {
   if (t.length > 80) return false;
   // Halachic notes typically include conditional/sequential words
   if (/(אם שכח|ונזכר|חוזר|במנחה אומר|דה"ח|דה״ח|דאם|דהיינו)/.test(t)) return false;
-  // Must end with colon or "אומרים זה" / "אומר" / "מוסיף"
-  return /[:：]$/.test(t) || /אומר(ים)?\s+זה|מוסיף(ים)?|יאמר/.test(t);
+  // Must end with colon or "אומרים זה" / "אומר" / "מוסיף", OR end with a bare
+  // "…אומרים" (Edot HaMizrach special-day rubrics: "בחנוכה אומרים", "בצום גדליה
+  // … אומרים" — the day's psalm follows on the next line).
+  return /[:：]$/.test(t) || /אומר(ים)?\s+זה|מוסיף(ים)?|יאמר/.test(t) || /אומרים\s*$/.test(t);
 }
 
 /** Map a Hebrew marker text to known condition tags. */
@@ -118,11 +124,15 @@ export function markerToTags(marker: string): ConditionTag[] {
   // Accept BOTH the "ב…" (on) and "ל…" (for) prefixes — Chabad/EM labels print
   // "לחנוכה" / "לפורים" as the inline cue, not only "בחנוכה".
   if (/[בל]חנוכה/.test(m)) tags.push('chanukah');
-  if (/[בל]פורים/.test(m)) tags.push('purim');
+  if (/[בלו]פורים/.test(m)) tags.push('purim'); // also "ופורים" in "בחנוכה ופורים"
 
   if (/(בתענית|לתענית|בצום|צומות|תענית ציבור|ביום צום)/.test(m)) tags.push('fast');
 
-  if (/(במוצש|במוצאי שבת|במוצאי שבת ויום טוב|מוצש)/.test(m)) tags.push('motzei-shabbat');
+  // Tisha b'Av-only inserts: נחם (in בונה ירושלים) and the T"B form of עננו.
+  // Marker forms: "בתשעה באב", "במנחת תשעה באב", "נחם", "מנחמי אבלי ציון".
+  if (/(תשעה באב|תשעה־באב|בתשעה באב|במנחת תשעה|^נחם\b|אבלי ציון)/.test(m)) tags.push('tisha-b-av');
+
+  if (/(במוצש|מוצש|[בל]מוצאי)/.test(m)) tags.push('motzei-shabbat'); // ל-prefix: "למוצאי שבת" (Chabad)
 
   // "בשבת" / "בשבתות" = on Shabbat — BUT exclude day-of-week phrases like
   // "בראשון בשבת" / "בשישי בשבת" which mean "on day N of the week", not Shabbat.
@@ -167,6 +177,12 @@ export function markerToTags(marker: string): ConditionTag[] {
 
 function isAlternativeMarker(marker: string): boolean {
   return /במקום|אומר במקום|חותם|חתימה/.test(marker);
+}
+
+/** A NEGATIVE marker: the gated text is said normally and OMITTED on the tagged
+ *  days, e.g. "בתשעה באב וביום הכפורים אין אומרים ברכה זו" (שעשה לי כל צרכי). */
+function isNegativeMarker(marker: string): boolean {
+  return /אין אומר|לא אומר|אינו אומר|אינם אומר|אין נופל/.test(marker);
 }
 
 /** Parse a single raw paragraph from Sefaria into our structured form.
@@ -242,6 +258,7 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
         marker,
         tags,
         _markerOnly: true,
+        _negate: isNegativeMarker(marker),
       };
     }
     // Sub-case: Atta Chonantanu — Motzei Shabbat insert in the 4th Amidah
@@ -285,7 +302,11 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
     //     monolithic EM/Chabad Amidah MUST stay hidden in the silent Amidah —
     //     broadening this to all vocalized text leaked them into the silent.
     const bareInner = cleanInner.replace(/[֑-ׇ]/g, '').trim();
-    if (/^יתגדל ויתקדש|^יתגדל ויתקדש שמ|^יהא שמ?יה רבא מברך/.test(bareInner)) {
+    // Kaddish liturgy wrapped whole in <small> must render (not hide as a note).
+    // Besides the opening (יתגדל / יהא שמיה רבא), the Kaddish Titkabal CONTINUATION
+    // lines — תתקבל צלותנא, יהא שלמא רבא, עושה שלום — are also <small>-wrapped in
+    // Edot HaMizrach Mincha and were being dropped, leaving a truncated kaddish.
+    if (/^יתגדל ויתקדש|^יתגדל ויתקדש שמ|^יהא שמ?יה רבא מברך|^תתקבל צלותהון|^תתקבל צלותנא|^יהא שלמא רבא|עושה שלום במרומיו/.test(bareInner)) {
       return { body: cleanInner, kind: 'normal' };
     }
     // Sub-case: halachic note (unvocalized instruction, or chazara-only liturgy
@@ -342,6 +363,7 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
       kind,
       marker,
       tags,
+      _negate: isNegativeMarker(marker),
     };
   }
 
@@ -404,6 +426,16 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
   // "Morid haTal" standalone — tag as summer-tal.
   if (/^מוריד הטל[:.,\s]/.test(bare) && !/מוריד הגשם/.test(bare)) {
     return { body, kind: 'conditional', marker: 'בקיץ', tags: ['summer-tal'] };
+  }
+  // Bare unvocalized marker line (e.g. "<b>למוצאי שבת</b>" → "למוצאי שבת"): a
+  // short directive that maps to date tags and gates the block that follows it.
+  // Without this it renders as a stray normal word. Unvocalized + short so that
+  // actual (vocalized) prayer text never matches.
+  if (body && !hasNikud(body) && body.replace(/\s/g, '').length <= 30) {
+    const mt = markerToTags(body);
+    if (mt.length > 0) {
+      return { body: '', kind: 'conditional', marker: body.replace(/[:：]\s*$/, '').trim(), tags: mt, _markerOnly: true };
+    }
   }
   return { body, kind: 'normal' };
 }
@@ -472,8 +504,13 @@ function preExtractInlineParens(raw: string): string[] | null {
  * strings that parseParagraphRaw should handle individually.
  */
 function preExtractInlineConditionals(raw: string): string[] {
-  // <small><small>MARKER:</small> BODY</small> — colon may also be at end
-  const pattern = /<small><small>([^<]+?)<\/small>\s*([^<]+?)<\/small>/;
+  // <small><small>MARKER</small> [<br>] BODY</small> — colon may also be at end.
+  // The BODY may contain inner tags (<br>, <b>) — Edot HaMizrach wraps the
+  // Al-HaNisim / Anenu narrative this way — so capture it up to the OUTER
+  // </small>, not just up to the first tag (the old [^<]+? stopped at <br>/<b>).
+  // Marker→body separator varies: "</small> body", "</small><br>body", or just
+  // "<br>body" (inner <small> left unclosed — EM Anenu line 29 does this).
+  const pattern = /<small><small>([^<]+?)(?:<\/small>\s*(?:<br\s*\/?>\s*)?|<br\s*\/?>\s*)((?:(?!<\/small>)[\s\S])*?)<\/small>/;
   const out: string[] = [];
   let remaining = raw;
   let guard = 0;
@@ -485,7 +522,7 @@ function preExtractInlineConditionals(raw: string): string[] {
     }
     const prefix = remaining.slice(0, m.index);
     const marker = m[1].replace(/[:：]\s*$/, '').trim();
-    const body = m[2].trim();
+    const body = m[2].replace(/<br\s*\/?>/gi, ' ').trim(); // <br> → space so words don't glue
     const suffix = remaining.slice(m.index + m[0].length);
     if (prefix.trim()) out.push(prefix);
     // Re-emit as a regular Case-B style: <small>marker:</small> body — the
@@ -516,9 +553,37 @@ function preExtractCombinedSeason(raw: string): string[] | null {
   return [`<small>בקיץ:</small> ${summer}`, `<small>בחורף:</small> ${winter}`];
 }
 
+/**
+ * Packed conditional blob: ONE Sefaria element that opens with a <small>
+ * DATE-marker then packs many <br>-separated prayer lines (Chabad's Avinu
+ * Malkenu is one element with 51 <br> and 4 <small> pairs). stripFormatting()
+ * drops <br>, so by the time parseParagraphRaw runs the line is glued into one
+ * normal paragraph that leaks on every day. Detect it HERE (raw still has <br>)
+ * and re-emit as a single "<small>HEAD:</small> line\nline…" so Case B turns it
+ * into ONE conditional gated by the marker. Its body opens with the litany's
+ * first verse, so the litany-continuation logic carries any plain tail element.
+ * Signature: a <br> appears before the opening <small> closes, and HEAD (the
+ * text before the first <br>) maps to date tags.
+ */
+function preExtractPackedBlob(raw: string): string[] | null {
+  if (!/^\s*<small>/i.test(raw)) return null;
+  const open = raw.search(/<small>/i);
+  const firstBr = raw.search(/<br\s*\/?>/i);
+  const firstClose = raw.search(/<\/small>/i);
+  if (firstBr < 0 || (firstClose >= 0 && firstClose < firstBr)) return null;
+  const head = raw.slice(open + 7, firstBr).replace(/<[^>]+>/g, '').replace(/[:：]\s*$/, '').trim();
+  const tags = markerToTags(head);
+  if (!tags.length || /^(בקיץ|בחורף|בימות)/.test(head)) return null;
+  const prayerLines = raw.slice(firstBr).split(/<br\s*\/?>/i)
+    .map((s) => s.replace(/<[^>]+>/g, '').trim())
+    .filter((s) => s && isVocalizedDense(s));
+  if (!prayerLines.length) return null;
+  return [`<small>${head}:</small> ${prayerLines.join('\n')}`];
+}
+
 export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): ParsedParagraph[] {
   const result: ParsedParagraph[] = [];
-  let pendingMarker: { marker: string; tags: ConditionTag[]; alternative: boolean } | null = null;
+  let pendingMarker: { marker: string; tags: ConditionTag[]; alternative: boolean; negate: boolean } | null = null;
 
   // First pass: split paragraphs with INLINE nested <small> conditionals
   // (Edot HaMizrach / Sephardi pattern) into separate raw fragments so the
@@ -531,6 +596,11 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
   // multiple paragraphs with awkward gaps.
   const expanded: string[] = [];
   for (const r of raw) {
+    const packed = preExtractPackedBlob(r);
+    if (packed) {
+      expanded.push(...packed);
+      continue;
+    }
     if (/<small><small>/i.test(r)) {
       expanded.push(...preExtractInlineConditionals(r));
       continue;
@@ -574,7 +644,10 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
   // the block.
   const isMultiParaOpening = (marker: string): boolean => {
     return /אומר(ים)?\s+(כאן\s+)?(ברכת כהנים|עננו|נחם|על הניסים|הלל)/.test(marker)
-      || /ברכת כהנים|נחם/.test(marker);
+      || /ברכת כהנים|נחם/.test(marker)
+      // Motzei-Shabbat maariv addition: ויהי נועם / תהלים צ"א / ובא לציון — a run
+      // of elements gated by a bare "<b>למוצאי שבת</b>" header, closed at עלינו.
+      || /[בל]מוצאי שבת/.test(marker);
   };
   let multiParaActive: { marker: string; tags: ConditionTag[] } | null = null;
   // אבינו מלכנו litany: a date-marker opens a multi-line run (EM prints each
@@ -644,6 +717,7 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
         marker: p.marker!,
         tags: p.tags ?? ['unknown'],
         alternative: isAlternativeMarker(p.marker!),
+        negate: !!p._negate,
       };
       continue;
     }
@@ -654,7 +728,13 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
     // similar instructional text — once we see one, end the block and emit
     // the note normally.
     if (multiParaActive) {
-      if (p.kind === 'halachic-note') {
+      const bareStart = (p.body || '').replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
+      // Hard structural closer: עלינו / kaddish always end an inserted block,
+      // even with no halachic-note between (Chabad maariv motzei-shabbat block
+      // ויהי נועם → ובא לציון is followed directly by עלינו, which must show
+      // every night).
+      const isHardCloser = /^(עלינו לשבח|יתגדל ויתקדש|תתקבל)/.test(bareStart);
+      if (p.kind === 'halachic-note' || isHardCloser) {
         multiParaActive = null;
         // fall through to normal handling below
       } else {
@@ -683,6 +763,7 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
         kind: pendingMarker.alternative ? 'alternative' : 'conditional',
         marker: pendingMarker.marker,
         tags: pendingMarker.tags,
+        _negate: pendingMarker.negate,
       });
       // אבינו מלכנו litany: the marker ("בעשרת ימי תשובה אומרים" / "בתענית...")
       // gates only THIS first line; EM prints the rest of the litany as separate
@@ -765,7 +846,12 @@ export function activeTags(date: Date = new Date(), inIsrael = true): Set<Condit
 
   const events = HebrewCalendar.calendar({ start: hd, end: hd, il: inIsrael, sedrot: false });
   const isRoshChodesh = events.some((e) => e.getFlags() & flags.ROSH_CHODESH);
-  const isFastDay = events.some((e) => e.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST));
+  // EXCLUDE the EREV flag: hebcal tags "Erev Tish'a B'Av" with a fast flag, but
+  // the eve is not itself a fast day (עננו / נחם / the fast Torah-reading belong
+  // to the fast proper). Taanit Bechorot (Erev Pesach, firstborns only) is also
+  // dropped here intentionally — it is not a public fast in the siddur sense.
+  const isFastDay = events.some((e) =>
+    (e.getFlags() & (flags.MAJOR_FAST | flags.MINOR_FAST)) && !(e.getFlags() & flags.EREV));
   const isYomTov = events.some((e) => e.getFlags() & flags.CHAG);
   const isCholHamoed = events.some((e) => e.getFlags() & flags.CHOL_HAMOED);
 
@@ -780,6 +866,9 @@ export function activeTags(date: Date = new Date(), inIsrael = true): Set<Condit
   if (isYomTov && !isRoshHashanaDay && !isYomKippurDay) out.add('yom-tov');
   if (isCholHamoed) out.add('chol-hamoed');
   if (isFastDay) out.add('fast');
+  // Tisha b'Av is the only MAJOR_FAST in Av (Yom Kippur, the other MAJOR_FAST,
+  // is in Tishrei). Covers the deferred 10-Av observance too (still month Av).
+  if (isFastDay && m === months.AV) out.add('tisha-b-av');
 
   // Specific yom-tov tags
   if (m === months.TISHREI) {
@@ -820,13 +909,27 @@ export function activeTags(date: Date = new Date(), inIsrael = true): Set<Condit
   if (isWinter) out.add('winter-geshem');
   else out.add('summer-tal');
 
-  const isTalUmatar =
-    (m === months.CHESHVAN && d >= 7) ||
-    m === months.KISLEV ||
-    m === months.TEVET ||
-    m === months.SHVAT ||
-    isAdar ||
-    (m === months.NISAN && d <= 15);
+  // ותן טל ומטר. END is the same everywhere — 15 Nisan. The START differs:
+  //   • Israel:    7 Cheshvan.
+  //   • Diaspora:  the 60th day after Tekufat Tishrei — Gregorian Dec 4, or
+  //                Dec 5 in the year preceding a civil leap year. Computing it
+  //                from 7 Cheshvan (as before) gave the diaspora the request
+  //                ~3 weeks too early.
+  const beforePesachEnd =
+    m === months.CHESHVAN || m === months.KISLEV || m === months.TEVET ||
+    m === months.SHVAT || isAdar || (m === months.NISAN && d <= 15);
+  let isTalUmatar: boolean;
+  if (inIsrael) {
+    isTalUmatar = beforePesachEnd && !(m === months.CHESHVAN && d < 7);
+  } else {
+    const gy = date.getFullYear();
+    const gm = date.getMonth() + 1;
+    const gd = date.getDate();
+    const leapNext = ((gy + 1) % 4 === 0 && (gy + 1) % 100 !== 0) || (gy + 1) % 400 === 0;
+    const decStart = leapNext ? 5 : 4;
+    const pastDiasporaStart = (gm === 12 && gd >= decStart) || gm <= 4;
+    isTalUmatar = beforePesachEnd && pastDiasporaStart;
+  }
   if (isTalUmatar) out.add('tal-umatar');
 
   return out;
@@ -1151,6 +1254,9 @@ export function shouldRender(
   // formatting directives — NOT seasonal conditionals. Default to showing so
   // we don't accidentally hide Kedushah body, Modim DeRabbanan, etc.
   if (p.tags.includes('unknown')) return true;
+  // Negative marker ("…אין אומרים ברכה זו"): said on ordinary days, OMITTED when
+  // one of the tagged days is active (e.g. שעשה לי כל צרכי on T"B / Yom Kippur).
+  if (p._negate) return !p.tags.some((t) => active.has(t));
   return p.tags.some((t) => active.has(t));
 }
 

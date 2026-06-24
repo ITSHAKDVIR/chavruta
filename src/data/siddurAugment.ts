@@ -228,12 +228,19 @@ function augmentForRoshChodeshSephardi(leaves: FlatLeaf[], ctx: DayContext): Fla
   // The RC subtree already includes Song of the Day + Barchi Nafshi (in their
   // Sephardi RC position). Drop the BASE weekday copies so they don't render a
   // second time later in the flow.
+  // The RC subtree is a COMPLETE, correctly-ordered closing (Hallel → Song of
+  // Day → Barchi Nafshi → Torah Reading → Ashrei/Uva Letzion → Hachnasat →
+  // Musaf). Drop the BASE weekday copies it supplies so they don't render a
+  // SECOND time AFTER Musaf (the previous bug: base Torah Reading landed after
+  // Musaf, and שיר-של-יום/עלינו duplicated). Keep base Beit Yaakov / Kaveh /
+  // Aleinu — the subtree doesn't include them.
   let out = leaves.filter((l) =>
-    !(/^(Song of the Day|Barchi Nafshi)$/i.test(l.en) && /Weekday Shacharit/i.test(l.ref)));
+    !(/^(Torah Reading|Ashrei|Song of the Day|Barchi Nafshi)$/i.test(l.en) && /Weekday Shacharit/i.test(l.ref)));
   const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahIdx < 0) return leaves;
 
-  // Inject RC subtree after Amidah.
+  // Inject the RC subtree right after Amidah, before the kept base tail
+  // (Beit Yaakov / Kaveh / Aleinu).
   out = injectAfter(out, amidahIdx, rcLeaves);
   return out;
 }
@@ -252,13 +259,43 @@ function augmentForRoshChodeshSephardi(leaves: FlatLeaf[], ctx: DayContext): Fla
 function augmentForRoshChodeshEdotMizrach(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
   const rcNode = findTopNode('edot-mizrach', /^Rosh (Chodesh|Hodesh)$|^סדר ראש ח[דו]ש$|^לראש ח[דו]ש$/);
   if (!rcNode) return leaves;
-  const rcLeaves = [...collectLeaves(rcNode), ...rcChanukahExtraReading(ctx)];
-  if (rcLeaves.length === 0) return leaves;
+  const rcAll = collectLeaves(rcNode);
+  if (rcAll.length === 0) return leaves;
+
+  // The EM RC subtree is INCOMPLETE (no Torah Reading, no Ashrei) and mis-ordered
+  // (Musaf before Barchi Nafshi), while the BASE RC-day flow already has Torah
+  // Reading in the right place (right after the Amidah) plus Ashrei / Uva Letzion
+  // / Song of Day / Aleinu. So keep the base and surgically inject only the
+  // RC-specific additions from the subtree — Hallel, Barchi Nafshi, Musaf — at
+  // the correct anchors (Ashkenazi-style). Injecting the subtree wholesale was
+  // the bug: it duplicated Uva Letzion/Song of Day/Aleinu and pushed the base
+  // Torah Reading to AFTER Musaf.
+  const hallel = rcAll.filter((l) => /^Hallel$/i.test(l.en) || /הלל/.test(l.he));
+  const musaf = rcAll.filter((l) => /^Muss?af$/i.test(l.en) || /^מוסף/.test(l.he));
+  const barchi = rcAll.filter((l) => /^Barchi Nafshi$/i.test(l.en) || /ברכי נפשי/.test(l.he));
+  const chanukahReading = rcChanukahExtraReading(ctx);
 
   let out = leaves;
   const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahIdx < 0) return leaves;
-  out = injectAfter(out, amidahIdx, rcLeaves);
+
+  // Hallel right after the Amidah (before the base Torah Reading).
+  if (hallel.length) out = injectAfter(out, amidahIdx, hallel);
+  // RC-Tevet (Chanukah) extra Nasi reading right after the base Torah Reading.
+  if (chanukahReading.length) {
+    const torahIdx = findFirstLeafByName(out, /^Torah Reading$|^קריאת התורה$/i);
+    if (torahIdx >= 0) out = injectAfter(out, torahIdx, chanukahReading);
+  }
+  // Barchi Nafshi after Song of the Day.
+  if (barchi.length) {
+    const songIdx = findFirstLeafByName(out, /^Song of the Day$|^שיר של יום$/i);
+    if (songIdx >= 0) out = injectAfter(out, songIdx, barchi);
+  }
+  // Musaf just before Aleinu (closes the service).
+  if (musaf.length) {
+    const aleinuIdx = findFirstLeafByName(out, /^Al?einu$|^Alenu$|^עלינו$/i);
+    out = aleinuIdx > 0 ? injectAfter(out, aleinuIdx - 1, musaf) : [...out, ...musaf];
+  }
   return out;
 }
 
@@ -374,7 +411,10 @@ function buildMusafClosingKaddish(): FlatLeaf {
     ref: 'Siddur Ashkenaz, Weekday, Shacharit, Concluding Prayers, Kaddish Shalem',
     he: 'קדיש תתקבל (לאחר חזרת מוסף)',
     en: "Kaddish Titkabal (after Musaf chazaras)",
-    trail: [{ he: 'מוסף לראש חודש', en: 'Musaf for Rosh Chodesh' }],
+    // Neutral trail — this kaddish is injected on every Musaf day (RC AND Chol
+    // HaMoed), so the trail must NOT be "Musaf for Rosh Chodesh" (which the
+    // relevance filter rejects on Chol HaMoed, dropping the kaddish).
+    trail: [{ he: 'אחרי מוסף', en: 'Concluding Kaddish' }],
   };
 }
 
@@ -481,7 +521,13 @@ function augmentForChanukah(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContext)
   // Remove the regular weekday Torah reading (Chanukah has its own).
   let out = leaves.filter((l) => !(/^Torah Reading$/i.test(l.en) || /קריאת התורה$/.test(l.he)));
 
-  let anchor = findLeafIndex(out, /^Amidah$|^עמידה$/);
+  // Anchor on the END of the Amidah (last Amidah leaf by trail), so Hallel +
+  // reading flow out of the Amidah. The old `findLeafIndex(/^Amidah$/)` failed in
+  // Ashkenaz (the Amidah is split into per-bracha leaves with no leaf literally
+  // named "Amidah"), so it fell back to Yishtabach and injected Hallel BEFORE
+  // Barchu / the Shema blessings.
+  let anchor = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i, /Post[\s-]?Amid|שלאחר.עמידה/i);
+  if (anchor < 0) anchor = findLeafIndex(out, /^Amidah$|^עמידה$/);
   if (anchor < 0) anchor = findLeafIndex(out, /Yishtabach|ישתבח/);
   if (anchor < 0) anchor = out.length - 1;
 
@@ -835,7 +881,12 @@ export function augmentLeavesForToday(
     });
     const tomorrowIsYomAtzmaut = tomorrowEventsMaariv.some((e) => /Yom HaAtzma|Atzma'?ut/i.test(e.getDesc()));
     const tomorrowIsYomYerushalayim = tomorrowEventsMaariv.some((e) => /Yom Yerushalayim|Jerusalem Day/i.test(e.getDesc()));
-    if (ctx.isPurim) out = augmentForPurimMaariv(out, nusach);
+    // Purim Maariv (Al-HaNisim + Megillah) is the EVE service that BEGINS Purim,
+    // said the night that enters 14 Adar — i.e. when TODAY is still 13 Adar. So
+    // it must fire on tomorrow=Purim, not on ctx.isPurim (whose night is already
+    // motzei Purim). Same eve logic as Yom HaAtzmaut Maariv above.
+    const tomorrowIsPurim = tomorrowEventsMaariv.some((e) => /Purim|Shushan/i.test(e.getDesc()) && !/Erev/i.test(e.getDesc()));
+    if (tomorrowIsPurim) out = augmentForPurimMaariv(out, nusach);
     else if (tomorrowIsYomAtzmaut || tomorrowIsYomYerushalayim) out = augmentForYomHaatzmautMaariv(out, nusach);
   }
 
