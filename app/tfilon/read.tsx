@@ -133,7 +133,11 @@ const CURATED_TOC_BY_PRAYER: Record<string, CuratedSection[]> = {
   Shacharit: [
     { label: 'ברכות השחר',      match: ['Preparatory', 'Morning Blessings', 'ברכות השחר'] },
     { label: 'קרבנות',          match: ['Korbanot', 'קרבנות', 'Sacrifices'] },
-    { label: 'פסוקי דזמרה',     match: ['Pesukei Dezimra', 'Pesukei DeZimra', 'פסוקי דזמרה'] },
+    // Sefard has no "Pesukei Dezimra" container node (its leaves sit directly
+    // under Weekday Shacharit), so also match the section's opener "Hodu" — that
+    // makes the chip appear and jump to the right spot in Sefard too. (Ashkenaz/
+    // EM/Chabad already match via the trail / leaf name and still resolve first.)
+    { label: 'פסוקי דזמרה',     match: ['Pesukei Dezimra', 'Pesukei DeZimra', "Pesukei D'Zimra", 'פסוקי דזמרה', 'Hodu', 'הודו'] },
     { label: 'ברכות קריאת שמע', match: ['Blessings of the Shema', 'Shema'] },
     { label: 'שמונה עשרה',      match: ['Amidah', 'Amida', 'שמונה עשרה', 'עמידה'] },
     { label: 'חזרת הש״ץ',       match: ['Repetition', 'Chazarat', 'חזרת'] },
@@ -383,6 +387,8 @@ export default function SiddurReader() {
   // track open state per-anchor. Date-aware additions (יעלה ויבוא, ובספר חיים,
   // ותן טל ומטר, וכו') apply to both because they live in paragraph tags.
   const [chazaraOpenIdx, setChazaraOpenIdx] = useState<Set<number>>(new Set());
+  // Optional personal additions (reshut) — collapsed by default, keyed "idx-j".
+  const [optionalOpenKeys, setOptionalOpenKeys] = useState<Set<string>>(new Set());
 
   // ===== Running text fetch =====
   const [leaves, setLeaves] = useState<LoadedLeaf[]>([]);
@@ -1141,6 +1147,33 @@ export default function SiddurReader() {
                       {leaf.paragraphs &&
                         leaf.paragraphs.map((p, j) => {
                           if (!shouldRender(p, active, { showAll, showNotes, chazara: false })) return null;
+                          // Optional personal addition (reshut) — a tap-to-open
+                          // collapse so it isn't mistaken for obligatory text.
+                          if (p._optional) {
+                            const key = `${idx}-${j}`;
+                            const open = optionalOpenKeys.has(key);
+                            return (
+                              <View key={j} style={{ marginVertical: spacing.xs }}>
+                                <Pressable
+                                  onPress={() => setOptionalOpenKeys((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(key)) next.delete(key); else next.add(key);
+                                    return next;
+                                  })}
+                                  hitSlop={6}
+                                >
+                                  <Text style={[typography.caption, styles.conditionalMarker]}>
+                                    🔹 תוספת רשות {open ? '▾' : '▸'}
+                                  </Text>
+                                </Pressable>
+                                {open ? (
+                                  <Text style={[typography.small, styles.paragraph]}>
+                                    {stripInactiveInlineParens(p.body, active)}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            );
+                          }
                           if (p.kind === 'halachic-note') {
                             return (
                               <Text key={j} style={[typography.small, styles.halachicNote]}>
@@ -1168,7 +1201,7 @@ export default function SiddurReader() {
                                 )}
                                 <Text
                                   style={[
-                                    typography.sacred,
+                                    p.small ? typography.small : typography.sacred,
                                     styles.paragraph,
                                     inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted,
                                   ]}
@@ -1188,7 +1221,7 @@ export default function SiddurReader() {
                             <Text
                               key={j}
                               style={[
-                                unvocalized ? styles.rubric : typography.sacred,
+                                unvocalized ? styles.rubric : (p.small ? typography.small : typography.sacred),
                                 styles.paragraph,
                               ]}
                             >

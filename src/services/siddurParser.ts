@@ -67,6 +67,16 @@ export type ParsedParagraph = {
   /** Internal: the marker is NEGATIVE ("…אין אומרים ברכה זו") — the body is said
    *  on ordinary days and OMITTED when one of `tags` is active (inverted gate). */
   _negate?: boolean;
+  /** Source paragraph was wrapped in <small> — render in the small font even when
+   *  the content is vocalized prayer (otherwise it shows in the large `sacred`
+   *  font). */
+  small?: boolean;
+  /** Context rubric (speaker/kaddish/section label) — an unvocalized directive
+   *  that must ALWAYS show (small font), not be hidden with descriptive notes. */
+  _alwaysShow?: boolean;
+  /** Optional personal addition (reshut) inside an Amidah bracha — render in a
+   *  collapse and exclude from the chazara. */
+  _optional?: boolean;
 };
 
 function decodeEntities(s: string): string {
@@ -185,9 +195,71 @@ function isNegativeMarker(marker: string): boolean {
   return /אין אומר|לא אומר|אינו אומר|אינם אומר|אין נופל/.test(marker);
 }
 
+/**
+ * A halachic-note that DESCRIBES a conditional insert (e.g. "אם שכח יעלה ויבא…")
+ * should follow that insert's day-condition — hidden on days the insert isn't
+ * said, even when "show notes" is on. Returns the day-tags the note inherits, or
+ * null if it isn't tied to a dated insert.
+ */
+function noteConditionTags(body: string): ConditionTag[] | null {
+  const bare = (body || '').replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '');
+  if (/יעלה ויבא|יעלה ויבוא/.test(bare)) return ['rosh-chodesh', 'chol-hamoed', 'yom-tov'];
+  if (/על הניסים|על הנסים/.test(bare)) return ['chanukah', 'purim'];
+  if (/\bנחם\b|אבלי ציון/.test(bare)) return ['tisha-b-av'];
+  if (/עננו/.test(bare)) return ['fast'];
+  if (/זכרנו|בספר חיים|המלך הקדוש|המלך המשפט|ובכן תן פחדך/.test(bare)) return ['aseret-yemei-teshuva'];
+  if (/טל ומטר|ותן טל|ותן ברכה/.test(bare)) return ['tal-umatar'];
+  if (/משיב הרוח|מוריד הגשם/.test(bare)) return ['winter-geshem'];
+  return null;
+}
+
+// Amida bracha NAMES — short unvocalized labels that orient the davener. Printed
+// in every siddur; must not be hidden as "notes" (Sefard prints them as plain
+// lines that the note-filter was swallowing).
+const AMIDA_BRACHA_NAMES = /^(אבות|גבורות|קדושת השם|קדושת היום|האל הקדוש|דעת|אתה חונן|חונן הדעת|תשובה|סליחה|גאולה|רפואה|רפואה ופרנסה|ברכת השנים|השנים|ברך עלינו|קבוץ גליות|קיבוץ גליות|השבת המשפט|דין|ברכת המינים|המינים|צדיקים|על הצדיקים|בנין ירושלים|ירושלים|מלכות בית דוד|את צמח דוד|קבלת תפלה|שומע תפלה|עבודה|רצה|הודאה|מודים|ברכת כהנים|שים שלום|שלום)$/;
+
+/**
+ * A CONTEXT rubric — an unvocalized directive that must ALWAYS show (in the small
+ * font), as opposed to a descriptive/forgot-it note (hidden unless notes are on).
+ * Per the user's spec + the empirical note-filter audit: speaker/movement cues,
+ * EVERY Kaddish label, section labels, and the Amida bracha names.
+ */
+export function isContextRubric(body: string): boolean {
+  const bare = (body || '').replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
+  if (!bare) return false;
+  // Descriptive / forgot-it / reason notes are NEVER context — stay toggle-hidden.
+  if (/אם שכח|ונזכר|אם לא|אם טעה|אם אמר|הטעם|מה שתקנו|נוהגים|יש אומרים|יש נוהגים|המנהג|דכתיב|במדרש|לפי ש/.test(bare)) return false;
+  // Amida bracha names (1-3 word labels).
+  if (AMIDA_BRACHA_NAMES.test(bare)) return true;
+  const words = bare.split(/\s+/).length;
+  // Short speaker/Kaddish/movement cue (or any short line ending with a colon).
+  if (words <= 6 && (
+    /קדיש/.test(bare) ||
+    /חזן|ש["׳']?ץ|הש["׳']?ץ|קהל|ציבור|צבור|אבלים|כהנים|עונין|עונים|עונה|אומר|אומרים|יאמרו|כורע|פוסע|חוזר|בלחש|בקול|עומד|יושב|מתחיל/.test(bare) ||
+    /[:：]\s*$/.test(bare)
+  )) return true;
+  return false;
+}
+
 /** Parse a single raw paragraph from Sefaria into our structured form.
  *  This is a low-level pass; merging marker-only with next paragraph is done after. */
 export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?: boolean } {
+  const result = parseParagraphRawInner(raw);
+  // Preserve "was wrapped in <small>" so display can use the SMALL font, not the
+  // large `sacred` one. Applies only to shown vocalized prayer (normal/conditional/
+  // alternative) — halachic-notes are already small, marker-only has no body.
+  // This is what makes Sefard's vocalized <small> inserts render small like the
+  // other nuschaot (the parser strips <small> and otherwise loses the size).
+  // Set for any non-marker result (halachic-notes included, so a seasonal insert
+  // later PROMOTED to conditional — e.g. זכרנו — keeps the small font).
+  if (!result._markerOnly) {
+    const t = stripFormatting(decodeEntities((raw || '').trim()));
+    if (/^<small>(?:(?!<\/small>)[\s\S])*<\/small>\s*$/i.test(t)) result.small = true;
+  }
+  return result;
+}
+
+function parseParagraphRawInner(raw: string): ParsedParagraph & { _markerOnly?: boolean } {
   if (!raw) return { body: '', kind: 'normal' };
 
   let txt = decodeEntities(raw).trim();
@@ -655,6 +727,11 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
   // whole run via this state so the entire litany is gated, not just line 1.
   let litanyTags: ConditionTag[] | null = null;
   let litanyMarker: string | undefined;
+  // Optional personal addition (reshut): an intro rubric ("מי שרוצה…יאמר כאן
+  // תחנה", "תפלה שיתפלל על מזונו") gates the vocalized <small> prayer that follows
+  // it (תפילה לחולה / בקשת פרנסה). We show the intro and put the prayer in a
+  // collapse (and out of the chazara).
+  let pendingReshut = false;
 
   for (const rRaw of expanded) {
     // DO NOT stripHtml here — that wipes <small> markers that parseParagraphRaw
@@ -739,6 +816,7 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
         // fall through to normal handling below
       } else {
         result.push({
+          ...p,
           body: p.body,
           kind: 'conditional',
           marker: multiParaActive.marker,
@@ -759,6 +837,7 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
     if (pendingMarker &&
         (p.kind === 'normal' || (p.kind === 'halachic-note' && isVocalizedDense(p.body)))) {
       result.push({
+        ...p,
         body: p.body,
         kind: pendingMarker.alternative ? 'alternative' : 'conditional',
         marker: pendingMarker.marker,
@@ -783,7 +862,7 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
     if (litanyTags) {
       if (/^אבינו מלכנו/.test((p.body || '').replace(/[֑-ׇ]/g, '').trim()) &&
           (p.kind === 'normal' || (p.kind === 'halachic-note' && isVocalizedDense(p.body)))) {
-        result.push({ body: p.body, kind: 'conditional', marker: litanyMarker, tags: litanyTags });
+        result.push({ ...p, body: p.body, kind: 'conditional', marker: litanyMarker, tags: litanyTags });
         continue;
       }
       litanyTags = null;
@@ -815,15 +894,45 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
     // promote dense-vocalized notes back to prayer. The chazara-only liturgy
     // (Kedushah / Modim DeRabbanan) was already tagged and `continue`d above, so
     // it never reaches here; only genuine bracha bodies are promoted.
-    const outKind =
-      opts?.amidah && p.kind === 'halachic-note' && isVocalizedDense(p.body)
-        ? 'normal'
-        : p.kind;
+    // Optional personal addition (reshut). An intro rubric introduces it; the
+    // next dense-vocalized <small> line IS the optional prayer.
+    {
+      const bareR = (p.body || '').replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '');
+      // Detect by content signature (the intro may be vocalized — parnassa's is —
+      // so don't gate on nikud). These phrases are specific directive intros that
+      // don't occur inside actual prayer text.
+      const isReshutIntro =
+        /מי שרוצה|הרוצה לומר|הרוצה להתפלל|יש נוהגים לומר|הנוהגים לומר|תחנה זו|תפלה שיתפלל|תפלה שיאמר|יאמר כאן (תחנה|תפלה|בקשה)/.test(bareR);
+      if (isReshutIntro) {
+        p._alwaysShow = true; // show the "say this tachina if you wish" line
+        pendingReshut = true;
+      } else if (pendingReshut) {
+        pendingReshut = false;
+        if (p.small && isVocalizedDense(p.body) &&
+            !p.tags?.length && !p.tags?.includes('chazara-only')) {
+          p._optional = true;
+        }
+      }
+    }
+
+    const promotedByAmidah =
+      opts?.amidah && p.kind === 'halachic-note' && isVocalizedDense(p.body);
+    const outKind = promotedByAmidah ? 'normal' : p.kind;
+    // A descriptive note about a dated insert inherits that insert's day-tags, so
+    // it hides/shows together with the insert (even when "show notes" is on) —
+    // e.g. the "forgot Yaaleh VeYavo" note only on R"Ch/חוה"מ/יו"ט.
+    const inheritedTags =
+      outKind === 'halachic-note' && (!p.tags || p.tags.length === 0)
+        ? noteConditionTags(p.body)
+        : null;
     result.push({
+      ...p,
       body: p.body,
       kind: outKind,
       marker: p.marker,
-      tags: p.tags,
+      tags: inheritedTags ?? p.tags,
+      // A bracha body promoted to main prayer (YT Musaf) is NOT small text.
+      small: promotedByAmidah ? false : p.small,
     });
   }
 
@@ -1242,11 +1351,26 @@ export function shouldRender(
   if (p.tags?.includes('chazara-only')) return !!opts.chazara;
   // Silent-only (the quiet 3rd bracha אתה קדוש) — hidden inside the chazara.
   if (p.tags?.includes('silent-only')) return !opts.chazara;
+  // Optional personal addition (reshut): shown in the silent Amidah (in a
+  // collapse, handled by the view) but NEVER in the chazara.
+  if (p._optional) return !opts.chazara;
+  // CONTEXT rubrics (speaker cues, Kaddish labels, bracha names) always show, in
+  // the small font — they orient the davener and must never be hidden with the
+  // descriptive notes.
+  const isContext = p._alwaysShow || isContextRubric(p.body);
   // User-facing rule: "without halachic notes" means hide every line that
   // isn't vocalized — that catches rubric annotations whether or not the
   // parser tagged them as halachic-note. Vocalized text always shows.
-  if (!opts.showNotes && !hasNikud(p.body)) return false;
-  if (p.kind === 'halachic-note') return opts.showNotes;
+  if (!opts.showNotes && !hasNikud(p.body) && !isContext) return false;
+  if (p.kind === 'halachic-note') {
+    if (isContext) return true;
+    if (!opts.showNotes) return false;
+    // Notes ON: a conditional-linked note (inherited day-tags) follows its insert.
+    if (p.tags && p.tags.length > 0 && !p.tags.includes('unknown')) {
+      return p.tags.some((t) => active.has(t));
+    }
+    return true;
+  }
   if (p.kind === 'normal') return true;
   if (opts.showAll) return true;
   if (!p.tags || p.tags.length === 0) return true;
