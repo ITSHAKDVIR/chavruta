@@ -26,6 +26,10 @@ export type ConditionTag =
   | 'purim'
   | 'fast'
   | 'tisha-b-av'     // נחם / עננו-of-Tisha-b'Av — said ONLY on the 9th of Av
+  | 'torah-reading'  // יהללו / ובנוחה / pesukei הוצאה-הכנסה — only when ס"ת is read
+  | 'elul'           // לדוד ה' אורי (תה' כז) — Elul through Hoshana Rabba
+  | 'no-tachanun'    // psalms said on days without Tachanun (תה' טז in L'David)
+  | 'bet-avel'       // house-of-mourning psalm (תה' מט) — not in ordinary davening
   | 'motzei-shabbat'
   | 'shabbat'
   | 'weekday'
@@ -142,6 +146,10 @@ export function markerToTags(marker: string): ConditionTag[] {
   // Marker forms: "בתשעה באב", "במנחת תשעה באב", "נחם", "מנחמי אבלי ציון".
   if (/(תשעה באב|תשעה־באב|בתשעה באב|במנחת תשעה|^נחם\b|אבלי ציון)/.test(m)) tags.push('tisha-b-av');
 
+  // Torah-procession pesukim (יהללו / ובנוחה / הוצאת-הכנסת ס"ת) — only on days a
+  // Sefer Torah is taken out. Marker forms across nuschaot.
+  if (/שמוציאין ספר תורה|מוציאין ס["׳']?ת|כשמחזירים הס|הכנסת ס["׳']?ת|בהכנסת ספר|הוצאת ספר תורה|כשמוציאין/.test(m)) tags.push('torah-reading');
+
   if (/(במוצש|מוצש|[בל]מוצאי)/.test(m)) tags.push('motzei-shabbat'); // ל-prefix: "למוצאי שבת" (Chabad)
 
   // "בשבת" / "בשבתות" = on Shabbat — BUT exclude day-of-week phrases like
@@ -210,6 +218,25 @@ function noteConditionTags(body: string): ConditionTag[] | null {
   if (/זכרנו|בספר חיים|המלך הקדוש|המלך המשפט|ובכן תן פחדך/.test(bare)) return ['aseret-yemei-teshuva'];
   if (/טל ומטר|ותן טל|ותן ברכה/.test(bare)) return ['tal-umatar'];
   if (/משיב הרוח|מוריד הגשם/.test(bare)) return ['winter-geshem'];
+  return null;
+}
+
+/**
+ * A vocalized PRAYER insert inside the Amidah that is conditional but carries no
+ * date-marker of its own (so the parser would otherwise classify it as plain
+ * prayer and leak it every day — especially in Sefard, where allSmallAmidah
+ * promotes <small> inserts to normal). Returns the day-tags it should gate by.
+ * Signatures are specific chatimot/openings — they never match a regular bracha
+ * body. (The regular "בונה ירושלים" chatima is a SEPARATE line, so gating the
+ * "מנחם ציון" variant is safe.)
+ */
+function insertConditionTags(body: string): ConditionTag[] | null {
+  const bare = (body || '').replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
+  if (/עננו (יהוה|אבינו|ה) עננו|עננו.{0,5}ביום צום/.test(bare)) return ['fast'];
+  if (/אתה חוננתנו למדע/.test(bare)) return ['motzei-shabbat'];
+  if (/מנחם ציון [בו]?בנין ירושלים|מנחם ציון ובונה ירושלים/.test(bare)) return ['tisha-b-av'];
+  if (/^נחם יהוה אלהינו|נחם.{0,8}אבלי ציון/.test(bare)) return ['tisha-b-av'];
+  if (/אבינו מלכנו אבינו אתה|אבינו מלכנו אין לנו מלך/.test(bare)) return ['fast', 'aseret-yemei-teshuva'];
   return null;
 }
 
@@ -717,6 +744,9 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
   const isMultiParaOpening = (marker: string): boolean => {
     return /אומר(ים)?\s+(כאן\s+)?(ברכת כהנים|עננו|נחם|על הניסים|הלל)/.test(marker)
       || /ברכת כהנים|נחם/.test(marker)
+      // Torah-procession block: "…שמוציאין ספר תורה אומרים יהללו…" gates the run
+      // יהללו → הודו → לדוד-מזמור (until the next marker / kaddish / עלינו).
+      || /שמוציאין ספר תורה|אומרים יהללו|כשמחזירים הס/.test(marker)
       // Motzei-Shabbat maariv addition: ויהי נועם / תהלים צ"א / ובא לציון — a run
       // of elements gated by a bare "<b>למוצאי שבת</b>" header, closed at עלינו.
       || /[בל]מוצאי שבת/.test(marker);
@@ -799,6 +829,35 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
       continue;
     }
 
+    // Torah-procession instruction — a LONG rubric (not a clean colon-marker, so
+    // it falls through as a halachic-note) like "בשני ובחמישי…שמוציאין ספר תורה
+    // אומרים יהללו כשמחזירים הס״ת…". It opens the יהללו → הודו → לדוד-מזמור block,
+    // which must show ONLY when a Sefer Torah is taken out. Gate the run as
+    // torah-reading. (Content-gating יהללו itself is unsafe — that exact verse is
+    // also in Pesukei Dezimra / Tehillim 148.)
+    // Instruction lines that OPEN a gated multi-paragraph block. These can be
+    // classified normal OR halachic-note (the prayer-as-marker heuristic varies),
+    // so match by INSTRUCTION-SPECIFIC content (phrases that never occur in a
+    // psalm body), regardless of kind. The instruction itself is dropped.
+    {
+      const bareTr = (p.body || '').replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '');
+      // Torah procession (יהללו → לדוד-מזמור → ובנוחה).
+      if (/שמוציאין ספר תורה|כשמחזירים הס|כשמוציאין ס|מוציאין ספר תורה|בהוצאת ספר תורה/.test(bareTr)) {
+        multiParaActive = { marker: 'בהוצאת ספר תורה', tags: ['torah-reading'] }; continue;
+      }
+      // "לדוד ה'" leaf psalm-blocks. The DAILY closing kaddish (יתגדל ויתקדש שמה
+      // רבא) is the hard-closer below, so it always shows.
+      if (/אחר כל תפלה.{0,30}אורי|מנהג.{0,20}לומר.{0,30}אורי/.test(bareTr)) {
+        multiParaActive = { marker: 'מאלול עד הושענא רבה', tags: ['elul'] }; continue;
+      }
+      if (/בבית האבל/.test(bareTr)) {
+        multiParaActive = { marker: 'בבית האבל', tags: ['bet-avel'] }; continue;
+      }
+      if (/שאין בהם תחנון|אין בו תחנון/.test(bareTr)) {
+        multiParaActive = { marker: 'בימים שאין תחנון', tags: ['no-tachanun'] }; continue;
+      }
+    }
+
     // If a multi-paragraph block is active, tag every paragraph with its marker
     // until a closing rubric is hit. The closer is typically a halachic-note
     // wrapped in <small>...</small> like "לאחר ברכת כהנים יאמרו הציבור" or
@@ -810,8 +869,15 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
       // even with no halachic-note between (Chabad maariv motzei-shabbat block
       // ויהי נועם → ובא לציון is followed directly by עלינו, which must show
       // every night).
-      const isHardCloser = /^(עלינו לשבח|יתגדל ויתקדש|תתקבל)/.test(bareStart);
-      if (p.kind === 'halachic-note' || isHardCloser) {
+      // Hard closer: עלינו / a full Kaddish opening (also catches a kaddish that
+      // begins with a "קדיש יתום" label, e.g. the daily kaddish ending the
+      // "לדוד ה'" leaf — it must show even after the no-Tachanun psalm-block).
+      const isHardCloser = /^(עלינו לשבח|יתגדל ויתקדש|תתקבל)/.test(bareStart) ||
+        /יתגדל ויתקדש שמה? רבא/.test(bareStart);
+      // A halachic-note closes the block ONLY if it's a real closing instruction,
+      // not a short speaker/context cue ("קהל:", "שליח ציבור") that belongs INSIDE
+      // the block (e.g. the יהללו → הודו → לדוד-מזמור Torah-procession run).
+      if ((p.kind === 'halachic-note' && !isContextRubric(p.body)) || isHardCloser) {
         multiParaActive = null;
         // fall through to normal handling below
       } else {
@@ -915,22 +981,29 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
       }
     }
 
+    // A vocalized conditional INSERT in the Amidah (עננו / אתה חוננתנו / מנחם ציון
+    // / the Avinu Malkenu litany) carries no date-marker, so it would leak every
+    // day — and in Sefard the allSmallAmidah promotion turns it into normal[].
+    // Tag it conditional so it gates by day (hidden on ordinary days, shown on
+    // its own). This MUST win over the amidah promotion.
+    const insertTags =
+      (!p.tags || p.tags.length === 0) ? insertConditionTags(p.body) : null;
     const promotedByAmidah =
-      opts?.amidah && p.kind === 'halachic-note' && isVocalizedDense(p.body);
-    const outKind = promotedByAmidah ? 'normal' : p.kind;
+      !insertTags && opts?.amidah && p.kind === 'halachic-note' && isVocalizedDense(p.body);
+    let outKind: ParagraphKind = insertTags ? 'conditional' : (promotedByAmidah ? 'normal' : p.kind);
     // A descriptive note about a dated insert inherits that insert's day-tags, so
     // it hides/shows together with the insert (even when "show notes" is on) —
     // e.g. the "forgot Yaaleh VeYavo" note only on R"Ch/חוה"מ/יו"ט.
     const inheritedTags =
-      outKind === 'halachic-note' && (!p.tags || p.tags.length === 0)
+      !insertTags && outKind === 'halachic-note' && (!p.tags || p.tags.length === 0)
         ? noteConditionTags(p.body)
         : null;
     result.push({
       ...p,
       body: p.body,
       kind: outKind,
-      marker: p.marker,
-      tags: inheritedTags ?? p.tags,
+      marker: insertTags ? (p.marker ?? '🔹 תוספת ליום מיוחד') : p.marker,
+      tags: insertTags ?? inheritedTags ?? p.tags,
       // A bracha body promoted to main prayer (YT Musaf) is NOT small text.
       small: promotedByAmidah ? false : p.small,
     });
@@ -978,6 +1051,19 @@ export function activeTags(date: Date = new Date(), inIsrael = true): Set<Condit
   // Tisha b'Av is the only MAJOR_FAST in Av (Yom Kippur, the other MAJOR_FAST,
   // is in Tishrei). Covers the deferred 10-Av observance too (still month Av).
   if (isFastDay && m === months.AV) out.add('tisha-b-av');
+  // Torah reading: Mondays & Thursdays, Rosh Chodesh, Chol HaMoed, Yom Tov,
+  // Chanukah, Purim, and public fasts. (Shabbat handled elsewhere / out of scope.)
+  if (gregDay === 1 || gregDay === 4 || out.has('rosh-chodesh') || out.has('chol-hamoed') ||
+      out.has('yom-tov') || out.has('chanukah') || out.has('purim') || isFastDay) {
+    out.add('torah-reading');
+  }
+  // לדוד ה' אורי (תה' כז) — Elul through Hoshana Rabba (21 Tishrei).
+  if (m === months.ELUL || (m === months.TISHREI && d <= 21)) out.add('elul');
+  // Days without Tachanun (for the תה' טז insert) — Shabbat handled by view.
+  if (gregDay === 6 || out.has('rosh-chodesh') || out.has('yom-tov') || out.has('chol-hamoed') ||
+      out.has('chanukah') || (m === months.NISAN) || (m === months.TISHREI && d >= 11 && d <= 21)) {
+    out.add('no-tachanun');
+  }
 
   // Specific yom-tov tags
   if (m === months.TISHREI) {

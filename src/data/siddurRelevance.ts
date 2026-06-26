@@ -356,9 +356,18 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
   // LeDavid (Psalm 27 — לדוד ה' אורי וישעי) - from Elul through Hoshana Rabbah.
   // Match EXACTLY "ledavid" (not "ledavid mizmor" which is Sunday's Psalm 24).
   // Also catches Sephardi leaf "L'David Hashem" / "לדוד ה'" (Psalm 27).
+  // Sefard's "L'David Hashem" leaf BUNDLES the daily mourner's Kaddish (after Shir
+  // shel Yom) together with the conditional psalms (תה' כז Elul, תה' מט bet-avel,
+  // תה' טז no-Tachanun). It must therefore ALWAYS render — the psalms are gated
+  // inside the leaf by the parser; the closing Kaddish shows every day. Don't gate
+  // the whole leaf to Elul (that hid the daily Kaddish — the "missing kaddish").
+  if (/^l['’'`]?david hashem$/.test(name) || /^לדוד ה['’'`]?$/.test((he || '').trim())) {
+    return true;
+  }
+  // Pure Psalm-27 leaf (Ashkenaz "LeDavid", no daily kaddish) — seasonal.
   if (
     /^ledavid$/.test(name) ||
-    /ledavid hashem ori|le-david hashem ori|psalm 27 of david|^l['’'`]?david hashem$/.test(name)
+    /ledavid hashem ori|le-david hashem ori|psalm 27 of david/.test(name)
   ) {
     if (ctx.m === months.ELUL) return true;
     if (ctx.m === months.TISHREI && ctx.d <= 21) return true;
