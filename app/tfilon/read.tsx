@@ -624,16 +624,26 @@ export default function SiddurReader() {
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Text style={[typography.bodyBold, { color: colors.primary }]}>‹ חזרה</Text>
         </Pressable>
-        {curatedNavItems.length > 0 ? (
+        <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.lg }}>
+          {curatedNavItems.length > 0 ? (
+            <Pressable
+              onPress={() => setNavOpen(true)}
+              hitSlop={10}
+              style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}
+            >
+              <Text style={[typography.bodyBold, { color: colors.primary }]}>📑 ניווט</Text>
+              <Text style={{ color: colors.primary, fontSize: 12 }}>▾</Text>
+            </Pressable>
+          ) : null}
+          {/* Prayer compass — quick jump to the Jerusalem-direction tool. */}
           <Pressable
-            onPress={() => setNavOpen(true)}
+            onPress={() => router.push('/tools/compass' as any)}
             hitSlop={10}
-            style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: 4 }}
+            accessibilityLabel="מצפן תפילה"
           >
-            <Text style={[typography.bodyBold, { color: colors.primary }]}>📑 ניווט</Text>
-            <Text style={{ color: colors.primary, fontSize: 12 }}>▾</Text>
+            <Text style={[typography.bodyBold, { color: colors.primary }]}>🧭</Text>
           </Pressable>
-        ) : null}
+        </View>
       </View>
 
       {/* Top-bar navigation modal — quick jump between prayer sections. */}
