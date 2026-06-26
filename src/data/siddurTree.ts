@@ -164,9 +164,15 @@ export function getFlatTopItems(nusach: Nusach): FlatTopItem[] {
       !top.ref;
 
     if (isFlattenable && top.children) {
+      // Disambiguate the flattened Shabbat children: "מעריב"/"שחרית"/"מנחה" look
+      // identical to the weekday ones once promoted to the top level. Tag them
+      // "…לשבת" unless already labeled. (Festival children have unique names — no
+      // need to suffix them.)
+      const ctx = top.en === 'Shabbat' ? 'שבת' : '';
       for (const child of top.children) {
+        const he = ctx && child.he && !child.he.includes(ctx) ? `${child.he} ל${ctx}` : child.he;
         out.push({
-          he: child.he,
+          he,
           en: child.en,
           ref: child.ref,
           childCount: child.children?.length ?? 0,

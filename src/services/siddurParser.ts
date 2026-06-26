@@ -197,6 +197,22 @@ function isAlternativeMarker(marker: string): boolean {
   return /במקום|אומר במקום|חותם|חתימה/.test(marker);
 }
 
+/**
+ * Normalize a garbled Tetragrammaton vocalization. Sefaria's Edot HaMizrach text
+ * points the divine name in ~19 Amida chatimot with NONSENSE nikud (e.g. יַהַוַהַ
+ * all-patach, יֵהֵוֵהֵ all-tzere, יֹהֵוָהֵ mixed). Replace any standalone י-ה-ו-ה
+ * token whose pointing isn't a VALID divine-name form with the standard יְהֹוָה.
+ * (Valid forms — qere Adonai / qere Elokim — are left untouched.)
+ */
+const VALID_HASHEM = new Set(['יְהֹוָה', 'יֱהֹוִה', 'יְהוָה', 'יֱהוִה', 'יְהֹוָֽה']);
+function normalizeDivineName(s: string): string {
+  if (!s || s.indexOf('י') < 0) return s;
+  // A standalone token: yud, he, vav, he — each optionally followed by nikud —
+  // bounded by start/space/( on the left and space/punctuation/end on the right.
+  const rx = /(^|[\s(])(י[֑-ׇ]*ה[֑-ׇ]*ו[֑-ׇ]*ה[֑-ׇ]*)(?=[\s,.:;)־"'’]|$)/g;
+  return s.replace(rx, (m, pre, name) => (VALID_HASHEM.has(name) ? m : pre + 'יְהֹוָה'));
+}
+
 /** A NEGATIVE marker: the gated text is said normally and OMITTED on the tagged
  *  days, e.g. "בתשעה באב וביום הכפורים אין אומרים ברכה זו" (שעשה לי כל צרכי). */
 function isNegativeMarker(marker: string): boolean {
@@ -291,6 +307,7 @@ function parseParagraphRawInner(raw: string): ParsedParagraph & { _markerOnly?: 
 
   let txt = decodeEntities(raw).trim();
   txt = stripFormatting(txt);
+  txt = normalizeDivineName(txt); // fix Sefaria's garbled שם-ה' vocalization (EM chatimot)
 
   // Modim DeRabbanan (kahal's chazara response) — detect by its unique signature
   // regardless of wrapping, BEFORE any other logic. It appears as a single
