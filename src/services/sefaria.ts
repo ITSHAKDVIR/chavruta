@@ -241,10 +241,14 @@ export async function fetchSefariaCalendar(date: Date = new Date()): Promise<Cal
   }
 }
 
-export async function fetchParshaAliyot(date: Date = new Date()): Promise<ParshaInfo | null> {
+export async function fetchParshaAliyot(date: Date = new Date(), inIsrael = false): Promise<ParshaInfo | null> {
   try {
-    const dateStr = date.toISOString().slice(0, 10);
-    const res = await fetch(`https://www.sefaria.org/api/calendars?year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}&diaspora=1`);
+    // In divergence years (e.g. after a Pesach 8th-day-on-Shabbat) the Israel and
+    // diaspora weekly parsha differ for several weeks — an Israeli user reading
+    // diaspora=1 would see the wrong sidra (e.g. חקת-בלק instead of בלק). Pick by
+    // the user's location.
+    const diaspora = inIsrael ? 0 : 1;
+    const res = await fetch(`https://www.sefaria.org/api/calendars?year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}&diaspora=${diaspora}`);
     if (!res.ok) return null;
     const json: any = await res.json();
     const parsha = json.calendar_items?.find((i: any) => i.title?.en === 'Parashat Hashavua');

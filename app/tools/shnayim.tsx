@@ -6,6 +6,7 @@ import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Card } from '../../src/components/Card';
 import { Pill } from '../../src/components/Pill';
 import { useStoredJSON } from '../../src/hooks/useStoredJSON';
+import { useLocation } from '../../src/hooks/useLocation';
 import { fetchSefariaText, fetchParshaAliyot, cleanSefariaText } from '../../src/services/sefaria';
 import { hebrewNumeral } from '../../src/data/hebrewNumbers';
 import { translateRef } from '../../src/data/refTranslate';
@@ -34,27 +35,32 @@ function refToApi(humanRef: string): string {
 
 export default function ShnayimScreen() {
   const router = useRouter();
+  const { location } = useLocation();
+  const inIsrael = location.countryCode === 'IL';
 
   const [prefs, setPrefs] = useStoredJSON<Prefs>(KEY_PREFS, { withRashi: false, layout: 'verse-by-verse' });
 
   const [parshaInfo, setParshaInfo] = useState<{ name: string; aliyot: string[] } | null>(null);
   const [loadingParsha, setLoadingParsha] = useState(true);
 
-  // Find next Shabbat from today
+  // The Shabbat this week's shnayim-mikra is for. Stays the SAME the whole week
+  // INCLUDING Shabbat itself (so you can still finish on Shabbat morning — the
+  // halachic deadline), and only rolls to the next parsha on מוצאי שבת / Sunday.
+  // (The old `|| 7` flipped on Saturday, hiding the parsha you were finishing.)
   const upcomingSaturday = useMemo(() => {
     const d = new Date();
-    const day = d.getDay();
-    d.setDate(d.getDate() + ((6 - day + 7) % 7 || 7));
+    const day = d.getDay();          // Sun=0 … Sat=6
+    d.setDate(d.getDate() + ((6 - day + 7) % 7)); // Sat → +0 (today); Sun-Fri → coming Sat
     return d;
   }, []);
 
   useEffect(() => {
     setLoadingParsha(true);
-    fetchParshaAliyot(upcomingSaturday).then((info) => {
+    fetchParshaAliyot(upcomingSaturday, inIsrael).then((info) => {
       setParshaInfo(info ? { name: info.name, aliyot: info.aliyot } : null);
       setLoadingParsha(false);
     });
-  }, [upcomingSaturday.toDateString()]);
+  }, [upcomingSaturday.toDateString(), inIsrael]);
 
   const parshahId = parshaInfo ? `${parshaInfo.name}-${upcomingSaturday.toISOString().slice(0, 10)}` : 'none';
   const [progress, setProgress] = useStoredJSON<Progress>(KEY, { parshahId, aliyot: {} });
