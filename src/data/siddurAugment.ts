@@ -32,6 +32,9 @@ import {
   buildTishaBAvShacharitTorahLeaves,
   buildTishaBAvHaftarah,
   buildFastMinchaHaftarah,
+  buildFastMinchaHotzaa,
+  buildFastMinchaHachnasa,
+  buildFastMinchaReadingKaddish,
   buildNachemLeaf,
   buildAnenuLeaf,
   buildAsherHaniLeaf,
@@ -945,22 +948,46 @@ function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext, nusach: Nu
  *  For T"B Mincha also add Nachem reminder. */
 function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext, nusach: Nusach): FlatLeaf[] {
   const isTishaBAv = ctx.hd.getMonth() === 5 && ctx.hd.getDate() === 9;
-  // Vayechal + Dirshu Haftarah are read BEFORE Amidah at Mincha.
-  const preAmidah: FlatLeaf[] = [...buildVayechalLeaves(), buildFastMinchaHaftarah()];
-  // Sephardi gets עננו injected into the Amidah by the splitter; others get a
-  // card. Nachem (T"B) is always shown as a card.
-  const postAmidah: FlatLeaf[] = nusach === 'sephardi' ? [] : [buildAnenuLeaf()];
-  if (isTishaBAv) postAmidah.push(buildNachemLeaf());
+  // (1) FULL Torah service BEFORE the Amidah: Hotzaat → Vayechal (3 olim) →
+  // Dirshu Haftarah → Hachnasat → Half Kaddish. (Was: Vayechal+Haftarah only —
+  // no procession, and Ashkenaz didn't always get it.)
+  const preAmidah: FlatLeaf[] = [
+    buildFastMinchaHotzaa(),
+    ...buildVayechalLeaves(),
+    buildFastMinchaHaftarah(),
+    buildFastMinchaHachnasa(),
+    buildFastMinchaReadingKaddish(),
+  ];
+  // (2) עננו: the INDIVIDUAL's Anenu is native in Shema Koleinu (שומע תפילה) for
+  // every nusach — no separate card. Only Ashkenaz lacks the CHAZAN's Anenu
+  // (a separate bracha between Geulah and Refuah); inject it there below.
+  const postAmidah: FlatLeaf[] = isTishaBAv ? [buildNachemLeaf()] : [];
 
   let out = leaves;
   let amidahFirst = findFirstLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i);
   let amidahLast = findLastLeafByTrail(out, /\bAmid(ah|a)\b|^עמידה$|^שמונה עשרה$/i,
     /Post[\s-]?Amid|שלאחר.עמידה/i);
-  // Sephardi/EM/Chabad fallback: Amidah is a single leaf (no parent trail).
   if (amidahFirst < 0) amidahFirst = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahLast < 0)  amidahLast  = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
-  if (amidahLast >= 0) out = injectAfter(out, amidahLast, postAmidah);
+  if (amidahLast >= 0 && postAmidah.length) out = injectAfter(out, amidahLast, postAmidah);
   if (amidahFirst > 0) out = injectAfter(out, amidahFirst - 1, preAmidah);
+
+  // (2b) Ashkenaz Chazan's Anenu — a separate bracha between Geulah (גאל ישראל)
+  // and Refuah (רפאנו) in the chazara. Other rites have it natively.
+  if (nusach === 'ashkenazi') {
+    const geulaIdx = findFirstLeafByName(out, /^Redemption$|^גאולה$|^גאל ישראל$/i);
+    if (geulaIdx >= 0) out = injectAfter(out, geulaIdx, [buildAnenuLeaf()]);
+  }
+
+  // (3) Avinu Malkenu BEFORE Tachanun (per R. Dvir). The base tree orders it
+  // Amida → Tachanun → Avinu Malkenu; move the leaf to just before Tachanun.
+  const amIdx = findFirstLeafByName(out, /^Avinu Malk(enu|einu)$|^אבינו מלכנו$/i);
+  // Loose match so it catches Ashkenaz "Vidui and 13 Middot" / "וידוי וי״ג המידות".
+  const tachIdx = findFirstLeafByName(out, /\bTac?hnun\b|\bTachanun\b|\bVidui\b|^תחנון|^וידוי|^לשני וחמישי/i);
+  if (amIdx >= 0 && tachIdx >= 0 && amIdx > tachIdx) {
+    const [am] = out.splice(amIdx, 1);
+    out.splice(tachIdx, 0, am);
+  }
   return out;
 }
 

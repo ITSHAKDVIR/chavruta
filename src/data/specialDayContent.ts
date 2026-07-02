@@ -47,6 +47,23 @@ export function buildTishaBAvHaftarah(): FlatLeaf {
   };
 }
 
+/** Fast-day Mincha Torah PROCESSION — Hotzaat (Vayehi Binsoa) and Hachnasat
+ *  (Uvenucho Yomar). Uses the two nusach-neutral Torah pesukim (Num 10:35-36) so
+ *  the ceremony is authentic and not mixed across rites. */
+const FAST_TR_TRAIL = [{ he: 'קריאת התורה למנחת תענית', en: 'Fast Day Mincha Torah Reading' }];
+export function buildFastMinchaHotzaa(): FlatLeaf {
+  return { ref: 'Numbers 10:35', he: 'הוצאת ספר תורה — וַיְהִי בִּנְסֹעַ הָאָרֹן', en: 'Removing the Torah — Vayehi Binsoa (Num 10:35)', trail: FAST_TR_TRAIL };
+}
+export function buildFastMinchaHachnasa(): FlatLeaf {
+  return { ref: 'Numbers 10:36', he: 'הכנסת ספר תורה — וּבְנֻחֹה יֹאמַר', en: 'Returning the Torah — Uvenucho Yomar (Num 10:36)', trail: FAST_TR_TRAIL };
+}
+/** Half Kaddish after the fast-Mincha Torah reading (before the Amidah). The
+ *  Ashkenaz "after the reading" Half Kaddish text is near-identical across rites. */
+export function buildFastMinchaReadingKaddish(): FlatLeaf {
+  return { ref: 'Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Reading from Sefer, Half Kaddish',
+    he: 'חצי קדיש (אחרי קריאת התורה)', en: 'Half Kaddish after the Torah reading', trail: FAST_TR_TRAIL };
+}
+
 /** Mincha (all public fasts incl. T"B) Haftarah — Dirshu Hashem b'himatzo */
 export function buildFastMinchaHaftarah(): FlatLeaf {
   return {
