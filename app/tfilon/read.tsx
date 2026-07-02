@@ -497,6 +497,9 @@ export default function SiddurReader() {
                     /שומע תפילה|שמע קולנו|קבלת תפילה/.test(s.he);
                   const scoped = paras.flatMap((p) => {
                     if (!isAnenuPara(p)) return [p];
+                    // Anenu is said ONLY at Shacharit / Mincha — never at Maariv
+                    // (incl. the motzei-fast Maariv, where the fast tag lingers).
+                    if (inMaariv) return [];
                     if (isShemaKoleinu) {
                       // Individual — silent only, Mincha only.
                       return inMincha ? [{ ...p, _chazaraScope: 'silent' as const }] : [];
@@ -512,7 +515,7 @@ export default function SiddurReader() {
                 // Chazan's Anenu (chazara-only, between Geulah and Refuah). Some
                 // sources abbreviate it to a note without the full text (Sefard /
                 // Chabad Shacharit); inject it if no full Chazan Anenu is present.
-                if (active.has('fast')) {
+                if (active.has('fast') && !inMaariv) {
                   const hasChazan = subLeaves.some((sl) => (sl.paragraphs || []).some(
                     (p) => (p as any)._chazaraScope === 'chazara' && isAnenuPara(p)));
                   if (!hasChazan) {
