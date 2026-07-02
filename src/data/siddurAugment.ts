@@ -952,10 +952,10 @@ function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext, nusach: Nusac
   // Dirshu Haftarah → Hachnasat → Half Kaddish. (Was: Vayechal+Haftarah only —
   // no procession, and Ashkenaz didn't always get it.)
   const preAmidah: FlatLeaf[] = [
-    buildFastMinchaHotzaa(),
+    ...buildFastMinchaHotzaa(),
     ...buildVayechalLeaves(),
     buildFastMinchaHaftarah(),
-    buildFastMinchaHachnasa(),
+    ...buildFastMinchaHachnasa(),
     buildFastMinchaReadingKaddish(),
   ];
   // (2) עננו: the INDIVIDUAL's Anenu is native in Shema Koleinu (שומע תפילה) for

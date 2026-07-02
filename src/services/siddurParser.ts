@@ -81,6 +81,12 @@ export type ParsedParagraph = {
   /** Optional personal addition (reshut) inside an Amidah bracha — render in a
    *  collapse and exclude from the chazara. */
   _optional?: boolean;
+  /** Display scope for an insert whose recitation depends on silent-vs-chazara:
+   *  'chazara' = only in the ש"ץ's repetition (e.g. Anenu between Geulah/Refuah);
+   *  'silent'  = only in the individual's silent Amidah (e.g. Anenu in Shema
+   *  Koleinu). Combined with the day-gate — hides in the wrong view, the tag
+   *  still gates the day. */
+  _chazaraScope?: 'silent' | 'chazara';
 };
 
 function decodeEntities(s: string): string {
@@ -217,6 +223,18 @@ function normalizeDivineName(s: string): string {
  *  days, e.g. "בתשעה באב וביום הכפורים אין אומרים ברכה זו" (שעשה לי כל צרכי). */
 function isNegativeMarker(marker: string): boolean {
   return /אין אומר|לא אומר|אינו אומר|אינם אומר|אין נופל/.test(marker);
+}
+
+/** Silent-vs-chazara scope from a rubric that introduces an Amidah insert:
+ *  "…אומר הש״ץ…" / "…שליח ציבור אומר…" → said only in the chazara;
+ *  "…אומר היחיד…" / "…בלחש…" / "…בתפילת הלחש…" → said only in the silent Amidah. */
+function markerScope(marker: string): 'silent' | 'chazara' | undefined {
+  const m = (marker || '').replace(/[֑-ׇ]/g, '').replace(/["׳'״]/g, '');
+  // Chazan-only (order-insensitive: "אומר הש״ץ" / "הש״ץ אומר").
+  if (/הש?ץ|שליח ציבור|החזן|חזן חוזר/.test(m) && /אומר|יאמר|חוזר/.test(m) && !/היחיד/.test(m)) return 'chazara';
+  // Individual / silent.
+  if (/היחיד|בלחש|בתפילת הלחש|כל אחד|בלבד היחיד/.test(m)) return 'silent';
+  return undefined;
 }
 
 /**
@@ -1457,6 +1475,11 @@ export function shouldRender(
   // Optional personal addition (reshut): shown in the silent Amidah (in a
   // collapse, handled by the view) but NEVER in the chazara.
   if (p._optional) return !opts.chazara;
+  // Display scope (Anenu): the ש"ץ's insert shows ONLY in the chazara, the
+  // individual's ONLY in the silent Amidah. This only HIDES in the wrong view;
+  // the paragraph's own day-tag (fast) still gates the day below.
+  if (p._chazaraScope === 'chazara' && !opts.chazara) return false;
+  if (p._chazaraScope === 'silent' && opts.chazara) return false;
   // CONTEXT rubrics (speaker cues, Kaddish labels, bracha names) always show, in
   // the small font — they orient the davener and must never be hidden with the
   // descriptive notes.

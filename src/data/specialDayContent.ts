@@ -51,11 +51,21 @@ export function buildTishaBAvHaftarah(): FlatLeaf {
  *  (Uvenucho Yomar). Uses the two nusach-neutral Torah pesukim (Num 10:35-36) so
  *  the ceremony is authentic and not mixed across rites. */
 const FAST_TR_TRAIL = [{ he: 'קריאת התורה למנחת תענית', en: 'Fast Day Mincha Torah Reading' }];
-export function buildFastMinchaHotzaa(): FlatLeaf {
-  return { ref: 'Numbers 10:35', he: 'הוצאת ספר תורה — וַיְהִי בִּנְסֹעַ הָאָרֹן', en: 'Removing the Torah — Vayehi Binsoa (Num 10:35)', trail: FAST_TR_TRAIL };
+// Hotzaat / Hachnasat use the SAME procession text as Shacharit (per R. Dvir).
+export function buildFastMinchaHotzaa(): FlatLeaf[] {
+  const base = 'Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Removing the Torah from Ark';
+  return [
+    { ref: `${base}, Vayehi Binsoa`, he: 'הוצאת ספר תורה — ויהי בנסע הארן', en: 'Removing the Torah — Vayehi Binsoa', trail: FAST_TR_TRAIL },
+    { ref: `${base}, Berich Shmei`, he: 'בריך שמיה', en: 'Berich Shmei', trail: FAST_TR_TRAIL },
+    { ref: `${base}, Gadlu`, he: 'גדלו ליהוה אתי', en: 'Gadlu', trail: FAST_TR_TRAIL },
+  ];
 }
-export function buildFastMinchaHachnasa(): FlatLeaf {
-  return { ref: 'Numbers 10:36', he: 'הכנסת ספר תורה — וּבְנֻחֹה יֹאמַר', en: 'Returning the Torah — Uvenucho Yomar (Num 10:36)', trail: FAST_TR_TRAIL };
+export function buildFastMinchaHachnasa(): FlatLeaf[] {
+  const base = 'Siddur Ashkenaz, Weekday, Shacharit, Torah Reading, Returning Sefer to Aron';
+  return [
+    { ref: `${base}, Yehalelu`, he: 'הכנסת ספר תורה — יהללו את שם יהוה', en: 'Returning the Torah — Yehalelu', trail: FAST_TR_TRAIL },
+    { ref: `${base}, Uvenucho Yomar`, he: 'ובנחה יאמר', en: 'Uvenucho Yomar', trail: FAST_TR_TRAIL },
+  ];
 }
 /** Half Kaddish after the fast-Mincha Torah reading (before the Amidah). The
  *  Ashkenaz "after the reading" Half Kaddish text is near-identical across rites. */

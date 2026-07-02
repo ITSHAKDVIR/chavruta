@@ -481,35 +481,54 @@ export default function SiddurReader() {
                   (l) => /^\s*<small>/.test(l) &&
                     /(מגן אברהם|מחיה ה?מתים|האל הקדוש)/.test(l.replace(/[֑-ׇ]/g, '')),
                 );
-                const subLeaves: LoadedLeaf[] = sections.map((s, k) => ({
-                  uid: `${uid}#${k}`,
-                  ref: `${leaf.ref}#${s.en}`,
-                  en: s.en,
-                  he: s.he,
-                  trail: amidahTrail,
-                  paragraphs: parseParagraphs(s.lines, { amidah: allSmallAmidah }),
-                  loading: false,
-                }));
-                // עננו — on a public fast the (Sephardi) individual says it within
-                // the Amidah, in שומע תפילה. Inject it as a sub-section right after
-                // "Response to Prayer" so it reads in its proper place rather than
-                // as a floating card. Self-gates via the 'fast' tag. Skip if the
-                // text already carries a full Anenu (the Mincha Amidah does, in
-                // Geulah) — only Shacharit needs it injected.
-                const hasNativeAnenu = sections.some((s) =>
-                  s.lines.some((l) => /עננו\s+(יהוה|אבינו)\s+עננו/.test(l.replace(/[֑-ׇ]/g, ''))));
-                if (active.has('fast') && !hasNativeAnenu) {
-                  const rtpIdx = subLeaves.findIndex((l) => /^Response to Prayer$/i.test(l.en));
-                  if (rtpIdx >= 0) {
-                    subLeaves.splice(rtpIdx + 1, 0, {
-                      uid: `${uid}#anenu`,
-                      ref: `${leaf.ref}#Anenu`,
-                      en: 'Anenu',
-                      he: 'עננו (בתענית ציבור)',
-                      trail: amidahTrail,
-                      paragraphs: [{ body: ANENU_TEXT, kind: 'conditional', marker: 'בתענית ציבור — בשומע תפילה', tags: ['fast'] }],
-                      loading: false,
-                    });
+                // Anenu display scope, by bracha position (reliable — the marker
+                // text is ambiguous):
+                //   שומע תפילה (Response to Prayer) = the INDIVIDUAL's Anenu →
+                //     said silently, and ONLY at Mincha (not Shacharit).
+                //   between Geulah/Refuah = the CHAZAN's Anenu → only in the chazara.
+                const inMincha = /Min(c?h)ah?|מנחה/i.test(
+                  `${leaf.en} ${leaf.he} ${leaf.trail.map((tr) => `${tr.en} ${tr.he}`).join(' ')}`,
+                );
+                const isAnenuPara = (p: ParsedParagraph) =>
+                  /עננו\s+\S{1,6}\s+עננו ביום צום|עננו ביום צום תעני/.test((p.body || '').replace(/[֑-ׇ]/g, ''));
+                const subLeaves: LoadedLeaf[] = sections.map((s, k) => {
+                  const paras = parseParagraphs(s.lines, { amidah: allSmallAmidah });
+                  const isShemaKoleinu = /^Response to Prayer$/i.test(s.en) ||
+                    /שומע תפילה|שמע קולנו|קבלת תפילה/.test(s.he);
+                  const scoped = paras.flatMap((p) => {
+                    if (!isAnenuPara(p)) return [p];
+                    if (isShemaKoleinu) {
+                      // Individual — silent only, Mincha only.
+                      return inMincha ? [{ ...p, _chazaraScope: 'silent' as const }] : [];
+                    }
+                    // Chazan — chazara only (between Geulah and Refuah).
+                    return [{ ...p, _chazaraScope: 'chazara' as const }];
+                  });
+                  return {
+                    uid: `${uid}#${k}`, ref: `${leaf.ref}#${s.en}`, en: s.en, he: s.he,
+                    trail: amidahTrail, paragraphs: scoped, loading: false,
+                  };
+                });
+                // Chazan's Anenu (chazara-only, between Geulah and Refuah). Some
+                // sources abbreviate it to a note without the full text (Sefard /
+                // Chabad Shacharit); inject it if no full Chazan Anenu is present.
+                if (active.has('fast')) {
+                  const hasChazan = subLeaves.some((sl) => (sl.paragraphs || []).some(
+                    (p) => (p as any)._chazaraScope === 'chazara' && isAnenuPara(p)));
+                  if (!hasChazan) {
+                    const geulaIdx = subLeaves.findIndex((sl) =>
+                      /^Redemption$/i.test(sl.en) || /^גאולה$|גאל ישראל/.test(sl.he));
+                    const at = geulaIdx >= 0 ? geulaIdx + 1
+                      : subLeaves.findIndex((sl) => /^Healing$/i.test(sl.en) || /^רפואה$/.test(sl.he));
+                    if (at >= 0) {
+                      subLeaves.splice(at, 0, {
+                        uid: `${uid}#anenu-chazan`, ref: `${leaf.ref}#AnenuChazan`,
+                        en: 'Anenu (Chazan)', he: 'עננו (חזרת הש״ץ — בין גאל ישראל לרפאנו)',
+                        trail: amidahTrail, loading: false,
+                        paragraphs: [{ body: ANENU_TEXT, kind: 'conditional',
+                          marker: 'בתענית ציבור — הש״ץ בחזרה', tags: ['fast'], _chazaraScope: 'chazara' }],
+                      });
+                    }
                   }
                 }
                 setLeaves((prev) => prev.flatMap((l) => (l.uid === uid ? subLeaves : [l])));
