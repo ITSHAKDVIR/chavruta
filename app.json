@@ -3,7 +3,7 @@
     "name": "חברותא",
     "slug": "chavruta-app",
     "scheme": "chavruta",
-    "version": "3.1.15",
+    "version": "3.1.16",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
