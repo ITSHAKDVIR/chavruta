@@ -465,9 +465,11 @@ export default function SiddurReader() {
             // Weekday Maariv: drop ברוך ה' לעולם + יראו עינינו (not said per the
             // Eretz-Yisrael minhag). Gated to Maariv so the verses aren't
             // stripped if they appear elsewhere.
-            const inMaariv = /Maariv|Arvit|מעריב|ערבית/i.test(
-              `${leaf.en} ${leaf.he} ${leaf.trail.map((tr) => `${tr.en} ${tr.he}`).join(' ')}`,
-            );
+            const leafBlob = `${leaf.en} ${leaf.he} ${leaf.trail.map((tr) => `${tr.en} ${tr.he}`).join(' ')}`;
+            const inMaariv = /Maariv|Arvit|מעריב|ערבית/i.test(leafBlob);
+            const inMincha = /Min(c?h)ah?|מנחה/i.test(leafBlob);
+            const isAnenuPara = (p: ParsedParagraph) =>
+              /עננו\s+\S{1,6}\s+עננו ביום צום|עננו ביום צום תעני/.test((p.body || '').replace(/[֑-ׇ]/g, ''));
             if (inMaariv) lines = stripMaarivBaruchHashemLeolam(lines);
             // Monolithic Amidah → split into virtual per-bracha sub-leaves with
             // canonical Ashkenaz en names, so the silent/chazara/Kedushah logic
@@ -495,11 +497,6 @@ export default function SiddurReader() {
                 //   שומע תפילה (Response to Prayer) = the INDIVIDUAL's Anenu →
                 //     said silently, and ONLY at Mincha (not Shacharit).
                 //   between Geulah/Refuah = the CHAZAN's Anenu → only in the chazara.
-                const inMincha = /Min(c?h)ah?|מנחה/i.test(
-                  `${leaf.en} ${leaf.he} ${leaf.trail.map((tr) => `${tr.en} ${tr.he}`).join(' ')}`,
-                );
-                const isAnenuPara = (p: ParsedParagraph) =>
-                  /עננו\s+\S{1,6}\s+עננו ביום צום|עננו ביום צום תעני/.test((p.body || '').replace(/[֑-ׇ]/g, ''));
                 const subLeaves: LoadedLeaf[] = sections.map((s, k) => {
                   const paras = parseParagraphs(s.lines, { amidah: allSmallAmidah });
                   const isShemaKoleinu = /^Response to Prayer$/i.test(s.en) ||
@@ -561,7 +558,21 @@ export default function SiddurReader() {
               lines = stripLongTachanunSupplication(lines);
               if (/^לשני וחמישי$/.test((leaf.he || '').trim())) heOverride = 'שומר ישראל';
             }
-            const parsed = parseParagraphs(lines);
+            let parsed = parseParagraphs(lines);
+            // Anenu scope for the SPLIT-amida nuschaot (Ashkenaz — brachot arrive
+            // as separate leaves). Same model as the monolithic path:
+            //   Response to Prayer (שומע תפילה) = individual → silent, Mincha only;
+            //   the injected Chazan Anenu leaf (between Geulah/Refuah) = chazara;
+            //   never at Maariv.
+            if (parsed.some(isAnenuPara)) {
+              const isShemaKoleinu = /Response to Prayer|שומע תפילה|שמע קולנו/.test(leafBlob);
+              parsed = parsed.flatMap((p) => {
+                if (!isAnenuPara(p)) return [p];
+                if (inMaariv) return [];
+                if (isShemaKoleinu) return inMincha ? [{ ...p, _chazaraScope: 'silent' as const }] : [];
+                return [{ ...p, _chazaraScope: 'chazara' as const }];
+              });
+            }
             setLeaves((prev) =>
               prev.map((l) => (l.uid === uid ? { ...l, he: heOverride ?? l.he, paragraphs: parsed, loading: false } : l)),
             );

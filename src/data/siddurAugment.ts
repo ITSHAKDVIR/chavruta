@@ -937,10 +937,15 @@ function augmentForFastShacharit(leaves: FlatLeaf[], ctx: DayContext, nusach: Nu
   // Inject high index first so the earlier insert doesn't shift the later one.
   if (ashreiIdx > amidahAnchor) out = injectAfter(out, ashreiIdx - 1, torahLeaves);
   else out = injectAfter(out, amidahAnchor, torahLeaves); // fallback: after Amidah
-  // Anenu — for Sephardi the splitter injects it INTO the Amidah (שומע תפילה),
-  // so don't also add the card. EM/Chabad (no split) and Ashkenazi still get
-  // the card right after the Amidah.
-  if (nusach !== 'sephardi') out = injectAfter(out, amidahAnchor, [buildAnenuLeaf()]);
+  // Anenu. Sefard/EM/Chabad (monolithic amida) are handled inside the amida
+  // splitter (read.tsx) — individual in Shema Koleinu (Mincha only), Chazan
+  // between Geulah/Refuah in the chazara. Only Ashkenaz (pre-split leaves) needs
+  // the CHAZAN's Anenu injected here, between Geulah (גאל ישראל) and Refuah
+  // (רפאנו); read.tsx scopes it chazara-only.
+  if (nusach === 'ashkenazi') {
+    const geulaIdx = findFirstLeafByName(out, /^Redemption$|^גאולה$/i);
+    if (geulaIdx >= 0) out = injectAfter(out, geulaIdx, [buildAnenuLeaf()]);
+  }
   return out;
 }
 
@@ -975,7 +980,7 @@ function augmentForFastMincha(leaves: FlatLeaf[], ctx: DayContext, nusach: Nusac
   // (2b) Ashkenaz Chazan's Anenu — a separate bracha between Geulah (גאל ישראל)
   // and Refuah (רפאנו) in the chazara. Other rites have it natively.
   if (nusach === 'ashkenazi') {
-    const geulaIdx = findFirstLeafByName(out, /^Redemption$|^גאולה$|^גאל ישראל$/i);
+    const geulaIdx = findFirstLeafByName(out, /^Redemption$|^גאולה$/i);
     if (geulaIdx >= 0) out = injectAfter(out, geulaIdx, [buildAnenuLeaf()]);
   }
 
