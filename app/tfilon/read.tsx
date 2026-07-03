@@ -363,8 +363,17 @@ export default function SiddurReader() {
 
   // Inserts for today
   const inserts = useMemo(() => getInsertsForDate(today, inIsrael), [today, inIsrael]);
-  // Active condition tags for today (אומר היום בעשי"ת? בר"ח? etc.)
-  const active = useMemo(() => activeTags(today, inIsrael), [today, inIsrael]);
+  // Active condition tags. For Maariv the tags reflect the NEXT Hebrew day (the
+  // day begins at night) — so day-additions appear in the maariv BEFORE the day,
+  // not in the motzei maariv.
+  const isMaarivService = useMemo(
+    () => /Maariv|Arvit|מעריב|ערבית/i.test(`${here?.en ?? ''} ${trail.map((t) => `${t.en} ${t.he}`).join(' ')}`),
+    [here?.en, trail],
+  );
+  const active = useMemo(
+    () => activeTags(today, inIsrael, isMaarivService),
+    [today, inIsrael, isMaarivService],
+  );
 
   // Halachic-window banner: detect if user is reading Shacharit/Mincha/Maariv
   // and warn them if the time is wrong or the end is approaching.

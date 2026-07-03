@@ -1051,11 +1051,20 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
   return result;
 }
 
-/** Compute which condition tags apply today. */
-export function activeTags(date: Date = new Date(), inIsrael = true): Set<ConditionTag> {
+/**
+ * Compute which condition tags apply. In Judaism the day begins at night, so for
+ * MAARIV (isMaariv) the tags reflect the NEXT Hebrew day — the one that begins
+ * that evening. This keeps day-additions (Yaaleh VeYavo, Al HaNisim, …) in the
+ * maariv BEFORE the day and OUT of the motzei (post-day) maariv, and makes
+ * Shabbat/Motzei-Shabbat fall out of the (rolled) day of week.
+ */
+export function activeTags(date: Date = new Date(), inIsrael = true, isMaariv = false): Set<ConditionTag> {
   const out = new Set<ConditionTag>();
   out.add(inIsrael ? 'in-israel' : 'in-diaspora');
 
+  if (isMaariv) {
+    date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, date.getHours(), date.getMinutes());
+  }
   const hd = new HDate(date);
   const m = hd.getMonth();
   const d = hd.getDate();
@@ -1123,8 +1132,11 @@ export function activeTags(date: Date = new Date(), inIsrael = true): Set<Condit
   // Shabbat / motzei
   if (gregDay === 6) out.add('shabbat');
   else out.add('weekday');
+  // Motzei-Shabbat. For maariv the date is already rolled to the night's day, so
+  // Saturday-night maariv → rolled Sunday (gregDay 0). For the daytime services
+  // keep the Saturday-evening time heuristic.
   if (gregDay === 0) out.add('motzei-shabbat');
-  if (gregDay === 6 && date.getHours() >= 18) out.add('motzei-shabbat');
+  if (!isMaariv && gregDay === 6 && date.getHours() >= 18) out.add('motzei-shabbat');
 
   // Tal/Geshem
   const isAdar = m === months.ADAR_I || m === months.ADAR_II;
