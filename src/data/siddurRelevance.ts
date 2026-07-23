@@ -121,6 +121,43 @@ function isTishaBav(ctx: Ctx): boolean {
   return events.some((e) => (e.getFlags() & flags.MAJOR_FAST) && !(e.getFlags() & flags.EREV));
 }
 
+/** True if Tachanun is said on this DAY (ignores the "mincha before a no-Tachanun
+ *  day" rule, which is applied per-service in the Tachanun gate). Encodes the
+ *  no-Tachanun list: R"Ch · Chanukah · Purim(+Katan/Shushan) · Lag BaOmer · Tu
+ *  B'Av · Tu BiShvat · Erev Yom Kippur · Erev Rosh Hashana · all of Nisan · Tisha
+ *  b'Av · Erev-YK→after R"Ch Cheshvan · R"Ch Sivan→12 Sivan. */
+function saysTachanun(ctx: Ctx): boolean {
+  if (isShabbat(ctx)) return false;
+  const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
+  if (events.some((e) => e.getFlags() & flags.MAJOR_FAST)) return false;       // Tisha b'Av / Yom Kippur
+  if (ctx.m === months.NISAN) return false;                                     // all of Nisan
+  if (ctx.m === months.ELUL && ctx.d === 29) return false;                      // Erev Rosh Hashana
+  // Tishrei: Rosh Hashana (1-2), Erev Yom Kippur (9), and Yom Kippur→end of
+  // Tishrei (Rama 624:5). Rosh Chodesh Cheshvan (1 Cheshvan) is caught below.
+  if (ctx.m === months.TISHREI && (ctx.d <= 2 || ctx.d === 9 || ctx.d >= 11)) return false;
+  if (events.some((e) => /Yom HaAtzma|Yom Yerushalayim/i.test(e.getDesc()))) return false;
+  if (ctx.m === months.IYYAR && ctx.d === 14) return false;                     // Pesach Sheni
+  if (ctx.m === months.IYYAR && ctx.d === 18) return false;                     // Lag BaOmer
+  if (ctx.m === months.SIVAN && ctx.d <= 12) return false;                      // R"Ch Sivan..12 Sivan
+  if (ctx.m === months.AV && ctx.d === 15) return false;                        // Tu B'Av
+  if ((ctx.m === months.ADAR_I || ctx.m === months.ADAR_II) && (ctx.d === 14 || ctx.d === 15)) return false; // Purim / Purim Katan / Shushan
+  if (ctx.m === months.SHVAT && ctx.d === 15) return false;                     // Tu BiShvat
+  return !events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.CHOL_HAMOED) || (e.getFlags() & flags.ROSH_CHODESH) || (e.getFlags() & flags.MINOR_HOLIDAY));
+}
+
+/** Erev Yom Kippur (9 Tishrei) / Erev Rosh Hashana (29 Elul) — the exception to
+ *  the "no Tachanun at the mincha BEFORE a no-Tachanun day" rule: at the mincha
+ *  before THESE, Tachanun IS said. */
+function isErevYomKippurOrRoshHashana(ctx: Ctx): boolean {
+  return (ctx.m === months.TISHREI && ctx.d === 9) || (ctx.m === months.ELUL && ctx.d === 29);
+}
+
+/** Tomorrow's context (for the "mincha before …" rule; handles month/year roll). */
+function nextDayCtx(ctx: Ctx): Ctx {
+  const hd = ctx.hd.add(1, 'd');
+  return { hd, m: hd.getMonth(), d: hd.getDate(), gregDay: (ctx.gregDay + 1) % 7, inIsrael: ctx.inIsrael };
+}
+
 function isRoshChodesh(ctx: Ctx): boolean {
   const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
   return events.some((e) => e.getFlags() & flags.ROSH_CHODESH);
@@ -191,7 +228,10 @@ function isTalGeshemSwitchDay(ctx: Ctx): boolean {
  * `he` is optional but enables gating leaves whose chu"l/EY designation lives
  * only in the Hebrew name (e.g. "ברוך ה' לעולם (outside of Israel)").
  */
-export function isSectionRelevantToday(en: string, date: Date = new Date(), inIsrael = true, he = ''): boolean {
+export function isSectionRelevantToday(
+  en: string, date: Date = new Date(), inIsrael = true, he = '',
+  service?: 'shacharit' | 'mincha' | 'maariv',
+): boolean {
   const ctx = buildCtx(date, inIsrael);
   const name = (en || '').toLowerCase();
   const haystack = `${name} ${(he || '').toLowerCase()}`;
@@ -300,26 +340,17 @@ export function isSectionRelevantToday(en: string, date: Date = new Date(), inIs
   // leaf, so it is NOT matched here and stays Mon/Thu-only (rule further down).
   if (/^tac?hanun$|^tachnun$|tachanun$|tachnun$|^vidui|vidui and 13|^post amidah$|וידוי|^el erech app?ayim$|אל ארך אפים/.test(name) ||
       /וידוי|^אל ארך אפים$|^לשני וחמישי$/.test(he || '')) {
-    if (isShabbat(ctx)) return false;
-    const events = HebrewCalendar.calendar({ start: ctx.hd, end: ctx.hd, il: ctx.inIsrael, sedrot: false });
-    if (events.some((e) => e.getFlags() & flags.MAJOR_FAST)) return false; // T"B / YK
-    if (ctx.m === months.NISAN) return false; // All of Nisan — no Tachanun
-    // Tishrei: no Tachanun on Rosh Hashana (1-2), Erev Yom Kippur (9), and from
-    // after Yom Kippur through Sukkot/Shmini Atzeret (Rama O.C. 624:5). But it IS
-    // said on Tzom Gedaliah (3) and the Aseret-Yemei-Teshuva weekdays (4-8) — the
-    // old "1-12" blanket wrongly hid Tachanun + Avinu Malkenu on those days.
-    if (ctx.m === months.TISHREI && (ctx.d <= 2 || ctx.d === 9 || ctx.d >= 11)) return false;
-    // Yom HaAtzma'ut / Yom Yerushalayim — Tachanun omitted (religious-Zionist
-    // custom). hebcal tags them MODERN_HOLIDAY; match by name (Yom HaShoah /
-    // HaZikaron are also MODERN_HOLIDAY but DO have Tachanun, so don't blanket).
-    if (events.some((e) => /Yom HaAtzma|Yom Yerushalayim/i.test(e.getDesc()))) return false;
-    if (ctx.m === months.IYYAR && ctx.d === 14) return false; // Pesach Sheni
-    if (ctx.m === months.IYYAR && ctx.d === 18) return false; // Lag BaOmer
-    if (ctx.m === months.SIVAN && ctx.d <= 12) return false; // Sivan 1-12 (incl Shavuot+Isru Chag)
-    if (ctx.m === months.AV && ctx.d === 15) return false; // Tu B'Av
-    if ((ctx.m === months.ADAR_I || ctx.m === months.ADAR_II) && (ctx.d === 14 || ctx.d === 15)) return false; // Purim + Shushan Purim
-    if (ctx.m === months.SHVAT && ctx.d === 15) return false; // Tu BiShvat
-    return !events.some((e) => (e.getFlags() & flags.CHAG) || (e.getFlags() & flags.CHOL_HAMOED) || (e.getFlags() & flags.ROSH_CHODESH) || (e.getFlags() & flags.MINOR_HOLIDAY));
+    // No Tachanun on the day itself.
+    if (!saysTachanun(ctx)) return false;
+    // No Tachanun at MINCHA of the day BEFORE a no-Tachanun day (the coming day
+    // begins that evening) — EXCEPT the mincha before Erev Yom Kippur / Erev Rosh
+    // Hashana, where Tachanun IS said. (For a 2-day Rosh Chodesh the "erev" is the
+    // day before the FIRST day, so tomorrow = the 30th, already no-Tachanun.)
+    if (service === 'mincha') {
+      const t = nextDayCtx(ctx);
+      if (!saysTachanun(t) && !isErevYomKippurOrRoshHashana(t)) return false;
+    }
+    return true;
   }
   // Lamenatze'ach (Psalm 20) — said on days Tachanun is said
   if (/^lamenatze'?ach$|^lamenatzeach$|למנצח/.test(name)) {

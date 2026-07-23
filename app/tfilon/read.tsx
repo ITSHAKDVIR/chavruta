@@ -246,6 +246,15 @@ export default function SiddurReader() {
 
   const slugs = useMemo(() => (rawPath ? rawPath.split('/').filter(Boolean) : []), [rawPath]);
   const { here, children, trail } = useMemo(() => getNodesAtPath(nusach, slugs), [nusach, slugs]);
+  // Which service is being shown — drives Tachanun's "mincha before a no-Tachanun
+  // day" rule and the Maariv next-Hebrew-day roll.
+  const serviceKind = useMemo<'shacharit' | 'mincha' | 'maariv' | undefined>(() => {
+    const blob = `${here?.en ?? ''} ${slugs.join(' ')} ${trail.map((t) => `${t.en} ${t.he}`).join(' ')}`;
+    if (/Maariv|Arvit|מעריב|ערבית/i.test(blob)) return 'maariv';
+    if (/Min(c?h)ah?|מנחה/i.test(blob)) return 'mincha';
+    if (/Shacharit|שחרית/i.test(blob)) return 'shacharit';
+    return undefined;
+  }, [here?.en, slugs, trail]);
 
   // Decide: navigation list or running text?
   const allLeavesUnderHere = useMemo(() => {
@@ -339,11 +348,11 @@ export default function SiddurReader() {
       if (KNOWN_EMPTY_REFS.has(l.ref)) return false;
       if (shouldHideForPrefs(l.en, prefs)) return false;
       if (l.trail.some((t) => shouldHideForPrefs(t.en, prefs))) return false;
-      if (!isSectionRelevantToday(l.en, today, inIsrael, l.he)) return false;
-      if (l.trail.some((t) => !isSectionRelevantToday(t.en, today, inIsrael, t.he))) return false;
+      if (!isSectionRelevantToday(l.en, today, inIsrael, l.he, serviceKind)) return false;
+      if (l.trail.some((t) => !isSectionRelevantToday(t.en, today, inIsrael, t.he, serviceKind))) return false;
       return true;
     }),
-    [allLeavesUnderHere, prefs, inIsrael],
+    [allLeavesUnderHere, prefs, inIsrael, today, serviceKind],
   );
   // Render any node with a reasonable leaf count as running text. The earlier
   // protection (force nav list at slugs.length===1) was for Ashkenazi's
@@ -366,10 +375,7 @@ export default function SiddurReader() {
   // Active condition tags. For Maariv the tags reflect the NEXT Hebrew day (the
   // day begins at night) — so day-additions appear in the maariv BEFORE the day,
   // not in the motzei maariv.
-  const isMaarivService = useMemo(
-    () => /Maariv|Arvit|מעריב|ערבית/i.test(`${here?.en ?? ''} ${trail.map((t) => `${t.en} ${t.he}`).join(' ')}`),
-    [here?.en, trail],
-  );
+  const isMaarivService = serviceKind === 'maariv';
   const active = useMemo(
     () => activeTags(today, inIsrael, isMaarivService),
     [today, inIsrael, isMaarivService],

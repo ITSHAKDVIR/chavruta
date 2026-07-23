@@ -217,115 +217,135 @@ function rcChanukahExtraReading(ctx: DayContext): FlatLeaf[] {
  * (gated by siddurRelevance) since the RC subtree's versions replace them.
  */
 function augmentForRoshChodeshSephardi(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
-  // Find Sephardi RC subtree leaves in order: Hallel, Song of the Day, Barchi
-  // Nafshi, Torah Reading, Ashrei Uva L'Tziyon, Returning Sefer Torah, Mussaf.
   const rcNode = findTopNode('sephardi', /^Rosh (Chodesh|Hodesh)$|^לראש ח[דו]ש$/);
   if (!rcNode) return leaves;
-  // On RC Tevet (Chanukah) append the day's Chanukah Naso reading after the
-  // RC subtree, so the 4th oleh's portion is present.
-  const rcLeaves = [...collectLeaves(rcNode), ...rcChanukahExtraReading(ctx)];
-  if (rcLeaves.length === 0) return leaves;
+  const rc = collectLeaves(rcNode);
+  const pick = (re: RegExp) => rc.filter((l) => re.test(l.en) || re.test(l.he));
+  // The Sephardi RC subtree carries the RC-specific pieces. Its Hallel and
+  // Mussaf texts ALREADY end with their own Kaddish (Shalem/Titkabal), so we
+  // do NOT append a synthetic one. The subtree's OWN order (leaf indices) is
+  // the correct Sephardi sequence: Hallel → Torah Reading → Ashrei/Uva Letzion
+  // → Returning Sefer → Mussaf. (Its Song of Day + Barchi Nafshi leaves are
+  // mis-placed near the top, so we ignore them and use the base copies at the
+  // very end instead.)
+  const hallel = pick(/^Hallel$|^סדר הלל$|הלל/);
+  const rcTorah = pick(/^Torah Reading$|קריאת התורה/);
+  const ashreiUva = pick(/^Ashrei Uva|אשרי ובא/);
+  const returning = pick(/^Returning|החזרת ספר/);
+  const musaf = pick(/^Muss?af$|^מוסף/);
+  if (hallel.length === 0 || musaf.length === 0) return leaves;
 
-  // Find the base Amidah leaf — Sephardi has en="Amidah" or "Amida"; he="עמידה"
-  // or "תפילת עמידה".
-  // The RC subtree already includes Song of the Day + Barchi Nafshi (in their
-  // Sephardi RC position). Drop the BASE weekday copies so they don't render a
-  // second time later in the flow.
-  // The RC subtree is a COMPLETE, correctly-ordered closing (Hallel → Song of
-  // Day → Barchi Nafshi → Torah Reading → Ashrei/Uva Letzion → Hachnasat →
-  // Musaf). Drop the BASE weekday copies it supplies so they don't render a
-  // SECOND time AFTER Musaf (the previous bug: base Torah Reading landed after
-  // Musaf, and שיר-של-יום/עלינו duplicated). Keep base Beit Yaakov / Kaveh /
-  // Aleinu — the subtree doesn't include them.
-  let out = leaves.filter((l) =>
-    !(/^(Torah Reading|Ashrei|Song of the Day|Barchi Nafshi)$/i.test(l.en) && /Weekday Shacharit/i.test(l.ref)));
+  // Remove the base weekday copies of pieces the RC subtree supplies (Torah
+  // Reading, the Mon/Thu reading preamble, Ashrei, Uva Letzion/Beit Yaakov).
+  // Relocate the base Song of the Day + Barchi Nafshi to the very END so the
+  // closing reads ...Musaf → Aleinu → Song of Day → Barchi Nafshi (one closing,
+  // no duplication — the previous bug injected the subtree as one block, so
+  // Song/Barchi rendered right after Hallel and again after Musaf).
+  const isReplaced = (l: FlatLeaf) =>
+    /Weekday Shacharit/i.test(l.ref) &&
+    /^(Torah Reading|For Monday & Thursday|Ashrei|Beit Yaakov|Uva Le[SZ]ion)$/i.test(l.en);
+  const isTailSong = (l: FlatLeaf) =>
+    /Weekday Shacharit/i.test(l.ref) && /^(Song of the Day|Barchi Nafshi)$/i.test(l.en);
+  const songBarchi = leaves.filter(isTailSong);
+  let out = leaves.filter((l) => !isReplaced(l) && !isTailSong(l));
+
   const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahIdx < 0) return leaves;
 
-  // Inject the RC subtree right after Amidah, before the kept base tail
-  // (Beit Yaakov / Kaveh / Aleinu).
-  out = injectAfter(out, amidahIdx, rcLeaves);
-  return out;
+  const closing = [
+    ...hallel,
+    ...rcTorah, ...rcChanukahExtraReading(ctx),
+    ...ashreiUva, ...returning,
+    ...musaf,
+  ];
+  out = injectAfter(out, amidahIdx, closing);
+  return [...out, ...songBarchi];
 }
 
 /**
  * Edot HaMizrach RC Shacharit.
  *
- * Edot HaMizrach has its own "סדר ראש חודש" subtree. Spec A1 ordering:
- * mostly identical to Sephardi (Shir Shel Yom + Barchi Nafshi BEFORE Sefer
- * Torah), but the order of Returning Sefer / Kaddish differs by minhag.
- *
- * The EM tree under "סדר ראש חודש" already encodes the EM-specific order, so
- * the simplest correct approach is to inject the subtree wholesale after the
- * Amidah leaf.
+ * Keep the base weekday flow (Torah Reading, Ashrei, Uva Letzion are correct
+ * there) and surgically interleave the RC-specific pieces from the "סדר ראש
+ * חודש" subtree at Ashkenazi-style anchors:
+ *   Amidah → Hallel → [base Torah Reading] → Ashrei/Uva Letzion → **Musaf**
+ *   → ... → Aleinu → **Song of Day → Barchi Nafshi** (at the END).
+ * The previous bug anchored Musaf just before Aleinu — but the base Song of
+ * Day sits before Aleinu, so Musaf landed AFTER Song of Day ("Musaf too late").
+ * The EM subtree Musaf has NO trailing Kaddish, so we append one; its Hallel
+ * already ends with Kaddish.
  */
 function augmentForRoshChodeshEdotMizrach(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
   const rcNode = findTopNode('edot-mizrach', /^Rosh (Chodesh|Hodesh)$|^סדר ראש ח[דו]ש$|^לראש ח[דו]ש$/);
   if (!rcNode) return leaves;
   const rcAll = collectLeaves(rcNode);
-  if (rcAll.length === 0) return leaves;
-
-  // The EM RC subtree is INCOMPLETE (no Torah Reading, no Ashrei) and mis-ordered
-  // (Musaf before Barchi Nafshi), while the BASE RC-day flow already has Torah
-  // Reading in the right place (right after the Amidah) plus Ashrei / Uva Letzion
-  // / Song of Day / Aleinu. So keep the base and surgically inject only the
-  // RC-specific additions from the subtree — Hallel, Barchi Nafshi, Musaf — at
-  // the correct anchors (Ashkenazi-style). Injecting the subtree wholesale was
-  // the bug: it duplicated Uva Letzion/Song of Day/Aleinu and pushed the base
-  // Torah Reading to AFTER Musaf.
   const hallel = rcAll.filter((l) => /^Hallel$/i.test(l.en) || /הלל/.test(l.he));
   const musaf = rcAll.filter((l) => /^Muss?af$/i.test(l.en) || /^מוסף/.test(l.he));
   const barchi = rcAll.filter((l) => /^Barchi Nafshi$/i.test(l.en) || /ברכי נפשי/.test(l.he));
   const chanukahReading = rcChanukahExtraReading(ctx);
+  if (hallel.length === 0 && musaf.length === 0) return leaves;
 
-  let out = leaves;
+  // Relocate the base Song of the Day to the very END (Barchi Nafshi follows it).
+  const isTailSong = (l: FlatLeaf) =>
+    /Weekday Shacharit/i.test(l.ref) && /^Song of the Day$/i.test(l.en);
+  const song = leaves.filter(isTailSong);
+  let out = leaves.filter((l) => !isTailSong(l));
+
+  // Anchors on the (Song-removed) base — all before Song, so still valid.
   const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahIdx < 0) return leaves;
+  const uvaIdx = findLastLeafByName(out, /^(Ashrei|Uva Le[SZ]ion|Beit Yaakov)$/i);
+  const torahIdx = findFirstLeafByName(out, /^Torah Reading$|^קריאת התורה$/i);
 
-  // Hallel right after the Amidah (before the base Torah Reading).
+  // Inject from the LATEST anchor to the earliest so indices stay valid.
+  // 1) Musaf (+ Kaddish Titkabal) right after the Ashrei/Uva Letzion block.
+  if (musaf.length && uvaIdx >= 0) out = injectAfter(out, uvaIdx, [...musaf, buildMusafClosingKaddish()]);
+  // 2) RC-Tevet (Chanukah) extra Nasi reading right after the base Torah Reading.
+  if (chanukahReading.length && torahIdx >= 0) out = injectAfter(out, torahIdx, chanukahReading);
+  // 3) Hallel right after the Amidah (its text ends with its own Kaddish).
   if (hallel.length) out = injectAfter(out, amidahIdx, hallel);
-  // RC-Tevet (Chanukah) extra Nasi reading right after the base Torah Reading.
-  if (chanukahReading.length) {
-    const torahIdx = findFirstLeafByName(out, /^Torah Reading$|^קריאת התורה$/i);
-    if (torahIdx >= 0) out = injectAfter(out, torahIdx, chanukahReading);
-  }
-  // Barchi Nafshi after Song of the Day.
-  if (barchi.length) {
-    const songIdx = findFirstLeafByName(out, /^Song of the Day$|^שיר של יום$/i);
-    if (songIdx >= 0) out = injectAfter(out, songIdx, barchi);
-  }
-  // Musaf just before Aleinu (closes the service).
-  if (musaf.length) {
-    const aleinuIdx = findFirstLeafByName(out, /^Al?einu$|^Alenu$|^עלינו$/i);
-    out = aleinuIdx > 0 ? injectAfter(out, aleinuIdx - 1, musaf) : [...out, ...musaf];
-  }
-  return out;
+  // 4) Song of the Day + Barchi Nafshi at the very END.
+  return [...out, ...song, ...barchi];
 }
 
 /**
  * Chabad RC Shacharit.
  *
- * Chabad has a single top-level leaf "Rosh Chodesh" (one ref). Inject it as
- * a single leaf after the Amidah. Order details (Hallel, RC reading, Mussaf)
- * are all inside this one Sefaria text.
+ * Chabad's "ראש חודש" leaf is ONLY the Musaf (Kedusha "כתר" + RC brachot +
+ * Kaddish Shalem). Its base weekday Shacharit has a Song of the Day but NO
+ * Barchi Nafshi. Interleave Ashkenazi-style:
+ *   Amidah → Hallel → [base Torah Reading] → Ashrei/Uva Letzion → **Musaf**
+ *   → ... → Aleinu → **Song of Day → Barchi Nafshi (synthesized, Ps 104)**.
+ * The previous bug injected Hallel + Musaf together right after the Amidah, so
+ * Musaf came BEFORE the reading; and Barchi Nafshi was missing entirely.
  */
 function augmentForRoshChodeshChabad(leaves: FlatLeaf[], ctx: DayContext): FlatLeaf[] {
-  // Chabad has top-level "Hallel" and "Rosh Chodesh" leaves (each is a single
-  // Sefaria ref, the entire RC content in one text).
   const hallelNode = findTopNode('chabad', /^Hallel$|^הלל$|^סדר הלל$/);
   const rcNode = findTopNode('chabad', /^Rosh (Chodesh|Hodesh)$|^לראש ח[דו]ש$|^ראש ח[דו]ש$/);
-  const inject: FlatLeaf[] = [];
-  if (hallelNode) inject.push(...collectLeaves(hallelNode));
-  if (rcNode) inject.push(...collectLeaves(rcNode));
-  // RC Tevet (Chanukah): append the day's Chanukah Naso reading.
-  inject.push(...rcChanukahExtraReading(ctx));
-  if (inject.length === 0) return leaves;
+  const hallel = hallelNode ? collectLeaves(hallelNode) : [];
+  const musaf = rcNode ? collectLeaves(rcNode) : []; // Chabad "Rosh Chodesh" = Musaf only
+  const chanukahReading = rcChanukahExtraReading(ctx);
+  if (hallel.length === 0 && musaf.length === 0) return leaves;
 
-  let out = leaves;
+  // Relocate the base Song of the Day to the very END; a synthesized Barchi
+  // Nafshi (Chabad has none) follows it.
+  const isTailSong = (l: FlatLeaf) =>
+    /^Song of the Day$|^שיר של יום$/i.test(l.en) && !/Rosh Chodesh|ראש ח[דו]ש/i.test(l.ref);
+  const song = leaves.filter(isTailSong);
+  let out = leaves.filter((l) => !isTailSong(l));
+
   const amidahIdx = findFirstLeafByName(out, /^Amid(ah|a)$|^עמידה$|^תפילת עמידה$/i);
   if (amidahIdx < 0) return leaves;
-  out = injectAfter(out, amidahIdx, inject);
-  return out;
+  const uvaIdx = findLastLeafByName(out, /^Ashrei|^Uva Le[SZ]ion|^אשרי|ובא לציון/i);
+  const torahIdx = findFirstLeafByName(out, /^Torah Reading$|^קריאת התורה$/i);
+
+  // Inject from latest anchor to earliest. Musaf after Ashrei/Uva Letzion.
+  if (musaf.length && uvaIdx >= 0) out = injectAfter(out, uvaIdx, musaf);
+  else if (musaf.length) out = injectAfter(out, torahIdx >= 0 ? torahIdx : amidahIdx, musaf);
+  if (chanukahReading.length && torahIdx >= 0) out = injectAfter(out, torahIdx, chanukahReading);
+  if (hallel.length) out = injectAfter(out, amidahIdx, hallel);
+  // Song of the Day + synthesized Barchi Nafshi at the very END.
+  return [...out, ...song, buildBarchiNafshiLeaf()];
 }
 
 /**
@@ -438,6 +458,26 @@ function findFirstLeafByName(leaves: FlatLeaf[], pattern: RegExp): number {
     if (pattern.test(leaves[i].en) || pattern.test(leaves[i].he)) return i;
   }
   return -1;
+}
+
+/** Find LAST leaf by name pattern (for anchoring after a multi-leaf block). */
+function findLastLeafByName(leaves: FlatLeaf[], pattern: RegExp): number {
+  for (let i = leaves.length - 1; i >= 0; i--) {
+    if (pattern.test(leaves[i].en) || pattern.test(leaves[i].he)) return i;
+  }
+  return -1;
+}
+
+/** Synthesized Barchi Nafshi (Psalm 104) — for nuschaot whose base has no
+ *  Barchi Nafshi leaf (Chabad). Real Tanach; said at the END of RC Shacharit,
+ *  immediately after the Song of the Day. */
+function buildBarchiNafshiLeaf(): FlatLeaf {
+  return {
+    ref: 'Psalms 104',
+    he: 'ברכי נפשי — תהלים ק״ד',
+    en: 'Barchi Nafshi — Psalm 104',
+    trail: [{ he: 'ברכי נפשי לראש חודש', en: 'Barchi Nafshi for Rosh Chodesh' }],
+  };
 }
 
 /** Build the 8 leaves of HALF Hallel — bracha + psalms 113, 114, 115:12-18,
