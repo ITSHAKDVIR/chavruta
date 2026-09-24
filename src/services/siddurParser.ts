@@ -270,7 +270,16 @@ function insertConditionTags(body: string): ConditionTag[] | null {
   if (/אתה חוננתנו למדע/.test(bare)) return ['motzei-shabbat'];
   if (/מנחם ציון [בו]?בנין ירושלים|מנחם ציון ובונה ירושלים/.test(bare)) return ['tisha-b-av'];
   if (/^נחם יהוה אלהינו|נחם.{0,8}אבלי ציון/.test(bare)) return ['tisha-b-av'];
-  if (/אבינו מלכנו אבינו אתה|אבינו מלכנו אין לנו מלך/.test(bare)) return ['fast', 'aseret-yemei-teshuva'];
+  if (/אבינו מלכנו אבינו אתה|אבינו מלכנו אין לנו מלך/.test(bare)) {
+    // Distinguish the SHORT everyday opener (Edot HaMizrach Weekday Mincha
+    // Vidui: "אבינו מלכנו אבינו אתה. אבינו מלכנו אין לנו מלך אלא אתה. אבינו
+    // מלכנו רחם עלינו..." — 3+ verses packed on ONE paragraph line) from the
+    // LONG fast-day / Aseret-Yemei-Teshuva litany, whose verses each print on
+    // their own paragraph. 3+ occurrences on one paragraph = daily short opener.
+    const verses = (bare.match(/אבינו מלכנו/g) || []).length;
+    if (verses >= 3) return null;
+    return ['fast', 'aseret-yemei-teshuva'];
+  }
   return null;
 }
 

@@ -73,6 +73,14 @@ export default function MoreScreen() {
       route: '/settings/notifications',
     },
     {
+      id: 'display',
+      label: 'תצוגה',
+      emoji: '🎨',
+      iconName: 'brush',
+      description: 'עיצוב כהה/בהיר וגודל טקסט התפילה',
+      route: '/settings/display',
+    },
+    {
       id: 'about',
       label: 'אודות',
       emoji: 'ℹ️',

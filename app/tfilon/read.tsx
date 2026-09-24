@@ -7,6 +7,7 @@ import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
 import { getString, Keys } from '../../src/storage/storage';
 import { useSiddurPrefs, shouldHideForPrefs } from '../../src/storage/siddurPrefs';
+import { useAppPrefs } from '../../src/storage/appPrefs';
 import { useLocation } from '../../src/hooks/useLocation';
 import { useEffectiveDate } from '../../src/hooks/useEffectiveDate';
 import {
@@ -222,6 +223,33 @@ function buildCuratedTOC(hereEn: string, leaves: LoadedLeaf[]): { label: string;
   return out;
 }
 
+/** Small button in the reader top-bar that cycles through 4 prayer-text sizes
+ *  (85%, 100%, 115%, 135%). Uses "אא" so the current size is directly visible. */
+function FontSizeButton() {
+  const [prefs, update] = useAppPrefs();
+  const steps: number[] = [0.85, 1.0, 1.15, 1.35];
+  const idx = Math.max(0, steps.indexOf(prefs.fontScale));
+  const nextIdx = (idx + 1) % steps.length;
+  return (
+    <Pressable
+      onPress={() => update({ fontScale: steps[nextIdx] })}
+      hitSlop={10}
+      accessibilityLabel="גודל טקסט"
+    >
+      <Text
+        style={{
+          color: colors.primary,
+          fontFamily: 'FrankRuhlLibre-Medium',
+          fontSize: 13 + idx * 3,
+          lineHeight: 22,
+        }}
+      >
+        אא
+      </Text>
+    </Pressable>
+  );
+}
+
 export default function SiddurReader() {
   const router = useRouter();
   const { nusach: rawNusach, path: rawPath } = useLocalSearchParams<{ nusach?: string; path?: string }>();
@@ -294,6 +322,20 @@ export default function SiddurReader() {
   // Siddur prefs (minyan/yachid, optional sections, quiet mode). Loaded
   // before allLeavesFiltered so the filter has the latest value.
   const [prefs, setPrefs] = useSiddurPrefs();
+
+  // App-wide display prefs (font scale + theme). fontScale multiplies the
+  // prayer-text styles below so users can enlarge the siddur without changing
+  // OS font size (which would also enlarge every other app).
+  const [appPrefs] = useAppPrefs();
+  const scale = appPrefs.fontScale;
+  const sacredStyle = useMemo(
+    () => ({ ...typography.sacred, fontSize: Math.round(typography.sacred.fontSize! * scale), lineHeight: Math.round(typography.sacred.lineHeight! * scale) }),
+    [scale],
+  );
+  const sacredSmallStyle = useMemo(
+    () => ({ ...typography.sacredSmall, fontSize: Math.round(typography.sacredSmall.fontSize! * scale), lineHeight: Math.round(typography.sacredSmall.lineHeight! * scale) }),
+    [scale],
+  );
 
   // Filter leaves by:
   //   1. User prefs (minyan, optional sections)
@@ -683,6 +725,9 @@ export default function SiddurReader() {
               <Text style={{ color: colors.primary, fontSize: 12 }}>▾</Text>
             </Pressable>
           ) : null}
+          {/* Font-size cycler — tap to cycle through 4 sizes for the prayer text.
+              Small emoji label so it fits the icon-strip. Persisted app-wide. */}
+          <FontSizeButton />
           {/* Prayer compass — quick jump to the Jerusalem-direction tool. */}
           <Pressable
             onPress={() => router.push('/tools/compass' as any)}
@@ -1259,7 +1304,7 @@ export default function SiddurReader() {
                                 )}
                                 <Text
                                   style={[
-                                    p.small ? typography.small : typography.sacred,
+                                    p.small ? sacredSmallStyle : sacredStyle,
                                     styles.paragraph,
                                     inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted,
                                   ]}
@@ -1279,7 +1324,7 @@ export default function SiddurReader() {
                             <Text
                               key={j}
                               style={[
-                                unvocalized ? styles.rubric : (p.small ? typography.small : typography.sacred),
+                                unvocalized ? styles.rubric : (p.small ? sacredSmallStyle : sacredStyle),
                                 styles.paragraph,
                               ]}
                             >
@@ -1335,12 +1380,12 @@ export default function SiddurReader() {
                                       {p.marker ? (
                                         <Text style={[typography.caption, styles.conditionalMarker]}>🔹 {p.marker}{!inSeason ? ' · לא היום' : ''}</Text>
                                       ) : null}
-                                      <Text style={[typography.sacred, styles.paragraph, inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted]}>{body}</Text>
+                                      <Text style={[p.small ? sacredSmallStyle : sacredStyle, styles.paragraph, inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted]}>{body}</Text>
                                     </View>
                                   );
                                 }
                                 const unvoc = !hasNikud(p.body);
-                                return <Text key={k} style={[unvoc ? styles.rubric : typography.sacred, styles.paragraph]}>{stripInactiveInlineParens(p.body, active)}</Text>;
+                                return <Text key={k} style={[unvoc ? styles.rubric : (p.small ? sacredSmallStyle : sacredStyle), styles.paragraph]}>{stripInactiveInlineParens(p.body, active)}</Text>;
                               })}
                             </View>
                           ) : null}
@@ -1427,7 +1472,7 @@ export default function SiddurReader() {
                                               🔹 {p.marker}{p.kind === 'alternative' ? ' (במקום)' : ''}{!inSeason ? ' · לא היום' : ''}
                                             </Text>
                                           ) : null}
-                                          <Text style={[typography.sacred, styles.paragraph, inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted]}>
+                                          <Text style={[p.small ? sacredSmallStyle : sacredStyle, styles.paragraph, inSeason ? styles.paragraphConditional : styles.paragraphConditionalMuted]}>
                                             {body}
                                           </Text>
                                         </View>
@@ -1436,7 +1481,7 @@ export default function SiddurReader() {
                                     const unvoc = !hasNikud(p.body);
                                     const chazaraRenderBody = stripInactiveInlineParens(p.body, active);
                                     return (
-                                      <Text key={k} style={[unvoc ? styles.rubric : typography.sacred, styles.paragraph]}>
+                                      <Text key={k} style={[unvoc ? styles.rubric : (p.small ? sacredSmallStyle : sacredStyle), styles.paragraph]}>
                                         {chazaraRenderBody}
                                       </Text>
                                     );

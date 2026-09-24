@@ -130,6 +130,20 @@ export const typography = {
     textAlign: 'right',
   } as TextStyle,
 
+  // Vocalized prayer text that Sefaria wrapped in <small> (Kaddish continuation
+  // lines in EM Mincha, Modim DeRabbanan, etc.). Still Frank Ruhl — same
+  // typographic family as sacred so it doesn't look like a font swap next to
+  // the surrounding prayer — just a step smaller. Do NOT use typography.small
+  // for prayer text: that's Rubik, and produces the visible font mismatch the
+  // user reported for the Kaddish before "למנצח בנגינות" in Mincha.
+  sacredSmall: {
+    fontFamily: 'FrankRuhlLibre-Medium',
+    fontSize: 17,
+    lineHeight: 27,
+    writingDirection: 'rtl',
+    textAlign: 'right',
+  } as TextStyle,
+
   // Time displays — tabular figures so hh:mm columns align across rows.
   timeBig: {
     fontFamily: tabularNumFamily,

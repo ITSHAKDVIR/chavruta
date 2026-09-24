@@ -307,7 +307,30 @@ function CrashSharer({ onClose }: { onClose: () => void }) {
   );
 }
 
+// Apply the stored theme SYNCHRONOUSLY as a module side-effect at import time
+// so the very first render uses the right palette. AsyncStorage is async, so
+// this initial run reads from the tiny synchronous cache — the actual stored
+// theme value gets applied via useThemeApplication() below. Worst case: one
+// flash of dark→light on first launch after the user changes the theme.
+import { loadAppPrefs, useAppPrefs } from '../src/storage/appPrefs';
+import { applyTheme, colors as themeColors } from '../src/theme/colors';
+
+/** Apply the stored theme at boot AND on every change. Returns a `themeKey`
+ *  the caller uses as the `key` prop of the mounted tree so a change triggers
+ *  a full remount, forcing all cached style arrays to rebuild with new colors. */
+function useThemeApplication(): number {
+  const [prefs] = useAppPrefs();
+  const [themeKey, setThemeKey] = useState(0);
+  useEffect(() => {
+    applyTheme(prefs.theme);
+    setThemeKey((k) => k + 1);
+  }, [prefs.theme]);
+  return themeKey;
+}
+
 export default function RootLayout() {
+  // Apply saved theme (dark/light) on boot + whenever it changes.
+  const themeKey = useThemeApplication();
   // Load Rubik font globally — bundled in APK so every device sees the same UI
   const [fontsLoaded] = useFonts({
     'Rubik-Light': Rubik_300Light,
@@ -381,13 +404,13 @@ export default function RootLayout() {
 
   return (
     <AppErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1 }} key={`theme-${themeKey}`}>
         <SafeAreaProvider>
-          <StatusBar style="dark" />
+          <StatusBar style={themeColors.bg === '#faf6ec' ? 'dark' : 'light'} />
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { backgroundColor: '#0a1f3d' },
+              contentStyle: { backgroundColor: themeColors.bg },
               animation: 'slide_from_right',
             }}
           />
