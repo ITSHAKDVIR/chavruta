@@ -10,6 +10,7 @@ import { useSiddurPrefs, shouldHideForPrefs } from '../../src/storage/siddurPref
 import { useAppPrefs } from '../../src/storage/appPrefs';
 import { useLocation } from '../../src/hooks/useLocation';
 import { useEffectiveDate } from '../../src/hooks/useEffectiveDate';
+import { useJerusalemPurim } from '../../src/hooks/useJerusalemPurim';
 import {
   getNodesAtPath,
   slugify,
@@ -25,7 +26,7 @@ import {
 } from '../../src/data/siddurTree';
 import { augmentLeavesForToday } from '../../src/data/siddurAugment';
 import { GabbaiCard } from '../../src/components/GabbaiCard';
-import { isSectionRelevantToday } from '../../src/data/siddurRelevance';
+import { isSectionRelevantToday, serviceOfNode } from '../../src/data/siddurRelevance';
 import { getActiveMusafLink } from '../../src/data/musafLinks';
 import { getActiveSelichotLink } from '../../src/data/selichotLink';
 import {
@@ -256,6 +257,8 @@ export default function SiddurReader() {
   const { location } = useLocation();
   const inIsrael = location.countryCode === 'IL';
   const today = useEffectiveDate();
+  // Purim day (14 / Shushan 15) — in the deps below so the text recomputes once loaded.
+  const jerusalemPurim = useJerusalemPurim();
 
   const [storedNusach, setStoredNusach] = useState<Nusach>('ashkenazi');
 
@@ -317,7 +320,7 @@ export default function SiddurReader() {
     }
     if (slugs.length === 0) return collectLeavesFromList(getNusachTree(nusach));
     return [];
-  }, [here?.ref, here?.children, here?.en, nusach, slugs.length, inIsrael, today]);
+  }, [here?.ref, here?.children, here?.en, nusach, slugs.length, inIsrael, today, jerusalemPurim]);
 
   // Siddur prefs (minyan/yachid, optional sections, quiet mode). Loaded
   // before allLeavesFiltered so the filter has the latest value.
@@ -394,7 +397,7 @@ export default function SiddurReader() {
       if (l.trail.some((t) => !isSectionRelevantToday(t.en, today, inIsrael, t.he, serviceKind))) return false;
       return true;
     }),
-    [allLeavesUnderHere, prefs, inIsrael, today, serviceKind],
+    [allLeavesUnderHere, prefs, inIsrael, today, serviceKind, jerusalemPurim],
   );
   // Render any node with a reasonable leaf count as running text. The earlier
   // protection (force nav list at slugs.length===1) was for Ashkenazi's
@@ -413,14 +416,14 @@ export default function SiddurReader() {
   const isMonOrThu = dayOfWeek === 1 || dayOfWeek === 4;
 
   // Inserts for today
-  const inserts = useMemo(() => getInsertsForDate(today, inIsrael), [today, inIsrael]);
+  const inserts = useMemo(() => getInsertsForDate(today, inIsrael), [today, inIsrael, jerusalemPurim]);
   // Active condition tags. For Maariv the tags reflect the NEXT Hebrew day (the
   // day begins at night) — so day-additions appear in the maariv BEFORE the day,
   // not in the motzei maariv.
   const isMaarivService = serviceKind === 'maariv';
   const active = useMemo(
     () => activeTags(today, inIsrael, isMaarivService),
-    [today, inIsrael, isMaarivService],
+    [today, inIsrael, isMaarivService, jerusalemPurim],
   );
 
   // Halachic-window banner: detect if user is reading Shacharit/Mincha/Maariv
@@ -952,7 +955,9 @@ export default function SiddurReader() {
 
           {/* Navigation list mode - filtered by today relevance */}
           {!isRunningText && children.length > 0 && (() => {
-            const visible = children.filter((c) => isSectionRelevantToday(c.en, today, inIsrael));
+            const relevantChild = (c: { en: string; he: string }) =>
+              isSectionRelevantToday(c.en, today, inIsrael, c.he, serviceKind ?? serviceOfNode(c.en, c.he));
+            const visible = children.filter(relevantChild);
             const hidden = children.length - visible.length;
             const list = showAll ? children : visible;
             return (
@@ -965,7 +970,7 @@ export default function SiddurReader() {
                   </Pressable>
                 )}
                 {list.map((c, i) => {
-                  const relevant = isSectionRelevantToday(c.en, today, inIsrael);
+                  const relevant = relevantChild(c);
                   return (
                     <Card key={`${c.en}-${i}`} onPress={() => navigateTo(slugify(c.en))}>
                       <View style={{ flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md, opacity: relevant ? 1 : 0.55 }}>
@@ -1286,7 +1291,7 @@ export default function SiddurReader() {
                           }
                           if (p.kind === 'conditional' || p.kind === 'alternative') {
                             // Inject day name into Yaaleh VeYavo etc.
-                            const enhancedBody = enhanceConditionalText(p, today, inIsrael);
+                            const enhancedBody = enhanceConditionalText(p, today, inIsrael, isMaarivService);
                             // Is this currently in season?
                             // 'unknown' tag = we don't know when, treat as in-season
                             // so it doesn't show a false "לא היום" badge.
@@ -1371,7 +1376,7 @@ export default function SiddurReader() {
                                   return <Text key={k} style={[typography.small, styles.halachicNote]}>{p.body}</Text>;
                                 }
                                 if (p.kind === 'conditional' || p.kind === 'alternative') {
-                                  const body = enhanceConditionalText(p, today, inIsrael);
+                                  const body = enhanceConditionalText(p, today, inIsrael, isMaarivService);
                                   const inSeason = !p.tags || p.tags.length === 0 ||
                                     p.tags.includes('unknown') || p.tags.includes('chazara-only') ||
                                     p.tags.some((t) => active.has(t));
@@ -1461,7 +1466,7 @@ export default function SiddurReader() {
                                       ) : null;
                                     }
                                     if (p.kind === 'conditional' || p.kind === 'alternative') {
-                                      const body = enhanceConditionalText(p, today, inIsrael);
+                                      const body = enhanceConditionalText(p, today, inIsrael, isMaarivService);
                                       const inSeason = !p.tags || p.tags.length === 0 ||
                                         p.tags.includes('unknown') || p.tags.includes('chazara-only') ||
                                         p.tags.some((t) => active.has(t));

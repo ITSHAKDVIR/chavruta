@@ -20,6 +20,7 @@
  * unchanged — no crash.
  */
 import { HDate, HebrewCalendar, flags, months } from '@hebcal/core';
+import { isPurimForUser } from './purimDay';
 import {
   FlatLeaf,
   Nusach,
@@ -98,7 +99,9 @@ function buildCtx(date: Date, inIsrael: boolean): DayContext {
   const isChanukah = events.some((e) => /Chanukah|Hanukkah/i.test(e.getDesc()));
   // NOTE: exclude "Erev Purim" — that's Ta'anit Esther (a FAST), which must get
   // the fast flow (Anenu + Vayechal), not the Purim flow (Vayavo Amalek).
-  const isPurim = events.some((e) => /Purim|Shushan/i.test(e.getDesc()) && !/Erev/i.test(e.getDesc()));
+  // Date-based, per the user's own Purim day (14, or 15 in Jerusalem) — hebcal
+  // reports Shushan Purim on 15 Adar everywhere.
+  const isPurim = isPurimForUser(hd, inIsrael);
 
   const m = hd.getMonth();
   const d = hd.getDate();
@@ -733,6 +736,17 @@ function augmentForCholHamoed(leaves: FlatLeaf[], nusach: Nusach, ctx: DayContex
   return out;
 }
 
+/** Some Sefaria "Mussaf" leaves are really the whole festival APPENDIX: Edot
+ *  HaMizrach's "Prayers for Three Festivals, Mussaf" continues past the Musaf
+ *  Amidah (which ends at segment 56, "עשה שלום … ואמרו אמן", + יהי רצון and two
+ *  rubrics) with Ushpizin verses, Yom-Tov/R"H Kiddush, Havdalah, Zohar for
+ *  Sukkot AND Shavuot, Akdamut-style "אוריתא" and Sukkot songs. The headerless
+ *  Amidah splitter folds that whole tail into "אלהי נצור", so on Chol HaMoed the
+ *  silent Musaf ran on for ~200 unrelated paragraphs. Restrict to the Amidah. */
+const MUSAF_REF_RANGE: Record<string, string> = {
+  'Siddur Edot HaMizrach, Prayers for Three Festivals, Mussaf': '1-59',
+};
+
 /** Sephardi/EM/Chabad ChH"M: inject the Festival Mussaf ONLY after the regular
  *  weekday Amidah. The user uses the regular weekday Amidah (with YvY
  *  conditional) for the silent Shacharit, not the Festival Amidah — so we
@@ -753,7 +767,7 @@ function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, ctx: Day
     // Include if it's clearly Mussaf
     if (/\bMu+ssa+f\b|מוסף/i.test(txt)) return true;
     return false;
-  });
+  }).map((l) => (MUSAF_REF_RANGE[l.ref] ? { ...l, ref: `${l.ref} ${MUSAF_REF_RANGE[l.ref]}` } : l));
   if (musafLeaves.length === 0) return leaves;
 
   let out = leaves;
@@ -767,8 +781,23 @@ function augmentForCholHamoedSimple(leaves: FlatLeaf[], nusach: Nusach, ctx: Day
   const chMtrail = [{ he: ctx.isPesach ? 'הלל לחול המועד פסח (חצי)' : 'הלל לחול המועד סוכות (שלם)',
                      en: ctx.isPesach ? 'Half Hallel for Chol HaMoed Pesach' : 'Full Hallel for Chol HaMoed Sukkot' }];
   const hallel = hallelRaw.map((l) => ({ ...l, trail: chMtrail }));
-  // Kaddish Titkabal closes the Hallel (ChH"M has Musaf), then Mussaf.
-  out = injectAfter(out, amidahIdx, [...hallel, buildHallelClosingKaddish(true), ...musafLeaves]);
+
+  // Interleave like Rosh Chodesh (Ashkenazi-style) — the previous bug injected
+  // Hallel+Mussaf together right after the Amidah, so Mussaf came BEFORE the
+  // Torah reading and Ashrei/Uva Letzion. Correct order:
+  //   Amidah → Hallel (+Kaddish Titkabal) → [base Torah Reading] →
+  //   Ashrei/Uva Letzion → **Mussaf** → … → Aleinu.
+  // Inject Mussaf FIRST (later anchor) so the earlier Amidah index stays valid.
+  // Prefix match (not anchored $) so Chabad's "Ashrei Uva LeZion" leaf matches
+  // too — otherwise Mussaf falls through to just-before-Aleinu (after Song/Kaveh).
+  const uvaIdx = findLastLeafByName(out, /^Ashrei|^Uva Le[SZ]ion|^Beit Yaakov|^אשרי|ובא לציון/i);
+  if (uvaIdx >= 0) out = injectAfter(out, uvaIdx, musafLeaves);
+  else {
+    const aleinuIdx = findFirstLeafByName(out, /^Al?einu$|^Alenu$|^עלינו$/i);
+    out = aleinuIdx > 0 ? injectAfter(out, aleinuIdx - 1, musafLeaves) : [...out, ...musafLeaves];
+  }
+  // Hallel + Kaddish Titkabal right after the Amidah (before the Torah reading).
+  out = injectAfter(out, amidahIdx, [...hallel, buildHallelClosingKaddish(true)]);
   return out;
 }
 
@@ -928,7 +957,23 @@ export function augmentLeavesForToday(
     // said the night that enters 14 Adar — i.e. when TODAY is still 13 Adar. So
     // it must fire on tomorrow=Purim, not on ctx.isPurim (whose night is already
     // motzei Purim). Same eve logic as Yom HaAtzmaut Maariv above.
-    const tomorrowIsPurim = tomorrowEventsMaariv.some((e) => /Purim|Shushan/i.test(e.getDesc()) && !/Erev/i.test(e.getDesc()));
+    // Sefirat HaOmer is counted at Maariv for the COMING day. Sefard and Ashkenaz
+    // keep it inside their Weekday Maariv, but Chabad and Edot HaMizrach hold it
+    // as a separate top-level node — so it never appeared in their Maariv at all.
+    // Inject that nusach's own Omer leaf (read.tsx then keeps only tonight's
+    // count): before Aleinu where the Maariv is split (EM), else after it (Chabad's
+    // Maariv is one leaf).
+    const tm = tomorrowHdMaariv.getMonth(), td = tomorrowHdMaariv.getDate();
+    const tonightIsOmer = (tm === months.NISAN && td >= 16) || tm === months.IYYAR || (tm === months.SIVAN && td <= 5);
+    if (tonightIsOmer && !out.some((l) => /Omer|עומר|עמר/i.test(`${l.en} ${l.he}`))) {
+      const omerNode = findTopNode(nusach, /^Sefirat HaOmer$|^Counting of the Omer$/i);
+      const omerLeaves = omerNode ? collectLeaves(omerNode) : [];
+      if (omerLeaves.length) {
+        const aleinuIdx = findFirstLeafByName(out, /^Al?einu$|^Alenu$|^עלינו$/i);
+        out = aleinuIdx > 0 ? injectAfter(out, aleinuIdx - 1, omerLeaves) : [...out, ...omerLeaves];
+      }
+    }
+    const tomorrowIsPurim = isPurimForUser(tomorrowHdMaariv, inIsrael);
     if (tomorrowIsPurim) out = augmentForPurimMaariv(out, nusach);
     else if (tomorrowIsYomAtzmaut || tomorrowIsYomYerushalayim) out = augmentForYomHaatzmautMaariv(out, nusach);
   }

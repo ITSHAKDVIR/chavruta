@@ -21,6 +21,7 @@ export const Keys = {
   calendarSyncId: '@yahadut/calendar-sync-id',
   chazakaTefillot: '@yahadut/chazaka-tefillot',
   siddurPrefs: '@yahadut/siddur-prefs',
+  inJerusalem: '@yahadut/in-jerusalem',
 } as const;
 
 export async function getJSON<T>(key: string, fallback: T): Promise<T> {

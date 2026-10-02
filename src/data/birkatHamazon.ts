@@ -1,4 +1,5 @@
 import { HDate, HebrewCalendar, flags, months } from '@hebcal/core';
+import { isPurimForUser } from './purimDay';
 
 /** A piece of Birkat HaMazon. Optional conditional metadata so the UI can highlight inserts. */
 export type BirkatSegment = {
@@ -131,9 +132,8 @@ export function buildBirkatHamazon(date: Date = new Date(), inIsrael = true): Bi
   // Chanukah: 25 Kislev - 2 Tevet (or 3 in non-29 Kislev years - hebcal handles via events)
   const events = HebrewCalendar.calendar({ start: hd, end: hd, il: inIsrael, sedrot: false });
   const isChanukah = events.some((e) => e.getDesc().toLowerCase().includes('chanukah'));
-  // Purim: 14 Adar (Adar II in leap year); 15 Adar (Shushan Purim - inIsrael for Jerusalem; we use a wider rule)
-  const adarMonth = HDate.isLeapYear(hd.getFullYear()) ? months.ADAR_II : months.ADAR_I;
-  const isPurim = m === adarMonth && (d === 14 || d === 15);
+  // Purim: 14 Adar (Adar II in leap year); 15 Adar for one who set "אני בירושלים"
+  const isPurim = isPurimForUser(hd, inIsrael);
 
   const segments: BirkatSegment[] = [];
 

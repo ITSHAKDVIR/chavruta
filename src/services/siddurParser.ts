@@ -1,4 +1,5 @@
 import { HDate, HebrewCalendar, flags, months } from '@hebcal/core';
+import { isPurimForUser } from '../data/purimDay';
 
 /**
  * Parses Sefaria HTML siddur text into structured paragraphs with
@@ -33,9 +34,18 @@ export type ConditionTag =
   | 'motzei-shabbat'
   | 'shabbat'
   | 'weekday'
-  | 'summer-tal'      // ימות החמה: Pesach (musaf) → Shmini Atzeret
-  | 'winter-geshem'   // ימות הגשמים: Shmini Atzeret → Pesach
-  | 'tal-umatar'      // 7 Cheshvan / Dec 4-5 → 15 Nisan: ותן טל ומטר
+  | 'summer-tal'      // גבורות ימות החמה (מוריד הטל): Pesach (musaf) → Shmini Atzeret
+  | 'winter-geshem'   // גבורות ימות הגשמים (משיב הרוח): Shmini Atzeret → Pesach
+  | 'tal-umatar'      // 7 Cheshvan / Dec 4-5 → 15 Nisan: ברכת השנים ותן טל ומטר
+  | 'summer-berachah' // ברכת השנים ימות החמה (ותן ברכה): 15 Nisan → 7 Cheshvan
+  // The Sukkot Musaf korban of a specific day ("ובחמשה עשר…" = 1, "וביום השני" = 2
+  // … "וביום השביעי" = 7). Israel says today's; the diaspora adds the doubtful
+  // previous day (ספיקא דיומא), so two are active there.
+  | 'sukkot-korban-1' | 'sukkot-korban-2' | 'sukkot-korban-3' | 'sukkot-korban-4'
+  | 'sukkot-korban-5' | 'sukkot-korban-6' | 'sukkot-korban-7'
+  | 'pesach-korban-1' // "ובחדש הראשון…" — Pesach first day(s) only, not Chol HaMoed
+  | 'hoshana-rabba'   // כ״א תשרי
+  | 'chol-hamoed-plain' // חול המועד שאינו הושענא רבה
   | 'in-israel'
   | 'in-diaspora'
   | 'sukkot'
@@ -124,7 +134,7 @@ function isMarkerPhrase(text: string): boolean {
 
 /** Map a Hebrew marker text to known condition tags. */
 export function markerToTags(marker: string): ConditionTag[] {
-  const m = marker.replace(/[״"׳']/g, '').replace(/[:.]/g, '').trim();
+  const m = marker.replace(/[״"׳'’‘`]/g, '').replace(/[:.]/g, '').trim();
   const tags: ConditionTag[] = [];
 
   if (/(בעשית|בעשרת ימי תשובה)/.test(m)) tags.push('aseret-yemei-teshuva');
@@ -133,13 +143,17 @@ export function markerToTags(marker: string): ConditionTag[] {
 
   if (/(ברח|בראש חדש|בראש חודש|בראש החדש|לרח|לראש חודש|לראש חדש)/.test(m)) tags.push('rosh-chodesh');
 
-  if (/(ביוט|ביום טוב|בשלש רגלים|בחג|בחגים|בשלוש רגלים)/.test(m)) tags.push('yom-tov');
-  if (/(בחהמ|בחול המועד|בחוהמ)/.test(m)) tags.push('chol-hamoed');
+  if (/(ביוט|ליוט|ביום טוב|בשלש רגלים|בחג|בחגים|בשלוש רגלים)/.test(m)) tags.push('yom-tov');
+  if (/(בחהמ|בחול המועד|בחוהמ|לחוהמ)/.test(m)) tags.push('chol-hamoed');
+  if (/(להושער|בהושער|הושענא רבה|הושענה רבה)/.test(m)) tags.push('hoshana-rabba');
 
-  if (/(בסוכות|חג הסוכות|לסכות|לסוכות)/.test(m)) { tags.push('sukkot'); tags.push('yom-tov'); }
-  if (/(בפסח|חג הפסח|חג המצות|במצות|לפסח)/.test(m)) { tags.push('pesach'); tags.push('yom-tov'); }
-  if (/(בשבועות|חג השבועות|לשבועות)/.test(m)) { tags.push('shavuot'); tags.push('yom-tov'); }
-  if (/(שמיני עצרת|בעצרת|שמ ע|לשמיני עצרת)/.test(m)) { tags.push('shmini-atzeret'); tags.push('yom-tov'); }
+  if (/(בסוכות|חג הסוכות|לסכות|לסוכות|חוהמ סוכות|המועד סוכות|^ה?סו?כות$)/.test(m)) { tags.push('sukkot'); tags.push('yom-tov'); }
+  if (/(בפסח|חג הפסח|חג המצות|במצות|לפסח|חוהמ פסח|המועד פסח|^ה?פסח$)/.test(m)) { tags.push('pesach'); tags.push('yom-tov'); }
+  if (/(בשבועות|חג השבועות|לשבועות|^ה?שבועות$)/.test(m)) { tags.push('shavuot'); tags.push('yom-tov'); }
+  // שמ"ע וש"ת / שמ"ע ולש"ת → after quote-strip "שמע ושת" / "שמע ולשת".
+  // Also the short abbreviation ש"ע (= שמיני עצרת): "בש״ע" → "בשע" (exact token).
+  // (The ת is REQUIRED — "שמע ו?ל?ש" alone would also catch "קריאת שמע ושמונה עשרה".)
+  if (/(שמיני עצרת|בעצרת|שמ ע|שמע ו?ל?שת(?![א-ת])|לשמיני עצרת)/.test(m) || /^[בל]?שע( ו?לש?ת)?$/.test(m)) { tags.push('shmini-atzeret'); tags.push('yom-tov'); }
 
   // Accept BOTH the "ב…" (on) and "ל…" (for) prefixes — Chabad/EM labels print
   // "לחנוכה" / "לפורים" as the inline cue, not only "בחנוכה".
@@ -160,18 +174,23 @@ export function markerToTags(marker: string): ConditionTag[] {
 
   // "בשבת" / "בשבתות" = on Shabbat — BUT exclude day-of-week phrases like
   // "בראשון בשבת" / "בשישי בשבת" which mean "on day N of the week", not Shabbat.
-  if (/(בשבת|בשבתות)/.test(m)
+  if (/(בשבת|בשבתות|לשבת|לשבתות)/.test(m)
       && !/(במוצש|במוצאי)/.test(m)
       && !/ב(ראשון|שני|שלישי|רביעי|חמישי|שישי|ששי)\s+ב?שבת/.test(m)) {
     tags.push('shabbat');
   }
   if (/(בחול|ביום חול|בימי החול)/.test(m) && !/(בחול המועד|בחוהמ)/.test(m)) tags.push('weekday');
 
-  // Tal/Geshem (Israeli and other variations)
-  if (/(בימות הגשמים|בחורף|משיב הרוח ומוריד הגשם|מוסף שמיני עצרת)/.test(m)) tags.push('winter-geshem');
-  if (/(בימות החמה|בקיץ|מוריד הטל)/.test(m)) tags.push('summer-tal');
-  // "ז' במרחשון" (7 Cheshvan) marks the START of "ותן טל ומטר" (winter rain
-  // request). It belongs with tal-umatar markers, NOT with summer-tal.
+  // Tal/Geshem. GEVUROT (משיב הרוח / מוריד הטל) switches at Shmini Atzeret ↔
+  // Pesach → summer-tal / winter-geshem. BIRKAT HASHANIM (ותן טל ומטר / ותן
+  // ברכה) switches at 7 Cheshvan ↔ Pesach → tal-umatar / summer-berachah, so its
+  // "בימות הגשמים" / "בימות החמה" labels map to THOSE tags (not geshem/tal),
+  // otherwise the 22-Tishrei→7-Cheshvan gap shows the winter "ותן טל ומטר".
+  if (/(בחורף|משיב הרוח ומוריד הגשם|מוסף שמיני עצרת)/.test(m)) tags.push('winter-geshem');
+  if (/(בקיץ|מוריד הטל)/.test(m)) tags.push('summer-tal');
+  if (/בימות הגשמים/.test(m)) tags.push('tal-umatar');
+  if (/בימות החמה/.test(m)) tags.push('summer-berachah');
+  // "ז' במרחשון" (7 Cheshvan) marks the START of "ותן טל ומטר".
   if (/(טל ומטר|ז במרחשון|מז במרחשון|בז במרחשון|מז חשון|בז חשון|ז חשון|דצמבר)/.test(m)) tags.push('tal-umatar');
 
   if (/(בארץ ישראל|באי|בארץ)/.test(m) && !/וחול|וחו ל/.test(m)) tags.push('in-israel');
@@ -201,6 +220,21 @@ export function markerToTags(marker: string): ConditionTag[] {
 
 function isAlternativeMarker(marker: string): boolean {
   return /במקום|אומר במקום|חותם|חתימה/.test(marker);
+}
+
+/** A festival-NAME tag (pesach/sukkot/shavuot/shmini-atzeret) is a mutually-
+ *  EXCLUSIVE menu choice: "בחוה״מ פסח: חג המצות…" must show ONLY on Pesach. But
+ *  markerToTags also attaches the generic chol-hamoed / yom-tov, and chol-hamoed
+ *  is active on Sukkot too — so the Pesach name would leak on Chol HaMoed Sukkot.
+ *  When a paragraph carries a specific festival-name tag, drop the generic
+ *  chol-hamoed / yom-tov so it gates on the festival alone. We do NOT touch
+ *  rosh-chodesh / yom-tov-only / chol-hamoed-only paragraphs (e.g. the Yaaleh
+ *  VeYavo opener is a UNION "בר״ח/חוה״מ/יו״ט" and must stay broad). */
+const FESTIVAL_NAME_TAGS: ConditionTag[] = ['pesach', 'sukkot', 'shavuot', 'shmini-atzeret'];
+function specificDayTags(tags: ConditionTag[] | undefined): ConditionTag[] | undefined {
+  if (!tags || !tags.length) return tags;
+  if (!tags.some((t) => FESTIVAL_NAME_TAGS.includes(t))) return tags;
+  return tags.filter((t) => t !== 'chol-hamoed' && t !== 'yom-tov');
 }
 
 /**
@@ -329,10 +363,42 @@ export function parseParagraphRaw(raw: string): ParsedParagraph & { _markerOnly?
   return result;
 }
 
+/** A dated alternate embedded MID-LINE in <small> without a colon — e.g. the
+ *  Ashkenaz R"Ch Musaf chatima "ברוך אתה ה׳ האל <small>בעשי״ת המלך</small>
+ *  הקדוש" rendered as "האל בעשי״ת המלך הקדוש" every Rosh Chodesh. Turn it into
+ *  "(בעשי״ת המלך)" so stripInactiveInlineParens hides it off-season and shows it
+ *  as a labeled alternate in season. Only mid-line (prayer text before it), only
+ *  when it maps to day tags, and never a "label:" (those are menu labels). */
+function parenMidlineDatedSmall(txt: string): string {
+  const unwrapped = txt.replace(/<(em|i)>\s*(<small>[^<]{2,40}<\/small>)\s*<\/\1>/gi, '$2');
+  return unwrapped
+    .replace(/<small>\s*([^<]{2,40}?)\s*<\/small>/g, (m: string, inner: string, off: number) => {
+      const beforeRaw = unwrapped.slice(0, off);
+      const before = beforeRaw.replace(/<[^>]+>/g, '').replace(/[֑-ׇ]/g, '');
+      if (!/[א-ת]{2}/.test(before)) return m;
+      // Already inside "( … )" — the paren handler owns it.
+      if ((before.match(/\(/g) || []).length > (before.match(/\)/g) || []).length) return m;
+      const w = inner.trim();
+      // Must be MARKER + ALTERNATE (≥2 words). A lone "בקיץ"/"בחורף" labels the
+      // adjacent text ("ותן <small>בקיץ</small> ברכה") and must stay as is.
+      if (/[:：]\s*$/.test(w) || !/^[בל]/.test(w) || w.split(/\s+/).length < 2) return m;
+      return markerToTags(w).length ? `(${w})` : m;
+    });
+}
+
 function parseParagraphRawInner(raw: string): ParsedParagraph & { _markerOnly?: boolean } {
   if (!raw) return { body: '', kind: 'normal' };
 
   let txt = decodeEntities(raw).trim();
+  // A closing tag glued to the next opening tag ("<b>כתר</b><small>בחזרת…")
+  // fused two words ("כתרבחזרת") once the tags were stripped. Keep a space.
+  txt = txt.replace(/<br\s*\/?>/gi, ' <br> ') // "…דרבנן</small><br><small>בחזרת" glued too
+    .replace(/<\/(b|strong|big|em|i|small)>(?=<(?:b|strong|big|em|i|small)\b)/gi, '</$1> ')
+    // …and a letter glued to a <small> rubric ("כתר<small>בחזרת…", "דרבנן<small>…").
+    // Only <small>: it always opens a separate label/instruction (unlike <big>,
+    // which Sefaria uses for an enlarged first letter INSIDE a word).
+    .replace(/([א-ת֑-ׇ])<small\b/gi, '$1 <small')
+    .replace(/<\/small>([א-ת])/gi, '</small> $1');
   txt = stripFormatting(txt);
   txt = normalizeDivineName(txt); // fix Sefaria's garbled שם-ה' vocalization (EM chatimot)
 
@@ -461,11 +527,20 @@ function parseParagraphRawInner(raw: string): ParsedParagraph & { _markerOnly?: 
   const leadSmall = /^<small>([^<]+?)<\/small>\s*[:：]?\s*([\s\S]+)$/i.exec(txt);
   if (leadSmall) {
     const marker = leadSmall[1].trim().replace(/[:：]$/, '').trim();
-    const body = leadSmall[2]
+    // A trailing "<small>בחורף:</small>" is the NEXT option's label (its text is
+    // the following paragraph) — don't leave it dangling in this one's body
+    // ("מוריד הטל. בחורף:").
+    const rest = leadSmall[2].replace(/\s*<small>\s*([^<]{1,20}?)\s*[:：]\s*(?:<\/small>)?\s*$/i,
+      (mm: string, lbl: string) => (markerToTags(lbl).length ? '' : mm));
+    const tags = markerToTags(marker);
+    // Plain (non-conditional) bodies go through stripInactiveInlineParens, so a
+    // mid-line dated alternate there must become "( … )" as in Case C — e.g. the
+    // Half Kaddish "<small>חזן:</small> … לעלא <small>בעשי״ת לעלא לעלא מכל</small>"
+    // showed the AYT rubric every day after Hallel.
+    const body = (tags.length === 0 && !isAlternativeMarker(marker) ? parenMidlineDatedSmall(rest) : rest)
       .replace(/<\/?small>/gi, '')
       .replace(/<\/?[a-zA-Z][^>]*>/g, '')
       .trim();
-    const tags = markerToTags(marker);
     // Section label (e.g. "משנה א", "פרק ב", "קדיש דרבנן") — short, no tags,
     // not a directive. Render the label inline as part of the body to avoid
     // a conditional badge or rubric box that would mislead the reader.
@@ -513,12 +588,48 @@ function parseParagraphRawInner(raw: string): ParsedParagraph & { _markerOnly?: 
   // Case C: no leading marker → normal text. Strip any inline <small> AND
   // any leftover HTML that survived (the final safety net for tags like
   // <big>, <em> that slipped through Sefaria's data).
+  // First: a mid-line dated alternate becomes "( … )" (see parenMidlineDatedSmall).
+  txt = parenMidlineDatedSmall(txt);
   const body = txt.replace(/<\/?small>/gi, '').replace(/<\/?[a-zA-Z][^>]*>/g, '').trim();
   // Content-pattern detection — some paragraphs in Sefaria have NO marker
   // but begin with phrases that imply a seasonal condition (e.g. על הניסים
   // is only said on Chanukah/Purim, יעלה ויבוא only on R"H/חוה"מ/יו"ט).
   // Strip nikud + leading <b>/<i> for the regex check.
   const bare = body.replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
+  // Inline festival/Shabbat LABEL at the very start of a Kedushat-HaYom / Musaf
+  // line — e.g. "בפסח: חג המצות…", "בסוכות: …", "לשבת: ישמחו במלכותך…",
+  // "בשמ"ע וש"ת: שמיני עצרת…". Sefaria nests the label inside the paragraph's
+  // <small> wrapper, so Case A/B miss it and the whole "menu" of festivals leaks
+  // on every festival day. Gate the paragraph by the label's day-tags. We match
+  // on the tag/nikud/quote-stripped text and only act when the label is a known
+  // date-marker (markerToTags → tags), so normal prayer text is never captured.
+  // Chabad Sukkot Musaf diaspora pointers — "[בחוץ לארץ מוסיפים: וביום השלישי]" /
+  // "[בחוץ לארץ מתחילים: וביום הששי …]". The korban blocks are now gated per
+  // day (and the diaspora's doubtful extra day is turned on by activeTags), so
+  // these bracketed instructions are redundant in the diaspora and wrong in
+  // Israel — render them as a (hidden-by-default) note.
+  if (/^\[\s*בחו(?:ץ לארץ|["״]?ל)\s+(?:מוסיפים|מתחילים)/.test(bare)) return { body, kind: 'halachic-note' };
+  const bareLbl = bare.replace(/["'״׳’‘`]/g, '');
+  const festLbl = bareLbl.match(/^(בחוהמ פסח|בחוהמ סוכות|בחול המועד פסח|בחול המועד סוכות|בפסח|לפסח|פסח|בסוכות|לסוכות|סוכות|סכות|בשבועות|לשבועות|שבועות|בשבת|לשבת|[בל]שמע ו?ל?שת|בשמיני עצרת|לשמיני עצרת|שמיני עצרת|בעצרת)\s*[:：\-–]\s/);
+  if (festLbl) {
+    const tags = specificDayTags(markerToTags(festLbl[1]));
+    if (tags && tags.length) {
+      const sliced = body.replace(/^\s*[^:：\-–]{0,30}[:：\-–]\s*/, '').trim();
+      return { body: sliced, kind: 'conditional', marker: festLbl[1], tags };
+    }
+  }
+  // A festival-Musaf Kedushat-HaYom option that opens with the festival NAME and
+  // no label ("חג השבועות הזה, את יום טוב מקרא קדש הזה, …") — Sefaria emits these
+  // as bare paragraphs in some Musaf copies. Gate each by its own festival so
+  // only today's shows (mirrors the labeled options handled above).
+  if (/^חג המצות הזה/.test(bare)) return { body, kind: 'conditional', marker: 'לפסח', tags: ['pesach'] };
+  if (/^חג השבועות הזה/.test(bare)) return { body, kind: 'conditional', marker: 'לשבועות', tags: ['shavuot'] };
+  if (/^חג ה?סו?כות הזה/.test(bare)) return { body, kind: 'conditional', marker: 'לסוכות', tags: ['sukkot'] };
+  if (/^שמיני[ ]?(חג[ ]?)?עצרת הזה/.test(bare)) return { body, kind: 'conditional', marker: 'לשמיני עצרת', tags: ['shmini-atzeret'] };
+  // Rosh Hashana Musaf Kedushat HaYom ("…את יום הזכרון הזה … יום תרועה …") is
+  // bundled in some festival-Musaf leaves; gate it to Rosh Hashana so it never
+  // leaks onto Chol HaMoed / a regular festival.
+  if (/הזכרון הזה/.test(bare) && /יום תרועה|זכרון תרועה/.test(bare)) return { body, kind: 'conditional', marker: 'בראש השנה', tags: ['rosh-hashana'] };
   // ועל הנסים / על הנסים — Chanukah/Purim insertion in Modim
   if (/^ו?על ה?נסים|^ו?על הניסים/.test(bare)) {
     return { body, kind: 'conditional', marker: 'בחנוכה ופורים', tags: ['chanukah', 'purim'] };
@@ -592,6 +703,23 @@ function stripHtml(s: string): string {
     .replace(/<\/?[a-zA-Z][^>]*>/g, '')
     .replace(/&lt;\/?[a-zA-Z][^&]*&gt;/g, '')
     .replace(/<[^>]*\/>/g, '');
+}
+
+/**
+ * A prayer line that ENDS with a dated, vocalized alternate in <small>, e.g. the
+ * Ashkenaz Kedushah: "…בָּרוּךְ אַתָּה ה׳ הָאֵל הַקָּדוֹשׁ: <small>בעשי״ת מסיים:
+ * בָּרוּךְ אַתָּה ה׳ הַמֶּלֶךְ הַקָּדוֹשׁ:</small>". Left whole, the AYT chatima
+ * rendered as plain prayer EVERY day. Split it into its own "<small>MARKER:</small>
+ * TEXT" fragment so Case B makes it a conditional gated by the marker's day tags.
+ * Only when the marker maps to date tags and both parts are vocalized prayer.
+ */
+function preExtractTrailingDatedSmall(raw: string): string[] | null {
+  const m = /^([\s\S]*\S)\s*<small>\s*([^<:：]{2,30}?)\s*[:：]\s*([^<]+?)\s*<\/small>\s*$/i.exec(raw);
+  if (!m) return null;
+  const [, before, marker, alt] = m;
+  if (!hasNikud(before) || !hasNikud(alt)) return null;
+  if (markerToTags(marker).length === 0) return null;
+  return [before, `<small>${marker}:</small> ${alt}`];
 }
 
 /**
@@ -739,18 +867,24 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
   // multiple paragraphs with awkward gaps.
   const expanded: string[] = [];
   for (const r of raw) {
+    const trailing = preExtractTrailingDatedSmall(r);
+    if (trailing) { expanded.push(...trailing); continue; }
     const packed = preExtractPackedBlob(r);
     if (packed) {
       expanded.push(...packed);
       continue;
     }
-    if (/<small><small>/i.test(r)) {
-      expanded.push(...preExtractInlineConditionals(r));
-      continue;
-    }
+    // Combined "בקיץ: … בחורף: …" BEFORE the nested-<small> splitter: Sefard's
+    // Musaf wraps it as "<small><small>בקיץ:</small> מוריד הטל. <small>בחורף:</small>
+    // משיב הרוח…</small>", which the nested splitter cut mid-way, leaving
+    // "מוריד הטל. בחורף:" with a dangling label.
     const season = preExtractCombinedSeason(r);
     if (season) {
       expanded.push(...season);
+      continue;
+    }
+    if (/<small><small>/i.test(r)) {
+      expanded.push(...preExtractInlineConditionals(r));
       continue;
     }
     expanded.push(r);
@@ -1057,6 +1191,150 @@ export function parseParagraphs(raw: string[], opts?: { amidah?: boolean }): Par
   pendingMarker = null;
   multiParaActive = null;
 
+  for (const p of result) {
+    if ((p.kind !== 'conditional' && p.kind !== 'alternative') || !p.tags) continue;
+    // Festival-name menu options ("בחוה״מ פסח: חג המצות…") carry a generic
+    // chol-hamoed/yom-tov tag alongside the festival; strip it so a festival name
+    // shows ONLY on its own festival, never on every Chol HaMoed / Yom Tov.
+    // NOT for negated markers ("ביו״ט ובחוה״מ פסח אין אומרים…"): there the tags
+    // list every EXCLUDED day, and narrowing would un-hide it on the others.
+    if (!p._negate) p.tags = specificDayTags(p.tags)!;
+    // Birkat HaShanim vs Gevurot timing: EM/Chabad label BOTH with בקיץ/בחורף,
+    // but ברכת השנים switches at 7 Cheshvan (tal-umatar / summer-berachah), not at
+    // Shmini Atzeret (geshem/tal). Disambiguate by the TEXT: a winter block that
+    // asks for טל ומטר (not משיב הרוח) is Birkat HaShanim → tal-umatar; a summer
+    // block of ברכנו/ותן ברכה (not מוריד הטל) → summer-berachah.
+    const bare = (p.body || '').replace(/[֑-ׇ]/g, '');
+    if (p.tags.includes('winter-geshem') && /טל ומטר|ותן טל/.test(bare) && !/משיב הרוח|מוריד הגשם/.test(bare)) {
+      p.tags = p.tags.map((t) => (t === 'winter-geshem' ? 'tal-umatar' : t));
+    }
+    if (p.tags.includes('summer-tal') && /ותן ברכה|בטללי רצון|מברך השנים|תבואתה לטובה/.test(bare) && !/מוריד הטל/.test(bare)) {
+      p.tags = p.tags.map((t) => (t === 'summer-tal' ? 'summer-berachah' : t));
+    }
+  }
+
+  // Sukkot Musaf — each day has its OWN korban ("וביום השני…" … "וביום השביעי…"),
+  // printed one after another. Without this every Chol HaMoed day showed ALL of
+  // them. Tag each day's block (korban + its own "ומנחתם…" / "אלהינו … וכו׳"
+  // continuation) with sukkot-korban-N; activeTags turns on today's (and in the
+  // diaspora also the doubtful previous day). Content-based, so it works for the
+  // labeled (Sefard/Ashkenaz) and the unlabeled (Chabad) layouts alike.
+  // The festival Musaf lists the korbanot of EVERY festival one after another;
+  // only some carry a recognizable label, so untagged ones (e.g. Pesach's
+  // "ובחדש הראשון…" or its "והקרבתם … פרים שנים") showed on every festival —
+  // the Pesach korban appeared in the Sukkot Musaf. Identify each korban by its
+  // unique Torah verse and gate it; each "ומנחתם…" continuation inherits the
+  // korban it follows. A continuation that follows a FIRST-DAY korban may be the
+  // one shared by all the first days (Ashkenaz), so it gets their union.
+  const SUKKOT_ORD: Record<string, number> = { 'השני': 2, 'השלישי': 3, 'הרביעי': 4, 'החמישי': 5, 'הששי': 6, 'השישי': 6, 'השביעי': 7 };
+  const FIRST_DAYS: ConditionTag[] = ['pesach-korban-1', 'sukkot-korban-1', 'shavuot', 'shmini-atzeret'];
+  const plain = (q: ParsedParagraph) => (q.body || '').replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim();
+  const PESACH_CHM_RX = /^והקרבתם אשה עלה [^.:]{0,8}\.?\s*פרים בני ?בקר שנים/;
+  // Two "והקרבתם … פרים שנים" in one leaf (Ashkenaz) = one for the first days,
+  // one for Chol HaMoed / last days. With only one, it serves every Pesach day.
+  const pesachVerseCount = result.filter((q) => PESACH_CHM_RX.test(plain(q))).length;
+  const korbanOf = (b: string): { tag: ConditionTag; marker: string; firstDay: boolean } | null => {
+    const mm = b.match(/^וביום (השני|השלישי|הרביעי|החמישי|הששי|השישי|השביעי)[\s.,:]/);
+    if (mm) { const n = SUKKOT_ORD[mm[1]]; return { tag: `sukkot-korban-${n}` as ConditionTag, marker: `קרבן היום ה-${n} לסוכות`, firstDay: false }; }
+    if (/^ובחמשה עשר יום לחדש השביעי/.test(b)) return { tag: 'sukkot-korban-1', marker: 'ליום א׳ דסוכות', firstDay: true };
+    if (/^ובחדש הראשון בארבעה עשר יום/.test(b)) return { tag: 'pesach-korban-1', marker: 'ליום א׳ דפסח', firstDay: true };
+    if (PESACH_CHM_RX.test(b)) return { tag: 'pesach', marker: 'לפסח', firstDay: false };
+    if (/^וביום הבכורים/.test(b)) return { tag: 'shavuot', marker: 'לשבועות', firstDay: true };
+    if (/^ביום השמיני[.,]?\s*עצרת/.test(b)) return { tag: 'shmini-atzeret', marker: 'לשמיני עצרת', firstDay: true };
+    if (/^(לשבת\s*:?\s*)?וביום השבת[.,]?\s*שני כבשים/.test(b)) return { tag: 'shabbat', marker: 'לשבת', firstDay: false };
+    return null;
+  };
+  // The leaf's FULL "ומנחתם ונסכיהם כמדבר…" — Ashkenaz prints it once and the
+  // per-day blocks only say "ומנחתם:" (a pointer). Without the Shavuot-only
+  // "<small>בשבועות …</small>" alternate.
+  const fullMinchatam = result.map((q) => q.body || '').find((t) => /^ומנחתם ונסכיהם/.test(t.replace(/[֑-ׇ]/g, '').replace(/<[^>]+>/g, '').trim()));
+  const fullMinchatamNoShavuot = fullMinchatam
+    ? fullMinchatam.replace(/<small>\s*בשבועות[^<]*<\/small>/g, '').replace(/\s*בשבועות ושני שעירים לכפר\.?/g, '').replace(/\s+/g, ' ').trim()
+    : undefined;
+  for (let i = 0; i < result.length; i++) {
+    let k = korbanOf(plain(result[i]));
+    if (!k) continue;
+    if (k.tag === 'pesach' && pesachVerseCount >= 2 && i > 0 && (result[i - 1].tags || []).includes('pesach-korban-1')) {
+      k = { tag: 'pesach-korban-1', marker: 'ליום א׳ דפסח', firstDay: true };
+    }
+    const kk = k;
+    const mark = (q: ParsedParagraph, tags: ConditionTag[]) => {
+      q.kind = 'conditional'; q.tags = tags; q._negate = false; if (!q.marker) q.marker = kk.marker;
+    };
+    mark(result[i], [kk.tag]);
+    let cont = 0;
+    for (let j = i + 1, n = 0; j < result.length && n < 4; j++, n++) {
+      const q = result[j];
+      const qb = plain(q);
+      if (korbanOf(qb) && !(kk.tag === 'pesach-korban-1' && PESACH_CHM_RX.test(qb) && pesachVerseCount >= 2)) break; // the next korban
+      if (q.marker && q.marker !== kk.marker && q.kind !== 'halachic-note') break; // a new labeled block
+      // The same korban's own verses / its Shabbat continuation.
+      if (/^(והקרבתם|ובחמשה עשר יום לחדש הזה|ביום הראשון מקרא קדש|עלת שבת בשבתו)/.test(qb)) {
+        mark(q, [PESACH_CHM_RX.test(qb) && kk.tag !== 'pesach-korban-1' ? 'pesach' : kk.tag]); continue;
+      }
+      if (!/^(ומנחתם|אלהינו ואלהי אבותינו וכו|או["״]?א וכו)/.test(qb)) break;
+      if (q.kind === 'halachic-note') continue;                // a hidden pointer stays hidden
+      // A bare "ומנחתם:" pointer of a non-first-day block → the full text.
+      if (!kk.firstDay && /^ומנחתם\s*:?\s*$/.test(qb) && fullMinchatamNoShavuot) q.body = fullMinchatamNoShavuot;
+      mark(q, kk.firstDay ? FIRST_DAYS : [kk.tag]);
+      if (++cont >= (kk.firstDay ? 3 : 1)) break;              // first days: pointer + shared full text + או״א
+    }
+  }
+  // Ashkenaz Shalosh-Regalim Musaf Kedushah holds two versions in one leaf —
+  // "ליו״ט ולהושע״ר:" (נעריצך …) and "לחוה״מ:" (נקדש …). The header only gated its
+  // first line, so on Chol HaMoed BOTH were shown (Kedushah twice). Gate the whole
+  // Yom-Tov/Hoshana-Rabba block, up to the "לחוה״מ" header.
+  {
+    const hdr = (q: ParsedParagraph) => `${(q.marker || '').replace(/[֑-ׇ]/g, '')} ${plain(q)}`.trim();
+    const iY = result.findIndex((q) => /^ליו["״]?ט ולהושע/.test(hdr(q)));
+    const iC = iY >= 0 ? result.findIndex((q, idx) => idx > iY && /^לחוה["״]?מ(\s|:|$)/.test(hdr(q))) : -1;
+    if (iY >= 0 && iC > iY) {
+      for (let i = iY; i < iC; i++) {
+        const q = result[i];
+        if (q.kind === 'halachic-note' || !(q.body || '').trim()) continue;
+        q.kind = 'conditional'; q.tags = ['yom-tov', 'hoshana-rabba']; q._negate = false;
+        if (!q.marker) q.marker = 'ליו״ט ולהושענא רבה';
+      }
+      // Sefaria interleaves the two versions:
+      //   Yom-Tov / Hoshana Rabba = נעריצך…אני ה׳ אלהיכם  +  אדיר אדירנו + ובדברי…ימלך  +  לדור ודור…האל הקדוש
+      //   Chol HaMoed             = נקדש…ימלך                                       +  לדור ודור…האל הקדוש
+      // The "בשבת חוה״מ מדלגים קטע זה" rubric (merged as the marker of "אדיר
+      // אדירנו") opens the Yom-Tov tail. Gate: ChM block → chol-hamoed-plain (not
+      // Hoshana Rabba); Yom-Tov tail → Yom-Tov/Hoshana Rabba; the shared
+      // "לדור ודור … האל הקדוש" stays for both.
+      const iTail = result.findIndex((q, idx) => idx > iC && /בשבת חול המועד מדלגים/.test(hdr(q)));
+      const iDor = result.findIndex((q, idx) => idx > Math.max(iC, iTail) && /לדור ודור נגיד/.test(plain(q)));
+      const setT = (from: number, to: number, tags: ConditionTag[], marker: string) => {
+        for (let i = from; i < to; i++) {
+          const q = result[i];
+          if (q.kind === 'halachic-note' || !(q.body || '').trim()) continue;
+          q.kind = 'conditional'; q.tags = tags; q._negate = false; q.marker = marker;
+        }
+      };
+      if (iTail > iC && iDor > iTail) {
+        setT(iC, iTail, ['chol-hamoed-plain'], 'לחול המועד');
+        setT(iTail, iDor, ['yom-tov', 'hoshana-rabba'], 'ליו״ט ולהושענא רבה');
+      }
+    }
+  }
+  // Orphan first-day headers ("ליום א׳ וב׳ דפסח:" / "ליום א׳ וב׳ דסכות:") — show
+  // them only with their block.
+  for (const q of result) {
+    const qb = plain(q);
+    if (q.kind !== 'normal' || qb.length > 30) continue;
+    if (/^ליום א.?\s*וב.?\s*דפסח/.test(qb)) { q.kind = 'conditional'; q.tags = ['pesach-korban-1']; q.marker = qb.replace(/:$/, ''); }
+    else if (/^ליום א.?\s*וב.?\s*דס[ו]?כות/.test(qb)) { q.kind = 'conditional'; q.tags = ['sukkot-korban-1']; q.marker = qb.replace(/:$/, ''); }
+  }
+  // Chabad: a "[בחוץ לארץ מתחילים: וביום …]" pointer (now a note) is followed by
+  // its own "ומנחתם…" — redundant (the doubtful day's block is shown by the
+  // day tags), so hide it with the pointer.
+  for (let i = 0; i + 1 < result.length; i++) {
+    if (result[i].kind === 'halachic-note' && /^\[\s*בחו(?:ץ לארץ|["״]?ל)/.test(plain(result[i])) &&
+        result[i + 1].kind === 'normal' && /^ומנחתם/.test(plain(result[i + 1]))) {
+      result[i + 1] = { ...result[i + 1], kind: 'halachic-note' };
+    }
+  }
+
   return result;
 }
 
@@ -1100,6 +1378,7 @@ export function activeTags(date: Date = new Date(), inIsrael = true, isMaariv = 
   const isYomKippurDay = m === months.TISHREI && d === 10;
   if (isYomTov && !isRoshHashanaDay && !isYomKippurDay) out.add('yom-tov');
   if (isCholHamoed) out.add('chol-hamoed');
+  if (isCholHamoed && !(m === months.TISHREI && d === 21)) out.add('chol-hamoed-plain');
   if (isFastDay) out.add('fast');
   // Tisha b'Av is the only MAJOR_FAST in Av (Yom Kippur, the other MAJOR_FAST,
   // is in Tishrei). Covers the deferred 10-Av observance too (still month Av).
@@ -1122,10 +1401,19 @@ export function activeTags(date: Date = new Date(), inIsrael = true, isMaariv = 
   if (m === months.TISHREI) {
     if (d === 1 || d === 2) out.add('rosh-hashana');
     if (d === 10) out.add('yom-kippur');
-    if (d >= 15 && d <= 21) out.add('sukkot');
+    if (d >= 15 && d <= 21) {
+      out.add('sukkot');
+      // Day-of-Sukkot Musaf korban: Israel → today's; diaspora → today's AND the
+      // previous day's (ספיקא דיומא: ChM day 1 in chu"l says "וביום השני וביום השלישי").
+      const s = d - 14; // 1..7
+      if (d === 21) out.add('hoshana-rabba');
+      out.add(`sukkot-korban-${s}` as ConditionTag);
+      if (!inIsrael && s >= 2) out.add(`sukkot-korban-${s - 1}` as ConditionTag);
+    }
     if (d === 22 || (!inIsrael && d === 23)) out.add('shmini-atzeret');
   }
   if (m === months.NISAN && d >= 15 && d <= 21) out.add('pesach');
+  if (m === months.NISAN && (d === 15 || (!inIsrael && d === 16))) out.add('pesach-korban-1');
   if (m === months.SIVAN && (d === 6 || (!inIsrael && d === 7))) out.add('shavuot');
 
   // Aseret Yemei Teshuva
@@ -1135,8 +1423,7 @@ export function activeTags(date: Date = new Date(), inIsrael = true, isMaariv = 
   if ((m === months.KISLEV && d >= 25) || (m === months.TEVET && d <= 2)) out.add('chanukah');
 
   // Purim
-  const adarMonth = HDate.isLeapYear(hd.getFullYear()) ? months.ADAR_II : months.ADAR_I;
-  if (m === adarMonth && (d === 14 || (inIsrael && d === 15))) out.add('purim');
+  if (isPurimForUser(hd, inIsrael)) out.add('purim');
 
   // Shabbat / motzei
   if (gregDay === 6) out.add('shabbat');
@@ -1182,6 +1469,11 @@ export function activeTags(date: Date = new Date(), inIsrael = true, isMaariv = 
     isTalUmatar = beforePesachEnd && pastDiasporaStart;
   }
   if (isTalUmatar) out.add('tal-umatar');
+  // Birkat HaShanim summer ("בימות החמה": ברכנו … ותן ברכה) is said whenever
+  // טל-ומטר is NOT — i.e. 15 Nisan → 7 Cheshvan. This differs from gevurot's
+  // summer-tal (which ends at Shmini Atzeret), so it has its own tag; otherwise
+  // the 22-Tishrei→7-Cheshvan gap wrongly shows the winter "ותן טל ומטר".
+  else out.add('summer-berachah');
 
   return out;
 }
@@ -1532,8 +1824,61 @@ export function shouldRender(
 }
 
 /** Some markers can be enhanced with today's specific name, e.g., יעלה ויבוא gets the holiday. */
-export function enhanceConditionalText(p: ParsedParagraph, date: Date = new Date(), inIsrael = true): string {
+/** Labels that introduce a festival/RC option inside a one-paragraph menu
+ *  (Yaaleh VeYavo / festival Musaf Kedushat HaYom), quote-insensitive. */
+const INLINE_MENU_LABELS =
+  'בראש ח[דו]ש|בחוה["״]?מ פסח|בחוה["״]?מ סוכות|בחוה["״]?מ שבועות|לר["״]?ח|לפסח|לסכות|לסוכות|לשבועות|לשמיני עצרת|לשמ["״]?ע ול?ש["״]?ת|לשמ["״]?ע|בפסח|בסוכות|בשבועות|בשמיני עצרת|בשמ["״]?ע ול?ש["״]?ת|בשמ["״]?ע';
+
+/** Gate a ONE-PARAGRAPH festival menu ("…ביום בראש חדש: … בחוה״מ פסח: … בחוה״מ
+ *  סוכות: …") down to TODAY's option only. Each option is "LABEL<sep>PHRASE";
+ *  the phrase runs to the next label (or, for the last, to the next sentence
+ *  terminator). Keeps the active option's phrase (label stripped), drops the
+ *  rest. No-op when fewer than 2 labels are present (so single-option paragraphs
+ *  and ordinary prayer text are untouched). */
+function gateInlineFestivalMenu(body: string, active: Set<ConditionTag>): string {
+  const N = '[\\u0591-\\u05C7]*';
+  const labelRx = new RegExp(`(${INLINE_MENU_LABELS})${N}\\s*[:\\-–]\\s*`, 'g');
+  const ms: { idx: number; end: number; label: string }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = labelRx.exec(body)) !== null) ms.push({ idx: m.index, end: m.index + m[0].length, label: m[1].replace(/[֑-ׇ]/g, '') });
+  if (ms.length < 2) return body;
+  const termAfter = (s: number) => { const mm = /[.:׃]/.exec(body.slice(s)); return mm ? s + mm.index + 1 : body.length; };
+  const lastEnd = termAfter(ms[ms.length - 1].end);
+  const prefix = body.slice(0, ms[0].idx);
+  const suffix = body.slice(lastEnd);
+  let kept = '';
+  for (let i = 0; i < ms.length; i++) {
+    const phrase = body.slice(ms[i].end, i < ms.length - 1 ? ms[i + 1].idx : lastEnd);
+    const tags = specificDayTags(markerToTags(ms[i].label)) || [];
+    if (tags.some((t) => active.has(t))) kept += phrase;
+  }
+  // No option matches today → don't strip the day name out of the prayer
+  // ("ביום … זכרנו"); leave the paragraph for the legacy handlers below.
+  if (!kept.trim()) return body;
+  return `${prefix}${kept}${suffix}`.replace(/\s+/g, ' ').replace(/\s+([.:׃,])/g, '$1').trim();
+}
+
+export function enhanceConditionalText(p: ParsedParagraph, date: Date = new Date(), inIsrael = true, isMaariv = false): string {
   if (!p.body) return p.body;
+  // Maariv belongs to the COMING Hebrew day (same roll as activeTags(…, isMaariv)),
+  // so the day name inserted into Yaaleh VeYavo at the Maariv that opens Rosh
+  // Chodesh is "ראש החודש", not empty.
+  if (isMaariv) date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, date.getHours(), date.getMinutes());
+  // A conditional body can still carry an inline dated alternate — e.g. the
+  // chazara-only Kedushah of Ashkenaz R"Ch Musaf ends "האל (בעשי״ת המלך) הקדוש".
+  // Gate those the same way plain text is gated.
+  const out = enhanceConditionalTextInner(p, date, inIsrael);
+  return /\(/.test(out) ? stripInactiveInlineParens(out, activeTags(date, inIsrael)) : out;
+}
+
+function enhanceConditionalTextInner(p: ParsedParagraph, date: Date, inIsrael: boolean): string {
+  // One-paragraph festival menus (Chabad YvY, Ashkenaz/EM festival Musaf) —
+  // reduce to today's option first. If it changed the body, that already did the
+  // job; otherwise fall through to the legacy chain handlers below.
+  {
+    const gated = gateInlineFestivalMenu(p.body, activeTags(date, inIsrael));
+    if (gated !== p.body) return gated;
+  }
   // Yaaleh VeYavo — Sefaria packs all festival names inline. After stripFormatting
   // strips <small> tags, the body looks like:
   //   ... בְּיוֹם לר"ח: רֹאשׁ הַחֹדֶשׁ הַזֶּה: לפסח: חַג הַמַּצּוֹת הַזֶּה: לסכות: חַג הַסֻּכּוֹת הַזֶּה: זָכְרֵנוּ...
@@ -1655,7 +2000,22 @@ export function stripInactiveInlineParens(body: string, active: Set<ConditionTag
   // Match (   [<small>]MARKER[</small>]   ALT   )
   const pattern = /\s*\(\s*(?:<small>\s*)?([^()<\s][^()<]{0,40}?)(?:\s*<\/small>)?\s+([^()<]{1,200}?)\s*\)\s*/g;
   return body.replace(pattern, (full, marker, alt) => {
-    const tags = markerToTags(marker.trim());
+    let tags = markerToTags(marker.trim());
+    // Multi-word marker ("(בעשרת ימי תשובה אומר: השלום)") — the regex took only
+    // its first word ("בעשרת"), which maps to nothing, so the AYT alternate was
+    // shown every day. Retry on the whole rubric before the colon.
+    let wholeLabel = false;
+    if (tags.length === 0) {
+      const lead = `${marker} ${alt}`.split(/[:：]/)[0].trim();
+      if (lead.length <= 40 && /[:：]/.test(`${marker} ${alt}`)) { tags = markerToTags(lead); wholeLabel = tags.length > 0; }
+    }
+    // Birkat HaShanim inline paren "(בחורף טל ומטר לברכה)": the בחורף marker is
+    // gevurot-timed (winter-geshem) but here it's the טל-ומטר request, which is
+    // tal-umatar-timed. Retag by the alternate's content.
+    const altBare = (alt || '').replace(/[֑-ׇ]/g, '');
+    if (tags.includes('winter-geshem') && /טל ומטר|ותן טל/.test(altBare) && !/משיב הרוח|מוריד הגשם/.test(altBare)) {
+      tags = tags.map((t) => (t === 'winter-geshem' ? 'tal-umatar' : t));
+    }
     if (tags.length === 0) {
       // Not a recognized seasonal marker — leave parenthetical alone
       // (could be a citation, response, or other inline note).
@@ -1664,7 +2024,9 @@ export function stripInactiveInlineParens(body: string, active: Set<ConditionTag
     const inSeason = tags.some((t) => active.has(t));
     if (inSeason) {
       // Keep the parenthetical visible so the reader can use the alternate
-      return ` (${marker.trim()}: ${alt.trim()}) `;
+      // A label that already has its own colon ("בתענית ציבור: …") is kept as written.
+      return wholeLabel || /^[^:：]{0,30}[:：]/.test(alt.trim()) || /[:：]\s*$/.test(marker)
+        ? ` (${marker.trim()} ${alt.trim()}) ` : ` (${marker.trim()}: ${alt.trim()}) `;
     }
     // Out of season — strip the parenthetical entirely, preserving a single space
     return ' ';

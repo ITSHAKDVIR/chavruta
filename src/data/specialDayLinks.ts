@@ -11,6 +11,7 @@
  * at the top of the prayer flow (similar to the Musaf and Selichot banners).
  */
 import { HDate, HebrewCalendar, flags, months } from '@hebcal/core';
+import { isPurimForUser } from './purimDay';
 
 export type SpecialLink = {
   /** Hebrew label shown in the banner. */
@@ -26,8 +27,8 @@ export type SpecialLink = {
 /** Megillah link — shown on Purim night (Maariv) and Purim morning (Shacharit). */
 export function getActiveMegillahLink(date: Date = new Date(), inIsrael = true): SpecialLink | null {
   const hd = new HDate(date);
-  const events = HebrewCalendar.calendar({ start: hd, end: hd, il: inIsrael, sedrot: false });
-  if (!events.some((e) => /Purim|Shushan/i.test(e.getDesc()))) return null;
+  // The user's Purim day (14, or 15 with "אני בירושלים") and its eve (night reading).
+  if (!isPurimForUser(hd, inIsrael) && !isPurimForUser(hd.add(1, 'd'), inIsrael)) return null;
   return {
     label: 'קריאת מגילת אסתר',
     description: 'קריאת המגילה (לילה ויום) — לחץ למעבר לטקסט עם ניקוד וטעמים.',

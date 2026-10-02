@@ -6,7 +6,7 @@ import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { Card } from '../../src/components/Card';
 import { getString, setString, Keys } from '../../src/storage/storage';
 import { getNusachTree, getFlatTopItems, slugify, Nusach, NUSACH_LABEL, NUSACH_KEYS, SiddurNode, FlatTopItem } from '../../src/data/siddurTree';
-import { isSectionRelevantToday } from '../../src/data/siddurRelevance';
+import { isSectionRelevantToday, serviceOfNode } from '../../src/data/siddurRelevance';
 import { useLocation } from '../../src/hooks/useLocation';
 import { colors, radius, spacing } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
@@ -65,7 +65,7 @@ export default function SidurIndex() {
   const now = new Date();
   const top = showAll
     ? allTop
-    : allTop.filter((n: FlatTopItem) => isSectionRelevantToday(n.en, now, inIsrael));
+    : allTop.filter((n: FlatTopItem) => isSectionRelevantToday(n.en, now, inIsrael, n.he, serviceOfNode(n.en, n.he)));
   const hiddenCount = allTop.length - top.length;
 
   return (

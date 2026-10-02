@@ -1,4 +1,5 @@
 import { HDate, HebrewCalendar, flags, months } from '@hebcal/core';
+import { isPurimForUser } from './purimDay';
 
 export type TefilaInsert = {
   id: string;
@@ -94,9 +95,8 @@ export function getInsertsForDate(date: Date = new Date(), inIsrael = true): Tef
     });
   }
 
-  // Al HaNissim - Purim (14 Adar; 15 Adar in walled cities like Jerusalem)
-  const adarMonth = HDate.isLeapYear(hd.getFullYear()) ? months.ADAR_II : months.ADAR_I;
-  if (m === adarMonth && (d === 14 || (inIsrael && d === 15))) {
+  // Al HaNissim - Purim (14 Adar; 15 Adar for one who set "אני בירושלים")
+  if (isPurimForUser(hd, inIsrael)) {
     inserts.push({
       id: 'al-hanisim-purim',
       title: 'על הנסים (פורים)',

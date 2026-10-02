@@ -313,6 +313,7 @@ function CrashSharer({ onClose }: { onClose: () => void }) {
 // theme value gets applied via useThemeApplication() below. Worst case: one
 // flash of dark→light on first launch after the user changes the theme.
 import { loadAppPrefs, useAppPrefs } from '../src/storage/appPrefs';
+import { useJerusalemPurim } from '../src/hooks/useJerusalemPurim';
 import { applyTheme, colors as themeColors } from '../src/theme/colors';
 
 /** Apply the stored theme at boot AND on every change. Returns a `themeKey`
@@ -331,6 +332,8 @@ function useThemeApplication(): number {
 export default function RootLayout() {
   // Apply saved theme (dark/light) on boot + whenever it changes.
   const themeKey = useThemeApplication();
+  // "אני בירושלים" — loaded at boot so every Purim computation sees it.
+  useJerusalemPurim();
   // Load Rubik font globally — bundled in APK so every device sees the same UI
   const [fontsLoaded] = useFonts({
     'Rubik-Light': Rubik_300Light,

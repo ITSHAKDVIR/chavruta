@@ -8,6 +8,7 @@ import { Card } from '../../src/components/Card';
 import { Icon } from '../../src/components/Icon';
 import { useLocation } from '../../src/hooks/useLocation';
 import { getString, setString, Keys } from '../../src/storage/storage';
+import { saveJerusalemPurim, useJerusalemPurim } from '../../src/hooks/useJerusalemPurim';
 import { colors, radius, spacing } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 
@@ -31,6 +32,9 @@ export default function MoreScreen() {
   const { location } = useLocation();
   const router = useRouter();
   const [nusach, setNusach] = useState<string>('ashkenazi');
+  const storedJerusalem = useJerusalemPurim();
+  const [inJerusalem, setInJerusalem] = useState<boolean | null>(null);
+  const jerusalemValue = inJerusalem ?? storedJerusalem;
 
   useEffect(() => {
     (async () => {
@@ -65,6 +69,14 @@ export default function MoreScreen() {
       description: 'אשכנז / ספרד / עדות מזרח / חב"ד',
     },
     {
+      id: 'jerusalem',
+      label: 'אני בירושלים',
+      emoji: '🏛',
+      iconName: 'location',
+      value: jerusalemValue ? 'כן' : 'לא',
+      description: 'פורים בט״ו באדר (שושן פורים): על הנסים, ויבא עמלק וערבית של פורים',
+    },
+    {
       id: 'notifications',
       label: 'מרכז התראות',
       emoji: '🔔',
@@ -92,6 +104,12 @@ export default function MoreScreen() {
   function handleItemPress(item: SettingsItem) {
     if (item.id === 'nusach') {
       cycleNusach();
+      return;
+    }
+    if (item.id === 'jerusalem') {
+      const next = !jerusalemValue;
+      setInJerusalem(next);
+      saveJerusalemPurim(next);
       return;
     }
     if (item.route) router.push(item.route as any);

@@ -1,4 +1,5 @@
 import { HDate, HebrewCalendar, flags, months } from '@hebcal/core';
+import { isPurimForUser } from './purimDay';
 
 /**
  * Determines whether a siddur section is relevant today.
@@ -14,9 +15,13 @@ type Ctx = {
   d: number;
   gregDay: number;
   inIsrael: boolean;
+  /** True when evaluating a MAARIV section — the ctx is then already rolled to
+   *  the next Hebrew day (the night belongs to the coming day). */
+  maariv?: boolean;
+  hour?: number;
 };
 
-function buildCtx(date: Date, inIsrael: boolean): Ctx {
+function buildCtx(date: Date, inIsrael: boolean, maariv = false): Ctx {
   const hd = new HDate(date);
   return {
     hd,
@@ -24,6 +29,8 @@ function buildCtx(date: Date, inIsrael: boolean): Ctx {
     d: hd.getDate(),
     gregDay: date.getDay(),
     inIsrael,
+    maariv,
+    hour: date.getHours(),
   };
 }
 
@@ -68,8 +75,7 @@ function isPurimSeason(ctx: Ctx): boolean {
 }
 
 function isPurimDay(ctx: Ctx): boolean {
-  const adar = HDate.isLeapYear(ctx.hd.getFullYear()) ? months.ADAR_II : months.ADAR_I;
-  return ctx.m === adar && (ctx.d === 14 || ctx.d === 15);
+  return isPurimForUser(ctx.hd, ctx.inIsrael);
 }
 
 function isPesachSeason(ctx: Ctx): boolean {
@@ -177,8 +183,11 @@ function isErevShabbat(ctx: Ctx): boolean {
 }
 
 function isMotzaeiShabbat(ctx: Ctx): boolean {
-  // Saturday night through Sunday end (rough)
-  return ctx.gregDay === 0;
+  // Maariv ctx is rolled to the coming day, so Saturday-night Maariv → Sunday.
+  if (ctx.maariv) return ctx.gregDay === 0;
+  // Non-Maariv (e.g. opening the Havdalah / Motzaei-Shabbat page directly):
+  // Saturday evening only. Never Sunday daytime.
+  return ctx.gregDay === 6 && (ctx.hour ?? 0) >= 18;
 }
 
 function isMonOrThurs(ctx: Ctx): boolean {
@@ -228,11 +237,29 @@ function isTalGeshemSwitchDay(ctx: Ctx): boolean {
  * `he` is optional but enables gating leaves whose chu"l/EY designation lives
  * only in the Hebrew name (e.g. "ברוך ה' לעולם (outside of Israel)").
  */
+/** The service a NAVIGATION node belongs to, judged from its name — so list
+ *  screens apply the same Maariv day-roll as the reader (otherwise on Motzaei
+ *  Shabbat the "Weekday Maariv" entry itself is hidden from the list). */
+export function serviceOfNode(en = '', he = ''): 'mincha' | 'maariv' | undefined {
+  const s = `${en} ${he}`;
+  if (/maariv|arvit|ערבית|מעריב/i.test(s)) return 'maariv';
+  if (/min(c?h)ah?|מנחה/i.test(s)) return 'mincha';
+  return undefined;
+}
+
 export function isSectionRelevantToday(
   en: string, date: Date = new Date(), inIsrael = true, he = '',
   service?: 'shacharit' | 'mincha' | 'maariv',
 ): boolean {
-  const ctx = buildCtx(date, inIsrael);
+  // In Judaism the day begins at night: a Maariv section belongs to the COMING
+  // Hebrew day. Evaluate it on the next date (same convention as
+  // activeTags(…, isMaariv)). Without this, Saturday-night Maariv was judged as
+  // "Shabbat" — hiding the whole Weekday Maariv (Sefard/EM showed an empty
+  // page) and showing the Motzaei-Shabbat additions on Sunday night instead.
+  if (service === 'maariv') {
+    date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, date.getHours(), date.getMinutes());
+  }
+  const ctx = buildCtx(date, inIsrael, service === 'maariv');
   const name = (en || '').toLowerCase();
   const haystack = `${name} ${(he || '').toLowerCase()}`;
   // Hebrew/English marker for "only outside Israel" content (the chu"l-only
