@@ -73,6 +73,9 @@ test.jpg
 .audittmp/
 _shim/
 sef_cache/
-siddur-audit/
+# The daven-audit engine itself is tracked (see .claude/skills/daven-audit);
+# only its generated outputs stay local.
+siddur-audit/*
+!siddur-audit/*.ts
+.siddur-dump.md
 amida.json
-tsconfig.dump.json

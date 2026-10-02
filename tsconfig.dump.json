@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@hebcal/core": ["./node_modules/@hebcal/core/dist/esm/index.js"]
+    },
+    "types": ["node"]
+  },
+  "include": ["siddur-audit/**/*.ts", "src/**/*.ts"]
+}
